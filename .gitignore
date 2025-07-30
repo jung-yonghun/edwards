@@ -1,0 +1,7 @@
+edwards/target/
+
+edwards/*.project
+
+edwards/*.classpath
+
+edwards/.settings/

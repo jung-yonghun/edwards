@@ -1,0 +1,1026 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) SEIN
+  ~ All rights reserved.
+  ~ This software is the confidential and proprietary information of SEIN. ("Confidential Information").
+  -->
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.edwards.biz.edmsManagement.EdmsManagementMapper">
+    <select id="selectEdmsFileListNew" resultType="map">
+        /* EDMS 파일 */
+        SELECT top 25 SDAAKey, EdmsParentGbn, EdmsNo, EdmsFileCategory, EdmsOrgFileNm, AddUserId
+        FROM CPS.[dbo].[SDAA100]
+        <where>
+            AND UseYn = 'Y'
+            <if test='EdmsParentGbn != null and EdmsParentGbn != ""'>AND EdmsParentGbn LIKE #{EdmsParentGbn} + '%'</if>
+            <if test='EdmsNo != null and EdmsNo != "" and EdmsSingoNo != null and EdmsSingoNo != ""'>AND ((EdmsNo = #{EdmsNo} and CommonYn='Y') OR (EdmsSingoNo = #{EdmsSingoNo} and CommonYn='N'))</if>
+            <if test='EdmsNo == "" and EdmsSingoNo != null and EdmsSingoNo != ""'>AND EdmsSingoNo = #{EdmsSingoNo}</if>
+            <if test='EdmsNo != null and EdmsNo != "" and EdmsSingoNo == ""'>AND EdmsNo = #{EdmsNo}</if>
+            <if test='EdmsJisaCode != null and EdmsJisaCode != "" '>AND EdmsJisaCode = #{EdmsJisaCode}</if>
+            <if test='EdmsFileCategory != null and EdmsFileCategory != ""'>AND EdmsFileCategory LIKE #{EdmsFileCategory} + '%'</if>
+        </where>
+    </select>
+
+    <select id="selectEdmsFileList1" resultType="map">
+        /* EDMS 파일 */
+        SELECT top 50 *
+        FROM CPS.[dbo].[SDAA100] a
+        <where>
+            AND UseYn = 'Y'
+            <if test='edmsKey != null and edmsKey != ""'>AND a.SDAAKey = CAST(#{edmsKey} AS NUMERIC)</if>
+            <if test='edmsParentGbn != null and edmsParentGbn != ""'>AND a.EdmsParentGbn LIKE #{edmsParentGbn} + '%'</if>
+            <if test='edmsNo != null and edmsNo != "" and edmsSingoNo != null and edmsSingoNo != ""'>AND ((a.EdmsNo = #{edmsNo} and a.CommonYn='Y') OR (a.EdmsSingoNo = #{edmsSingoNo} and a.CommonYn='N'))</if>
+            <if test='edmsNo == "" and edmsSingoNo != null and edmsSingoNo != ""'>AND a.EdmsSingoNo = #{edmsSingoNo}</if>
+            <if test='edmsNo != null and edmsNo != "" and edmsSingoNo == ""'>AND a.EdmsNo = #{edmsNo}</if>
+            <if test='edmsJisaCode != null and edmsJisaCode != ""'>AND a.EdmsJisaCode = #{edmsJisaCode}</if>
+        </where>
+    </select>
+
+
+    <select id="findEdmsMasterWithFileList" resultType="map">
+        /* EDMS 마스터X파일 리스트1 */
+        SELECT datas.*
+        FROM (
+        SELECT ROW_NUMBER() OVER (ORDER BY SDAAKey desc) AS 'rownum',
+        a.SDAAKey,a.EdmsParentGbn,a.EdmsNo,a.EdmsSingoNo,a.EdmsFileCategory,a.EdmsFilePath,a.EdmsSaveFileNm,a.EdmsOrgFileNm,
+		a.EdmsFileSize,a.EdmsFileExt,a.UseYn,a.AddUserId,a.AddUserNm,a.AddDtm,a.EditUserId,a.EditUserNm,a.EditDtm,
+        ISNULL((SELECT count(count) FROM soo.dbo.TBR_Ftp_Send_Log WITH (NOLOCK) WHERE a.SDAAKey = CAST(edmsFileKey AS NUMERIC)), 0) AS 'ftpFileCount'
+        FROM CPS.[dbo].[SDAA100] a
+        <where>
+            AND UseYn = 'Y'
+            <if test='edmsKey != null and edmsKey != ""'>AND a.SDAAKey = CAST(#{edmsKey} AS NUMERIC)</if>
+            <if test='edmsGubun != null and edmsGubun != ""'>AND a.EdmsParentGbn LIKE #{edmsGubun} + '%'</if>
+            <if test='edmsNo != null and edmsNo != "" and edmsSingoNo != null and edmsSingoNo != ""'>AND ((a.EdmsNo = #{edmsNo} and a.CommonYn='Y') OR (a.EdmsSingoNo = #{edmsSingoNo} and a.CommonYn='N'))</if>
+            <if test='edmsNo == "" and edmsSingoNo != null and edmsSingoNo != ""'>AND a.EdmsSingoNo = #{edmsSingoNo}</if>
+            <if test='edmsNo != null and edmsNo != "" and edmsSingoNo == ""'>AND a.EdmsNo = #{edmsNo}</if>
+            <if test='edmsJisaCode != null and edmsJisaCode != ""'>AND a.EdmsJisaCode = #{edmsJisaCode}</if>
+        </where>
+        ) datas
+        <if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+            WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+        </if>
+    </select>
+
+    <!-- select id="findEdmsMasterWithFileList" resultType="map">
+        /* EDMS 마스터X파일 리스트 */
+        SELECT datas.*
+        FROM (
+        SELECT ROW_NUMBER() OVER (ORDER BY a.edmsKey, b.edmsFileKey) AS 'rownum',
+        a.edmsKey, a.edmsGubun, a.edmsUploadType, a.edmsComKey, a.edmsComName, a.edmsComCode, a.edmsComNum,
+        a.edmsNum, a.edmsManagementNum, a.edmsStatus,
+        a.addDay, a.editDay, a.iphangDay, a.banipDay, a.singoDay, a.suriDay, a.banchulDay,
+        a.jisaCode, a.teamCode, a.singoNum, a.divisionSingoYn, a.edmsMrn, a.edmsMsn,
+        a.useYn, a.addUserId, a.addUserName, a.addDate, a.editUserId, a.editUserName, a.editDate,
+        b.edmsFileKey, b.edmsParentGubun, b.edmsParentKey, b.edmsFileCategory, b.edmsFileUploadType, b.edmsServerGubun, b.edmsServerIp,
+        b.edmsFilePath, b.edmsSaveFileName, b.edmsOrgFileName, b.edmsFileSize, b.edmsFileExt, b.edmsFileStatus,
+        b.edmsSearchKeyword, b.edmsFileNote, b.addDay AS 'edmsFileAddDay',
+        b.useYn AS 'edmsFileUseYn', b.addUserId AS 'edmsFileAddUserId', b.addDate AS 'edmsFileAddDate', b.editUserId AS 'edmsFileEditUserId', b.editDate AS 'edmsFileEditDate'
+        FROM [soo].[dbo].[TBR_EDMS_Master] a WITH (NOLOCK)
+        LEFT OUTER JOIN [soo].[dbo].[TBR_EDMS_AttachFile] b WITH (NOLOCK)
+        ON a.edmsGubun = b.edmsParentGubun
+        AND a.edmsKey = b.edmsParentKey
+        AND b.useYn = 'Y'
+        <where>
+            AND a.useYn = 'Y'
+            /* TBR_EDMS_Master */
+            <if test='edmsKey != null and edmsKey != ""'>AND a.edmsKey = CAST(#{edmsKey} AS NUMERIC) /* edmsKey(PK) */</if>
+            <if test='edmsGubun != null and edmsGubun != ""'>AND a.edmsGubun LIKE #{edmsGubun} + '%' /* edmsGubun */</if>
+            <if test='edmsUploadType != null and edmsUploadType != ""'>AND a.edmsUploadType LIKE #{edmsUploadType} + '%' /* edmsUploadType */</if>
+            <if test='edmsComKey != null and edmsComKey != ""'>AND a.edmsComKey = CAST(#{edmsComKey} AS NUMERIC) /* edmsComKey */</if>
+            <if test='edmsComName != null and edmsComName != ""'>AND a.edmsComName LIKE '%' + #{edmsComName} + '%' /* edmsComName */</if>
+            <if test='jisaCode != null and jisaCode != ""'>AND a.jisaCode = #{jisaCode} /* jisaCode */</if>
+            <if test='teamCode != null and teamCode != ""'>AND a.teamCode LIKE #{teamCode} + '%' /* teamCode */</if>
+            <if test='edmsComCode != null and edmsComCode != ""'>AND a.edmsComCode LIKE #{edmsComCode} + '%' /* edmsComCode */</if>
+            <if test='edmsComNum != null and edmsComNum != ""'>AND a.edmsComNum LIKE #{edmsComNum} + '%' /* edmsComNum */</if>
+            <if test='edmsNum != null and edmsNum != ""'>AND a.edmsNum LIKE #{edmsNum} + '%' /* edmsNum */</if>
+            <if test='edmsStatus != null and edmsStatus != ""'>AND a.edmsStatus LIKE #{edmsStatus} + '%' /* edmsStatus */</if>
+            <if test='singoNum != null and singoNum != ""'>AND a.singoNum LIKE #{singoNum} + '%' /* singoNum */</if>
+            <if test='divisionSingoYn != null and divisionSingoYn != ""'>AND a.divisionSingoYn LIKE #{divisionSingoYn} + '%' /* divisionSingoYn */</if>
+            <if test='edmsMrn != null and edmsMrn != ""'>AND a.edmsMrn LIKE #{edmsMrn} + '%' /* edmsMrn */</if>
+            <if test='edmsMsn != null and edmsMsn != ""'>AND a.edmsMsn LIKE #{edmsMsn} + '%' /* edmsMsn */</if>
+            <if test='_DateType != null and _DateType != "ALL" and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+                <choose>
+                    <when test='_DateType == "addDay"'>AND a.addDay BETWEEN #{strFromDate} AND #{strToDate} /* addDay */</when>
+                    <when test='_DateType == "editDay"'>AND a.editDay BETWEEN #{strFromDate} AND #{strToDate} /* editDay */</when>
+                    <when test='_DateType == "iphangDay"'>AND a.iphangDay BETWEEN #{strFromDate} AND #{strToDate} /* iphangDay */</when>
+                    <when test='_DateType == "banipDay"'>AND a.banipDay BETWEEN #{strFromDate} AND #{strToDate} /* banipDay */</when>
+                    <when test='_DateType == "singoDay"'>AND a.singoDay BETWEEN #{strFromDate} AND #{strToDate} /* singoDay */</when>
+                    <when test='_DateType == "suriDay"'>AND a.suriDay BETWEEN #{strFromDate} AND #{strToDate} /* suriDay */</when>
+                    <when test='_DateType == "banchulDay"'>AND a.banchulDay BETWEEN #{strFromDate} AND #{strToDate} /* banchulDay */</when>
+                </choose>
+            </if>
+            <if test='edmsMasterUserId != null and edmsMasterUserId != ""'>
+                AND (a.addUserId = #{edmsMasterUserId} OR a.editUserId = #{edmsMasterUserId} ) /* edmsMasterUserId */
+            </if>
+            <if test='edmsMasterUserName != null and edmsMasterUserName != ""'>
+                AND (a.addUserName = #{edmsMasterUserName} OR a.editUserName = #{edmsMasterUserName} ) /* edmsMasterUserName */
+            </if>
+
+            /* TBR_EDMS_AttachFile */
+            <if test='edmsFileKey != null and edmsFileKey != ""'>AND b.edmsFileKey = CAST(#{edmsFileKey} AS NUMERIC) /* edmsFileKey(PK) */</if>
+            <if test='edmsParentKey != null and edmsParentKey != ""'>AND b.edmsParentKey = CAST(#{edmsParentKey} AS NUMERIC) /* edmsParentKey */</if>
+            <if test='edmsFileCategory != null and edmsFileCategory != ""'>AND b.edmsFileCategory LIKE #{edmsFileCategory} + '%' /* edmsFileCategory */</if>
+            <if test='edmsFileUploadType != null and edmsFileUploadType != ""'>AND b.edmsFileUploadType LIKE #{edmsFileUploadType} + '%' /* edmsFileUploadType */</if>
+            <if test='edmsServerGubun != null and edmsServerGubun != ""'>AND b.edmsServerGubun LIKE #{edmsServerGubun} + '%' /* edmsServerGubun */</if>
+            <if test='edmsSaveFileName != null and edmsSaveFileName != ""'>AND b.edmsSaveFileName LIKE #{edmsSaveFileName} + '%' /* edmsSaveFileName */</if>
+            <if test='edmsOrgFileName != null and edmsOrgFileName != ""'>AND b.edmsOrgFileName LIKE #{edmsOrgFileName} + '%' /* edmsOrgFileName */</if>
+            <if test='edmsSearchKeyword != null and edmsSearchKeyword != ""'>AND (b.edmsSearchKeyword LIKE #{edmsSearchKeyword} + '%' OR b.edmsSearchKeyword is null OR b.edmsSearchKeyword ='') /* edmsSearchKeyword */</if>
+            <if test='edmsFileNote != null and edmsFileNote != ""'>AND b.edmsFileNote LIKE #{edmsFileNote} + '%' /* edmsFileNote */</if>
+            <if test='edmsServerGubun != null and edmsServerGubun != ""'>AND b.edmsServerGubun LIKE #{edmsServerGubun} + '%' /* edmsServerGubun */</if>
+            <if test='edmsSaveFileName != null and edmsSaveFileName != ""'>AND b.edmsSaveFileName LIKE #{edmsSaveFileName} + '%' /* edmsSaveFileName */</if>
+            <if test='edmsFileStatus != null and edmsFileStatus != ""'>AND b.edmsFileStatus LIKE #{edmsFileStatus} + '%' /* edmsFileStatus */</if>
+            <if test='edmsFileAddDay != null and edmsFileAddDay != "" and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+                AND b.addDay BETWEEN #{strFromDate} AND #{strToDate} /* edmsFileAddDay */
+            </if>
+            <if test='edmsFileUserId != null and edmsFileUserId != ""'>
+                AND (b.addUserId = #{edmsFileUserId} OR b.editUserId = #{edmsFileUserId} ) /* edmsFileUserId */
+            </if>
+        </where>
+        ) datas
+        <if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+            WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+        </if>
+    </select>
+
+    <select id="findEdmsMasterWithFileList1" resultType="map">
+        /* ASML EDMS 마스터X파일 리스트 */
+        SELECT datas.*
+        FROM (
+        SELECT ROW_NUMBER() OVER (ORDER BY a.edmsKey, b.edmsFileKey) AS 'rownum',
+        a.edmsKey, a.edmsGubun, a.edmsUploadType, a.edmsComKey, a.edmsComName, a.edmsComCode, a.edmsComNum,
+        a.edmsNum, a.edmsManagementNum, a.edmsStatus,
+        a.addDay, a.editDay, a.iphangDay, a.banipDay, a.singoDay, a.suriDay, a.banchulDay,
+        a.jisaCode, a.teamCode, a.singoNum, a.divisionSingoYn, a.edmsMrn, a.edmsMsn,
+        a.useYn, a.addUserId, a.addUserName, a.addDate, a.editUserId, a.editUserName, a.editDate,
+        b.edmsFileKey, b.edmsParentGubun, b.edmsParentKey, b.edmsFileCategory, b.edmsFileUploadType, b.edmsServerGubun, b.edmsServerIp,
+        b.edmsFilePath, b.edmsSaveFileName, b.edmsOrgFileName, b.edmsFileSize, b.edmsFileExt, b.edmsFileStatus,
+        b.edmsSearchKeyword, b.edmsFileNote, b.addDay AS 'edmsFileAddDay',
+        b.useYn AS 'edmsFileUseYn', b.addUserId AS 'edmsFileAddUserId', b.addDate AS 'edmsFileAddDate', b.editUserId AS 'edmsFileEditUserId', b.editDate AS 'edmsFileEditDate',
+        ISNULL((SELECT count(count) FROM soo.dbo.TBR_Ftp_Send_Log WITH (NOLOCK) WHERE convert(varchar,b.edmsFileKey) = edmsFileKey), 0) AS 'ftpFileCount'
+        FROM [soo].[dbo].[TBR_EDMS_Master] a WITH (NOLOCK)
+        LEFT OUTER JOIN [soo].[dbo].[TBR_EDMS_AttachFile] b WITH (NOLOCK)
+        ON a.edmsGubun = b.edmsParentGubun
+        AND a.edmsKey = b.edmsParentKey
+        AND b.useYn = 'Y'
+        <where>
+            AND a.useYn = 'Y'
+            /* TBR_EDMS_Master */
+            <if test='edmsKey != null and edmsKey != ""'>AND a.edmsKey = CAST(#{edmsKey} AS NUMERIC) /* edmsKey(PK) */</if>
+            <if test='edmsGubun != null and edmsGubun != ""'>AND a.edmsGubun LIKE #{edmsGubun} + '%' /* edmsGubun */</if>
+            <if test='edmsUploadType != null and edmsUploadType != ""'>AND a.edmsUploadType LIKE #{edmsUploadType} + '%' /* edmsUploadType */</if>
+            <if test='edmsComKey != null and edmsComKey != ""'>AND a.edmsComKey = CAST(#{edmsComKey} AS NUMERIC) /* edmsComKey */</if>
+            <if test='edmsComName != null and edmsComName != ""'>AND a.edmsComName LIKE '%' + #{edmsComName} + '%' /* edmsComName */</if>
+            <if test='jisaCode != null and jisaCode != ""'>AND a.jisaCode = #{jisaCode} /* jisaCode */</if>
+            <if test='teamCode != null and teamCode != ""'>AND a.teamCode LIKE #{teamCode} + '%' /* teamCode */</if>
+            <if test='edmsComCode != null and edmsComCode != ""'>AND a.edmsComCode LIKE #{edmsComCode} + '%' /* edmsComCode */</if>
+            <if test='edmsComNum != null and edmsComNum != ""'>AND a.edmsComNum LIKE #{edmsComNum} + '%' /* edmsComNum */</if>
+            <if test='edmsNum != null and edmsNum != ""'>AND a.edmsNum LIKE #{edmsNum} + '%' /* edmsNum */</if>
+            <if test='edmsStatus != null and edmsStatus != ""'>AND a.edmsStatus LIKE #{edmsStatus} + '%' /* edmsStatus */</if>
+            <if test='singoNum != null and singoNum != ""'>AND a.singoNum LIKE #{singoNum} + '%' /* singoNum */</if>
+            <if test='divisionSingoYn != null and divisionSingoYn != ""'>AND a.divisionSingoYn LIKE #{divisionSingoYn} + '%' /* divisionSingoYn */</if>
+            <if test='edmsMrn != null and edmsMrn != ""'>AND a.edmsMrn LIKE #{edmsMrn} + '%' /* edmsMrn */</if>
+            <if test='edmsMsn != null and edmsMsn != ""'>AND a.edmsMsn LIKE #{edmsMsn} + '%' /* edmsMsn */</if>
+            <if test='_DateType != null and _DateType != "ALL" and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+                <choose>
+                    <when test='_DateType == "addDay"'>AND a.addDay BETWEEN #{strFromDate} AND #{strToDate} /* addDay */</when>
+                    <when test='_DateType == "editDay"'>AND a.editDay BETWEEN #{strFromDate} AND #{strToDate} /* editDay */</when>
+                    <when test='_DateType == "iphangDay"'>AND a.iphangDay BETWEEN #{strFromDate} AND #{strToDate} /* iphangDay */</when>
+                    <when test='_DateType == "banipDay"'>AND a.banipDay BETWEEN #{strFromDate} AND #{strToDate} /* banipDay */</when>
+                    <when test='_DateType == "singoDay"'>AND a.singoDay BETWEEN #{strFromDate} AND #{strToDate} /* singoDay */</when>
+                    <when test='_DateType == "suriDay"'>AND a.suriDay BETWEEN #{strFromDate} AND #{strToDate} /* suriDay */</when>
+                    <when test='_DateType == "banchulDay"'>AND a.banchulDay BETWEEN #{strFromDate} AND #{strToDate} /* banchulDay */</when>
+                </choose>
+            </if>
+            <if test='edmsMasterUserId != null and edmsMasterUserId != ""'>
+                AND (a.addUserId = #{edmsMasterUserId} OR a.editUserId = #{edmsMasterUserId} ) /* edmsMasterUserId */
+            </if>
+            <if test='edmsMasterUserName != null and edmsMasterUserName != ""'>
+                AND (a.addUserName = #{edmsMasterUserName} OR a.editUserName = #{edmsMasterUserName} ) /* edmsMasterUserName */
+            </if>
+
+            /* TBR_EDMS_AttachFile */
+            <if test='edmsFileKey != null and edmsFileKey != ""'>AND b.edmsFileKey = CAST(#{edmsFileKey} AS NUMERIC) /* edmsFileKey(PK) */</if>
+            <if test='edmsParentKey != null and edmsParentKey != ""'>AND b.edmsParentKey = CAST(#{edmsParentKey} AS NUMERIC) /* edmsParentKey */</if>
+            <if test='edmsFileCategory != null and edmsFileCategory != ""'>AND b.edmsFileCategory LIKE #{edmsFileCategory} + '%' /* edmsFileCategory */</if>
+            <if test='edmsFileUploadType != null and edmsFileUploadType != ""'>AND b.edmsFileUploadType LIKE #{edmsFileUploadType} + '%' /* edmsFileUploadType */</if>
+            <if test='edmsServerGubun != null and edmsServerGubun != ""'>AND b.edmsServerGubun LIKE #{edmsServerGubun} + '%' /* edmsServerGubun */</if>
+            <if test='edmsSaveFileName != null and edmsSaveFileName != ""'>AND b.edmsSaveFileName LIKE #{edmsSaveFileName} + '%' /* edmsSaveFileName */</if>
+            <if test='edmsOrgFileName != null and edmsOrgFileName != ""'>AND b.edmsOrgFileName LIKE #{edmsOrgFileName} + '%' /* edmsOrgFileName */</if>
+            <if test='edmsSearchKeyword != null and edmsSearchKeyword != ""'>AND (b.edmsSearchKeyword LIKE #{edmsSearchKeyword} + '%' OR b.edmsSearchKeyword is null OR b.edmsSearchKeyword ='') /* edmsSearchKeyword */</if>
+            <if test='edmsFileNote != null and edmsFileNote != ""'>AND b.edmsFileNote LIKE #{edmsFileNote} + '%' /* edmsFileNote */</if>
+            <if test='edmsServerGubun != null and edmsServerGubun != ""'>AND b.edmsServerGubun LIKE #{edmsServerGubun} + '%' /* edmsServerGubun */</if>
+            <if test='edmsSaveFileName != null and edmsSaveFileName != ""'>AND b.edmsSaveFileName LIKE #{edmsSaveFileName} + '%' /* edmsSaveFileName */</if>
+            <if test='edmsFileStatus != null and edmsFileStatus != ""'>AND b.edmsFileStatus LIKE #{edmsFileStatus} + '%' /* edmsFileStatus */</if>
+            <if test='edmsFileAddDay != null and edmsFileAddDay != "" and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+                AND b.addDay BETWEEN #{strFromDate} AND #{strToDate} /* edmsFileAddDay */
+            </if>
+            <if test='edmsFileUserId != null and edmsFileUserId != ""'>
+                AND (b.addUserId = #{edmsFileUserId} OR b.editUserId = #{edmsFileUserId} ) /* edmsFileUserId */
+            </if>
+        </where>
+        ) datas
+        <if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+            WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+        </if>
+    </select>
+
+    <select id="findEdmsMasterWithNotClassificationFileList" resultType="map">
+        /* EDMS 마스터X파일 미구분 리스트 */
+        SELECT datas.*
+        FROM (
+        SELECT ROW_NUMBER() OVER (ORDER BY a.edmsKey) AS 'rownum',
+        a.edmsKey, a.edmsGubun, a.edmsUploadType, a.edmsComKey, a.edmsComName, a.edmsComCode, a.edmsComNum, a.edmsNum,
+        a.edmsManagementNum, a.edmsStatus, a.addDay, a.editDay, a.iphangDay, a.banipDay,
+        a.singoDay, a.suriDay, a.banchulDay, a.jisaCode, a.teamCode, a.singoNum, a.divisionSingoYn, a.edmsMrn, a.edmsMsn,
+        a.useYn, a.addUserId, a.addUserName, a.addDate, a.editUserId, a.editUserName, a.editDate,
+        CASE WHEN SUM(CASE WHEN b.edmsFileCategory = '미구분' THEN 1 ELSE 0 END) > 0 THEN '미구분' ELSE '완료' END AS '미구분여부',
+        COUNT(b.edmsFileKey) AS '파일첨부'
+        FROM [soo].[dbo].[TBR_EDMS_Master] a WITH (NOLOCK)
+        LEFT OUTER JOIN [soo].[dbo].[TBR_EDMS_AttachFile] b WITH (NOLOCK)
+        ON a.edmsGubun = b.edmsParentGubun
+        AND a.edmsKey = b.edmsParentKey
+        AND b.useYn = 'Y'
+        <where>
+            AND a.useYn= 'Y'
+            <if test='_userId != null and _userId != "" and _Auth != null and _Auth != ""'>
+                AND EXISTS ( SELECT * FROM [soo].[dbo].[UFN_userAuthCustomerCode](#{_userId}, #{_Auth}, 'KEYS') WHERE datas = a.edmsComKey ) /* 사용자거래처KEY function */
+            </if>
+            /* TBR_EDMS_Master */
+            <if test='edmsKey != null and edmsKey != ""'>AND a.edmsKey = CAST(#{edmsKey} AS NUMERIC) /* edmsKey(PK) */</if>
+            <if test='edmsGubun != null and edmsGubun != ""'>AND a.edmsGubun LIKE #{edmsGubun} + '%' /* edmsGubun */</if>
+            <if test='edmsUploadType != null and edmsUploadType != ""'>AND a.edmsUploadType LIKE #{edmsUploadType} + '%' /* edmsUploadType */</if>
+            <if test='edmsComKey != null and edmsComKey != ""'>AND a.edmsComKey = CAST(#{edmsComKey} AS NUMERIC) /* edmsComKey */</if>
+            <if test='edmsComName != null and edmsComName != ""'>AND a.edmsComName LIKE '%' + #{edmsComName} + '%' /* edmsComName */</if>
+            <if test='jisaCode != null and jisaCode != ""'>AND a.jisaCode = #{jisaCode} /* jisaCode */</if>
+            <if test='teamCode != null and teamCode != ""'>AND a.teamCode LIKE #{teamCode} + '%' /* teamCode */</if>
+            <if test='edmsComCode != null and edmsComCode != ""'>AND a.edmsComCode LIKE #{edmsComCode} + '%' /* edmsComCode */</if>
+            <if test='edmsComNum != null and edmsComNum != ""'>AND a.edmsComNum LIKE #{edmsComNum} + '%' /* edmsComNum */</if>
+            <if test='edmsNum != null and edmsNum != ""'>AND a.edmsNum LIKE '%' + #{edmsNum} + '%' /* edmsNum */</if>
+            <if test='edmsStatus != null and edmsStatus != ""'>AND a.edmsStatus LIKE #{edmsStatus} + '%' /* edmsStatus */</if>
+            <if test='singoNum != null and singoNum != ""'>AND a.singoNum LIKE '%' + #{singoNum} + '%' /* singoNum */</if>
+            <if test='divisionSingoYn != null and divisionSingoYn != ""'>AND a.divisionSingoYn LIKE #{divisionSingoYn} + '%' /* divisionSingoYn */</if>
+            <if test='edmsMrn != null and edmsMrn != ""'>AND a.edmsMrn LIKE #{edmsMrn} + '%' /* edmsMrn */</if>
+            <if test='edmsMsn != null and edmsMsn != ""'>AND a.edmsMsn LIKE #{edmsMsn} + '%' /* edmsMsn */</if>
+            <if test='_DateType != null and _DateType != "ALL" and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+                <choose>
+                    <when test='_DateType == "addDay"'>AND a.addDay BETWEEN #{strFromDate} AND #{strToDate} /* addDay */</when>
+                    <when test='_DateType == "editDay"'>AND a.editDay BETWEEN #{strFromDate} AND #{strToDate} /* editDay */</when>
+                    <when test='_DateType == "iphangDay"'>AND a.iphangDay BETWEEN #{strFromDate} AND #{strToDate} /* iphangDay */</when>
+                    <when test='_DateType == "banipDay"'>AND a.banipDay BETWEEN #{strFromDate} AND #{strToDate} /* banipDay */</when>
+                    <when test='_DateType == "singoDay"'>AND a.singoDay BETWEEN #{strFromDate} AND #{strToDate} /* singoDay */</when>
+                    <when test='_DateType == "suriDay"'>AND a.suriDay BETWEEN #{strFromDate} AND #{strToDate} /* suriDay */</when>
+                    <when test='_DateType == "banchulDay"'>AND a.banchulDay BETWEEN #{strFromDate} AND #{strToDate} /* banchulDay */</when>
+                </choose>
+            </if>
+            <if test='edmsMasterUserId != null and edmsMasterUserId != ""'>
+                AND (a.addUserId = #{edmsMasterUserId} OR a.editUserId = #{edmsMasterUserId} ) /* edmsMasterUserId */
+            </if>
+            <if test='edmsMasterUserName != null and edmsMasterUserName != ""'>
+                AND (a.addUserName LIKE '%' + #{edmsMasterUserName} + '%' OR a.editUserName like '%' + #{edmsMasterUserName} + '%' ) /* edmsMasterUserName */
+            </if>
+
+            /* TBR_EDMS_AttachFile */
+            <if test='edmsFileKey != null and edmsFileKey != ""'>AND b.edmsFileKey = CAST(#{edmsFileKey} AS NUMERIC) /* edmsFileKey(PK) */</if>
+            <if test='edmsFileCategory != null and edmsFileCategory != ""'>AND b.edmsFileCategory LIKE #{edmsFileCategory} + '%' /* edmsFileCategory */</if>
+            <if test='edmsFileUploadType != null and edmsFileUploadType != ""'>AND b.edmsFileUploadType LIKE #{edmsFileUploadType} + '%' /* edmsFileUploadType */</if>
+            <if test='edmsServerGubun != null and edmsServerGubun != ""'>AND b.edmsServerGubun LIKE #{edmsServerGubun} + '%' /* edmsServerGubun */</if>
+            <if test='edmsSaveFileName != null and edmsSaveFileName != ""'>AND b.edmsSaveFileName LIKE #{edmsSaveFileName} + '%' /* edmsSaveFileName */</if>
+            <if test='edmsOrgFileName != null and edmsOrgFileName != ""'>AND b.edmsOrgFileName LIKE #{edmsOrgFileName} + '%' /* edmsOrgFileName */</if>
+            <if test='edmsSearchKeyword != null and edmsSearchKeyword != ""'>AND b.edmsSearchKeyword LIKE #{edmsSearchKeyword} + '%' /* edmsSearchKeyword */</if>
+            <if test='edmsFileNote != null and edmsFileNote != ""'>AND b.edmsFileNote LIKE #{edmsFileNote} + '%' /* edmsFileNote */</if>
+            <if test='edmsServerGubun != null and edmsServerGubun != ""'>AND b.edmsServerGubun LIKE #{edmsServerGubun} + '%' /* edmsServerGubun */</if>
+            <if test='edmsSaveFileName != null and edmsSaveFileName != ""'>AND b.edmsSaveFileName LIKE #{edmsSaveFileName} + '%' /* edmsSaveFileName */</if>
+            <if test='edmsFileStatus != null and edmsFileStatus != ""'>AND b.edmsFileStatus LIKE #{edmsFileStatus} + '%' /* edmsFileStatus */</if>
+            <if test='edmsFileAddDay != null and edmsFileAddDay != "" and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+                AND b.addDay BETWEEN #{strFromDate} AND #{strToDate} /* edmsFileAddDay */
+            </if>
+            <if test='edmsFileUserId != null and edmsFileUserId != ""'>
+                AND (b.addUserId = #{edmsFileUserId} OR b.editUserId = #{edmsFileUserId} ) /* edmsFileUserId */
+            </if>
+        </where>
+        GROUP BY a.edmsKey, a.edmsGubun, a.edmsUploadType, a.edmsComKey, a.edmsComName, a.edmsComCode, a.edmsComNum, a.edmsNum,
+        a.edmsManagementNum, a.edmsStatus, a.addDay, a.editDay, a.iphangDay, a.banipDay,
+        a.singoDay, a.suriDay, a.banchulDay, a.jisaCode, a.teamCode, a.singoNum, a.divisionSingoYn, a.edmsMrn, a.edmsMsn,
+        a.useYn, a.addUserId, a.addUserName, a.addDate, a.editUserId, a.editUserName, a.editDate
+        ) datas
+        <if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+            WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+        </if>
+        order by datas.addDay desc
+    </select-->
+
+    <select id="findEdmsMasterWithNotClassificationFileList" resultType="map">
+        /* EDMS 수입분류 리스트 */
+        SELECT datas.*
+        FROM (
+        SELECT ROW_NUMBER() OVER (ORDER BY a.edmsKey) AS 'rownum',
+		a.edmsKey, a.edmsGubun, a.edmsUploadType, a.edmsComKey, a.edmsComName, a.edmsComCode, a.edmsComNum,
+		a.edmsNum, a.edmsManagementNum, a.addDay, a.editDay, a.jisaCode, a.teamCode, a.useYn,
+		a.addUserId, a.addUserName, a.addDate, a.addDtm, a.editUserId, a.editUserName, a.editDate, a.editDtm,
+		c.Impo_key, c.Impo_year, c.Impo_tcano, c.Impo_napse_code, c.Impo_napse_sangho, c.Impo_napse_saup,
+		c.Impo_singo_no, c.Impo_mbl_no, c.Impo_bl_no, c.Impo_mrn_no,
+		c.Impo_singo_date, c.Impo_iphang_date, c.Impo_banip_date, c.Impo_ok_date,
+		c.Impo_send_result, c.Impo_receive_result, c.UserID, c.UserNM,
+		(select COUNT(k.edmsParentKey) from soo.dbo.TBR_EDMS_AttachFile k where k.edmsParentKey = a.edmsKey and k.edmsFileCategory = 'B0001' and k.edmsSearchKeyword = c.Impo_singo_no and k.useYn = 'Y') as 'filePaperCount',
+		(select COUNT(k.edmsParentKey) from soo.dbo.TBR_EDMS_AttachFile k where k.edmsParentKey = a.edmsKey and k.edmsFileCategory != 'B0001' and k.useYn = 'Y') as 'fileCount',
+		(select top 1 k.deliveryRequestKey from soo.dbo.TBR_Delivery_Request k
+		  where k.hblNo = a.edmsNum
+		    and k.customerCode = a.edmsComCode
+		    and k.singoNo = c.Impo_singo_no
+		    and k.useYn = 'Y') as 'deliveryRequestKey',
+		(select top 1 k.deliveryStatus from soo.dbo.TBR_Delivery_Request k
+		  where k.hblNo = a.edmsNum
+		    and k.customerCode = a.edmsComCode
+		    and k.singoNo = c.Impo_singo_no
+		    and k.useYn = 'Y') as 'deliveryStatus'
+		from soo.dbo.TBR_EDMS_Master a WITH (NOLOCK)
+		left outer join
+		(select
+		b.Impo_key, b.Impo_year, b.Impo_tcano, b.Impo_napse_code, b.Impo_napse_sangho, b.Impo_napse_saup,
+		b.Impo_singo_no, b.Impo_mbl_no, b.Impo_bl_no, b.Impo_mrn_no,
+		b.Impo_singo_date, b.Impo_iphang_date, b.Impo_banip_date, b.Impo_ok_date,
+		b.Impo_send_result, b.Impo_receive_result, b.UserID, b.UserNM
+		from soo.dbo.TBR_EDMS_Master a, ${_defaultDB}.kcba.impo1 b
+		<where>
+		    AND a.edmsNum = b.Impo_bl_no
+		    AND a.edmsComCode = b.Impo_napse_code
+            AND a.useYn= 'Y'
+            <if test='edmsKey != null and edmsKey != ""'>AND a.edmsKey = CAST(#{edmsKey} AS NUMERIC)</if>
+            <if test='edmsGubun != null and edmsGubun != ""'>AND a.edmsGubun LIKE #{edmsGubun} + '%'</if>
+            <if test='edmsUploadType != null and edmsUploadType != ""'>AND a.edmsUploadType LIKE #{edmsUploadType} + '%'</if>
+            <if test='edmsComKey != null and edmsComKey != ""'>AND a.edmsComKey = CAST(#{edmsComKey} AS NUMERIC)</if>
+            <if test='edmsComName != null and edmsComName != ""'>AND a.edmsComName LIKE '%' + #{edmsComName} + '%'</if>
+            <if test='jisaCode != null and jisaCode != ""'>AND a.jisaCode = #{jisaCode}</if>
+            <if test='teamCode != null and teamCode != ""'>AND a.teamCode LIKE #{teamCode} + '%'</if>
+            <if test='edmsComCode != null and edmsComCode != ""'>AND a.edmsComCode LIKE #{edmsComCode} + '%'</if>
+            <if test='edmsComNum != null and edmsComNum != ""'>AND a.edmsComNum LIKE #{edmsComNum} + '%'</if>
+            <if test='edmsNum != null and edmsNum != ""'>AND a.edmsNum LIKE '%' + #{edmsNum} + '%'</if>
+            <if test='edmsStatus != null and edmsStatus != ""'>AND b.Impo_receive_result LIKE #{edmsStatus} + '%'</if>
+            <if test='singoNum != null and singoNum != ""'>AND b.Impo_singo_no LIKE '%' + #{singoNum} + '%'</if>
+            <if test='_DateType != null and _DateType != "ALL" and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+                <choose>
+                    <when test='_DateType == "addDay"'>AND a.addDay BETWEEN #{strFromDate} AND #{strToDate}</when>
+                    <when test='_DateType == "editDay"'>AND a.editDay BETWEEN #{strFromDate} AND #{strToDate}</when>
+                    <when test='_DateType == "iphangDay"'>AND b.Impo_iphang_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+                    <when test='_DateType == "banipDay"'>AND b.Impo_banip_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+                    <when test='_DateType == "singoDay"'>AND b.Impo_singo_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+                    <when test='_DateType == "suriDay"'>AND b.Impo_ok_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+                </choose>
+            </if>
+            <if test='edmsMasterUserId != null and edmsMasterUserId != ""'>
+                AND (a.addUserId = #{edmsMasterUserId} OR a.editUserId = #{edmsMasterUserId} ) /* edmsMasterUserId */
+            </if>
+            <if test='edmsMasterUserName != null and edmsMasterUserName != ""'>
+                AND (a.addUserName LIKE '%' + #{edmsMasterUserName} + '%' OR a.editUserName like '%' + #{edmsMasterUserName} + '%' ) /* edmsMasterUserName */
+            </if>
+        </where>
+		) c
+		ON a.edmsNum = c.Impo_bl_no
+		AND a.edmsComCode = c.Impo_napse_code
+		<where>
+            AND a.useYn= 'Y'
+            <if test='edmsKey != null and edmsKey != ""'>AND a.edmsKey = CAST(#{edmsKey} AS NUMERIC)</if>
+            <if test='edmsGubun != null and edmsGubun != ""'>AND a.edmsGubun LIKE #{edmsGubun} + '%'</if>
+            <if test='edmsUploadType != null and edmsUploadType != ""'>AND a.edmsUploadType LIKE #{edmsUploadType} + '%'</if>
+            <if test='edmsComKey != null and edmsComKey != ""'>AND a.edmsComKey = CAST(#{edmsComKey} AS NUMERIC)</if>
+            <if test='edmsComName != null and edmsComName != ""'>AND a.edmsComName LIKE '%' + #{edmsComName} + '%'</if>
+            <if test='jisaCode != null and jisaCode != ""'>AND a.jisaCode = #{jisaCode}</if>
+            <if test='teamCode != null and teamCode != ""'>AND a.teamCode LIKE #{teamCode} + '%'</if>
+            <if test='edmsComCode != null and edmsComCode != ""'>AND a.edmsComCode LIKE #{edmsComCode} + '%'</if>
+            <if test='edmsComNum != null and edmsComNum != ""'>AND a.edmsComNum LIKE #{edmsComNum} + '%'</if>
+            <if test='edmsNum != null and edmsNum != ""'>AND a.edmsNum LIKE '%' + #{edmsNum} + '%'</if>
+            <if test='edmsStatus != null and edmsStatus != ""'>AND c.Impo_receive_result LIKE #{edmsStatus} + '%'</if>
+            <if test='singoNum != null and singoNum != ""'>AND c.Impo_singo_no LIKE '%' + #{singoNum} + '%'</if>
+            <if test='_DateType != null and _DateType != "ALL" and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+                <choose>
+                    <when test='_DateType == "addDay"'>AND a.addDay BETWEEN #{strFromDate} AND #{strToDate}</when>
+                    <when test='_DateType == "editDay"'>AND a.editDay BETWEEN #{strFromDate} AND #{strToDate}</when>
+                    <when test='_DateType == "iphangDay"'>AND c.Impo_iphang_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+                    <when test='_DateType == "banipDay"'>AND c.Impo_banip_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+                    <when test='_DateType == "singoDay"'>AND c.Impo_singo_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+                    <when test='_DateType == "suriDay"'>AND c.Impo_ok_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+                </choose>
+            </if>
+            <if test='edmsMasterUserId != null and edmsMasterUserId != ""'>
+                AND (a.addUserId = #{edmsMasterUserId} OR a.editUserId = #{edmsMasterUserId} ) /* edmsMasterUserId */
+            </if>
+            <if test='edmsMasterUserName != null and edmsMasterUserName != ""'>
+                AND (a.addUserName LIKE '%' + #{edmsMasterUserName} + '%' OR a.editUserName like '%' + #{edmsMasterUserName} + '%' ) /* edmsMasterUserName */
+            </if>
+        </where>
+        ) datas
+        <if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+            WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+        </if>
+        order by datas.edmsKey desc
+    </select>
+
+    <select id="findEdmsMasterExWithNotClassificationFileList" resultType="map">
+        /* EDMS 수출분류 리스트 */
+        SELECT datas.*
+        FROM (
+        SELECT ROW_NUMBER() OVER (ORDER BY a.edmsKey) AS 'rownum',
+		a.edmsKey, a.edmsGubun, a.edmsUploadType, a.edmsComKey, a.edmsComName, a.edmsComCode, a.edmsComNum,
+		a.edmsNum, a.edmsManagementNum, a.addDay, a.editDay, a.jisaCode, a.teamCode, a.useYn,
+		a.addUserId, a.addUserName, a.addDate, a.addDtm, a.editUserId, a.editUserName, a.editDate, a.editDtm,
+		c.Expo_key, c.Expo_year, c.Expo_suchulja_code, c.Expo_suchulja_sangho, c.Expo_SuchulSaupNo,
+		c.Expo_singo_no, c.Expo_iv_no,
+		c.Expo_singo_date, c.Expo_ok_date,
+		c.Expo_junsong_result, c.Expo_res_result, c.UserID, c.UserNM,
+		(select COUNT(k.edmsParentKey) from soo.dbo.TBR_EDMS_AttachFile k where k.edmsParentKey = a.edmsKey and k.edmsFileCategory = 'B0001' and k.edmsSearchKeyword = c.Expo_singo_no and k.useYn = 'Y') as 'filePaperCount',
+		(select COUNT(k.edmsParentKey) from soo.dbo.TBR_EDMS_AttachFile k where k.edmsParentKey = a.edmsKey and k.edmsFileCategory != 'B0001' and k.useYn = 'Y') as 'fileCount'
+		from soo.dbo.TBR_EDMS_Master a WITH (NOLOCK)
+		left outer join
+		(select
+		b.Expo_key, b.Expo_year, b.Expo_suchulja_code, b.Expo_suchulja_sangho, b.Expo_SuchulSaupNo,
+		b.Expo_singo_no, b.Expo_iv_no,
+		b.Expo_singo_date, b.Expo_ok_date,
+		b.Expo_junsong_result, b.Expo_res_result, b.UserID, b.UserNM
+		from soo.dbo.TBR_EDMS_Master a, ${_defaultDB}.kcba.expo1 b
+		<where>
+		    AND a.edmsNum = b.Expo_iv_no
+		    AND a.edmsComCode = b.Expo_suchulja_code
+            AND a.useYn= 'Y'
+            <if test='edmsKey != null and edmsKey != ""'>AND a.edmsKey = CAST(#{edmsKey} AS NUMERIC)</if>
+            <if test='edmsGubun != null and edmsGubun != ""'>AND a.edmsGubun LIKE #{edmsGubun} + '%'</if>
+            <if test='edmsUploadType != null and edmsUploadType != ""'>AND a.edmsUploadType LIKE #{edmsUploadType} + '%'</if>
+            <if test='edmsComKey != null and edmsComKey != ""'>AND a.edmsComKey = CAST(#{edmsComKey} AS NUMERIC)</if>
+            <if test='edmsComName != null and edmsComName != ""'>AND a.edmsComName LIKE '%' + #{edmsComName} + '%'</if>
+            <if test='jisaCode != null and jisaCode != ""'>AND a.jisaCode = #{jisaCode}</if>
+            <if test='teamCode != null and teamCode != ""'>AND a.teamCode LIKE #{teamCode} + '%'</if>
+            <if test='edmsComCode != null and edmsComCode != ""'>AND a.edmsComCode LIKE #{edmsComCode} + '%'</if>
+            <if test='edmsComNum != null and edmsComNum != ""'>AND a.edmsComNum LIKE #{edmsComNum} + '%'</if>
+            <if test='edmsNum != null and edmsNum != ""'>AND a.edmsNum LIKE '%' + #{edmsNum} + '%'</if>
+            <if test='edmsStatus != null and edmsStatus != ""'>AND b.Expo_res_result LIKE #{edmsStatus} + '%'</if>
+            <if test='singoNum != null and singoNum != ""'>AND b.Expo_singo_no LIKE '%' + #{singoNum} + '%'</if>
+            <if test='_DateType != null and _DateType != "ALL" and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+                <choose>
+                    <when test='_DateType == "addDay"'>AND a.addDay BETWEEN #{strFromDate} AND #{strToDate}</when>
+                    <when test='_DateType == "editDay"'>AND a.editDay BETWEEN #{strFromDate} AND #{strToDate}</when>
+                    <when test='_DateType == "singoDay"'>AND b.Expo_singo_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+                    <when test='_DateType == "suriDay"'>AND b.Expo_ok_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+                </choose>
+            </if>
+            <if test='edmsMasterUserId != null and edmsMasterUserId != ""'>
+                AND (a.addUserId = #{edmsMasterUserId} OR a.editUserId = #{edmsMasterUserId} ) /* edmsMasterUserId */
+            </if>
+            <if test='edmsMasterUserName != null and edmsMasterUserName != ""'>
+                AND (a.addUserName LIKE '%' + #{edmsMasterUserName} + '%' OR a.editUserName like '%' + #{edmsMasterUserName} + '%' ) /* edmsMasterUserName */
+            </if>
+        </where>
+		) c
+		ON a.edmsNum = c.Expo_iv_no
+		AND a.edmsComCode = c.Expo_suchulja_code
+		<where>
+            AND a.useYn= 'Y'
+            <if test='edmsKey != null and edmsKey != ""'>AND a.edmsKey = CAST(#{edmsKey} AS NUMERIC)</if>
+            <if test='edmsGubun != null and edmsGubun != ""'>AND a.edmsGubun LIKE #{edmsGubun} + '%'</if>
+            <if test='edmsUploadType != null and edmsUploadType != ""'>AND a.edmsUploadType LIKE #{edmsUploadType} + '%'</if>
+            <if test='edmsComKey != null and edmsComKey != ""'>AND a.edmsComKey = CAST(#{edmsComKey} AS NUMERIC)</if>
+            <if test='edmsComName != null and edmsComName != ""'>AND a.edmsComName LIKE '%' + #{edmsComName} + '%'</if>
+            <if test='jisaCode != null and jisaCode != ""'>AND a.jisaCode = #{jisaCode}</if>
+            <if test='teamCode != null and teamCode != ""'>AND a.teamCode LIKE #{teamCode} + '%'</if>
+            <if test='edmsComCode != null and edmsComCode != ""'>AND a.edmsComCode LIKE #{edmsComCode} + '%'</if>
+            <if test='edmsComNum != null and edmsComNum != ""'>AND a.edmsComNum LIKE #{edmsComNum} + '%'</if>
+            <if test='edmsNum != null and edmsNum != ""'>AND a.edmsNum LIKE '%' + #{edmsNum} + '%'</if>
+            <if test='edmsStatus != null and edmsStatus != ""'>AND c.Expo_res_result LIKE #{edmsStatus} + '%'</if>
+            <if test='singoNum != null and singoNum != ""'>AND c.Expo_singo_no LIKE '%' + #{singoNum} + '%'</if>
+            <if test='_DateType != null and _DateType != "ALL" and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+                <choose>
+                    <when test='_DateType == "addDay"'>AND a.addDay BETWEEN #{strFromDate} AND #{strToDate}</when>
+                    <when test='_DateType == "editDay"'>AND a.editDay BETWEEN #{strFromDate} AND #{strToDate}</when>
+                    <when test='_DateType == "singoDay"'>AND c.Expo_singo_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+                    <when test='_DateType == "suriDay"'>AND c.Expo_ok_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+                </choose>
+            </if>
+            <if test='edmsMasterUserId != null and edmsMasterUserId != ""'>
+                AND (a.addUserId = #{edmsMasterUserId} OR a.editUserId = #{edmsMasterUserId} ) /* edmsMasterUserId */
+            </if>
+            <if test='edmsMasterUserName != null and edmsMasterUserName != ""'>
+                AND (a.addUserName LIKE '%' + #{edmsMasterUserName} + '%' OR a.editUserName like '%' + #{edmsMasterUserName} + '%' ) /* edmsMasterUserName */
+            </if>
+        </where>
+        ) datas
+        <if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+            WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+        </if>
+        order by datas.edmsKey desc
+    </select>
+
+    <select id="findEdmsMasterList" resultType="map">
+        /* EDMS 마스터 리스트 */
+        SELECT datas.*
+        FROM (
+        SELECT ROW_NUMBER() OVER (ORDER BY a.edmsKey) AS 'rownum',
+        a.edmsKey, a.edmsGubun, a.edmsComKey, a.edmsComName, a.edmsComCode, a.edmsComNum, a.edmsNum,
+        a.edmsManagementNum, a.edmsStatus, a.addDay, a.editDay, a.iphangDay, a.banipDay,
+        a.singoDay, a.suriDay, a.banchulDay, a.jisaCode, a.teamCode, a.singoNum, a.divisionSingoYn, a.edmsMrn, a.edmsMsn,
+        a.useYn, a.addUserId, a.addUserName, a.addDate, a.editUserId, a.editUserName, a.editDate
+        FROM [soo].[dbo].[TBR_EDMS_Master] a WITH (NOLOCK)
+        <where>
+            AND a.useYn= 'Y'
+            AND a.edmsUploadType != 'GEOWS'
+            <if test='_userId != null and _userId != "" and _Auth != null and _Auth != ""'>
+                AND EXISTS ( SELECT * FROM [soo].[dbo].[UFN_userAuthCustomerCode](#{_userId}, #{_Auth}, 'KEYS') WHERE datas = a.edmsComKey ) /* 사용자거래처KEY function */
+            </if>
+            /* TBR_EDMS_Master */
+            <if test='edmsKey != null and edmsKey != ""'>AND a.edmsKey = CAST(#{edmsKey} AS NUMERIC) /* edmsKey(PK) */</if>
+            <if test='edmsGubun != null and edmsGubun != ""'>AND a.edmsGubun LIKE #{edmsGubun} + '%' /* edmsGubun */</if>
+            <if test='edmsUploadType != null and edmsUploadType != ""'>AND a.edmsUploadType LIKE #{edmsUploadType} + '%' /* edmsUploadType */</if>
+            <if test='edmsComKey != null and edmsComKey != ""'>AND a.edmsComKey = CAST(#{edmsComKey} AS NUMERIC) /* edmsComKey */</if>
+            <if test='edmsComName != null and edmsComName != ""'>AND a.edmsComName LIKE '%' + #{edmsComName} + '%' /* edmsComName */</if>
+            <if test='jisaCode != null and jisaCode != ""'>AND a.jisaCode = #{jisaCode} /* jisaCode */</if>
+            <if test='teamCode != null and teamCode != ""'>AND a.teamCode LIKE #{teamCode} + '%' /* teamCode */</if>
+            <if test='edmsComCode != null and edmsComCode != ""'>AND a.edmsComCode LIKE #{edmsComCode} + '%' /* edmsComCode */</if>
+            <if test='edmsComNum != null and edmsComNum != ""'>AND a.edmsComNum LIKE #{edmsComNum} + '%' /* edmsComNum */</if>
+            <if test='edmsNum != null and edmsNum != ""'>AND a.edmsNum LIKE '%' + #{edmsNum} + '%' /* edmsNum */</if>
+            <if test='edmsStatus != null and edmsStatus != ""'>AND a.edmsStatus LIKE #{edmsStatus} + '%' /* edmsStatus */</if>
+            <if test='singoNum != null and singoNum != ""'>AND a.singoNum LIKE #{singoNum} + '%' /* singoNum */</if>
+            <if test='divisionSingoYn != null and divisionSingoYn != ""'>AND a.divisionSingoYn LIKE #{divisionSingoYn} + '%' /* divisionSingoYn */</if>
+            <if test='edmsMrn != null and edmsMrn != ""'>AND a.edmsMrn LIKE #{edmsMrn} + '%' /* edmsMrn */</if>
+            <if test='edmsMsn != null and edmsMsn != ""'>AND a.edmsMsn LIKE #{edmsMsn} + '%' /* edmsMsn */</if>
+            <if test='_DateType != null and _DateType != "ALL" and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+                <choose>
+                    <when test='_DateType == "addDay"'>AND a.addDay BETWEEN #{strFromDate} AND #{strToDate} /* addDay */</when>
+                    <when test='_DateType == "editDay"'>AND a.editDay BETWEEN #{strFromDate} AND #{strToDate} /* editDay */</when>
+                    <when test='_DateType == "iphangDay"'>AND a.iphangDay BETWEEN #{strFromDate} AND #{strToDate} /* iphangDay */</when>
+                    <when test='_DateType == "banipDay"'>AND a.banipDay BETWEEN #{strFromDate} AND #{strToDate} /* banipDay */</when>
+                    <when test='_DateType == "singoDay"'>AND a.singoDay BETWEEN #{strFromDate} AND #{strToDate} /* singoDay */</when>
+                    <when test='_DateType == "suriDay"'>AND a.suriDay BETWEEN #{strFromDate} AND #{strToDate} /* suriDay */</when>
+                    <when test='_DateType == "banchulDay"'>AND a.banchulDay BETWEEN #{strFromDate} AND #{strToDate} /* banchulDay */</when>
+                </choose>
+            </if>
+            <if test='edmsMasterUserId != null and edmsMasterUserId != ""'>
+                AND (a.addUserId = #{edmsMasterUserId} OR a.editUserId = #{edmsMasterUserId} ) /* edmsMasterUserId */
+            </if>
+            <if test='edmsMasterUserName != null and edmsMasterUserName != ""'>
+                AND (a.addUserName = #{edmsMasterUserName} OR a.editUserName = #{edmsMasterUserName} ) /* edmsMasterUserName */
+            </if>
+        </where>
+        ) datas
+        <if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+            WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+        </if>
+        ORDER BY datas.edmsKey desc
+    </select>
+
+    <select id="findEdmsMasterStatusGroupCountList" resultType="map">
+        /* EDMS 마스터 상태별 건수 리스트 */
+        SELECT datas.*
+        FROM (
+        SELECT ROW_NUMBER() OVER (ORDER BY a.edmsStatus) AS 'rownum',
+        a.edmsStatus, COUNT(a.edmsStatus) AS 'edmsStatusCount'
+        FROM [soo].[dbo].[TBR_EDMS_Master] a WITH (NOLOCK)
+        <where>
+            AND a.useYn = 'Y'
+            /* TBR_EDMS_Master */
+            <if test='edmsKey != null and edmsKey != ""'>AND a.edmsKey = CAST(#{edmsKey} AS NUMERIC) /* edmsKey(PK) */</if>
+            <if test='edmsGubun != null and edmsGubun != ""'>AND a.edmsGubun LIKE #{edmsGubun} + '%' /* edmsGubun */</if>
+            <if test='edmsUploadType != null and edmsUploadType != ""'>AND a.edmsUploadType LIKE #{edmsUploadType} + '%' /* edmsUploadType */</if>
+            <if test='edmsComKey != null and edmsComKey != ""'>AND a.edmsComKey = CAST(#{edmsComKey} AS NUMERIC) /* edmsComKey */</if>
+            <if test='edmsComName != null and edmsComName != ""'>AND a.edmsComName LIKE '%' + #{edmsComName} + '%' /* edmsComName */</if>
+            <if test='jisaCode != null and jisaCode != ""'>AND a.jisaCode = #{jisaCode} /* jisaCode */</if>
+            <if test='teamCode != null and teamCode != ""'>AND a.teamCode LIKE #{teamCode} + '%' /* teamCode */</if>
+            <if test='edmsComCode != null and edmsComCode != ""'>AND a.edmsComCode LIKE #{edmsComCode} + '%' /* edmsComCode */</if>
+            <if test='edmsComNum != null and edmsComNum != ""'>AND a.edmsComNum LIKE #{edmsComNum} + '%' /* edmsComNum */</if>
+            <if test='edmsNum != null and edmsNum != ""'>AND a.edmsNum LIKE #{edmsNum} + '%' /* edmsNum */</if>
+            <if test='edmsStatus != null and edmsStatus != ""'>AND a.edmsStatus LIKE #{edmsStatus} + '%' /* edmsStatus */</if>
+            <if test='singoNum != null and singoNum != ""'>AND a.singoNum LIKE #{singoNum} + '%' /* singoNum */</if>
+            <if test='divisionSingoYn != null and divisionSingoYn != ""'>AND a.divisionSingoYn LIKE #{divisionSingoYn} + '%' /* divisionSingoYn */</if>
+            <if test='_DateType != null and _DateType != "ALL" and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+                <choose>
+                    <when test='_DateType == "addDay"'>AND a.addDay BETWEEN #{strFromDate} AND #{strToDate} /* addDay */</when>
+                    <when test='_DateType == "editDay"'>AND a.editDay BETWEEN #{strFromDate} AND #{strToDate} /* editDay */</when>
+                    <when test='_DateType == "iphangDay"'>AND a.iphangDay BETWEEN #{strFromDate} AND #{strToDate} /* iphangDay */</when>
+                    <when test='_DateType == "banipDay"'>AND a.banipDay BETWEEN #{strFromDate} AND #{strToDate} /* banipDay */</when>
+                    <when test='_DateType == "singoDay"'>AND a.singoDay BETWEEN #{strFromDate} AND #{strToDate} /* singoDay */</when>
+                    <when test='_DateType == "suriDay"'>AND a.suriDay BETWEEN #{strFromDate} AND #{strToDate} /* suriDay */</when>
+                    <when test='_DateType == "banchulDay"'>AND a.banchulDay BETWEEN #{strFromDate} AND #{strToDate} /* banchulDay */</when>
+                </choose>
+            </if>
+            <if test='edmsMasterUserId != null and edmsMasterUserId != ""'>
+                AND (a.addUserId = #{edmsMasterUserId} OR a.editUserId = #{edmsMasterUserId} ) /* edmsMasterUserId */
+            </if>
+            <if test='edmsMasterUserName != null and edmsMasterUserName != ""'>
+                AND (a.addUserName = #{edmsMasterUserName} OR a.editUserName = #{edmsMasterUserName} ) /* edmsMasterUserName */
+            </if>
+        </where>
+        GROUP BY a.edmsStatus
+        ) datas
+        <if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+            WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+        </if>
+    </select>
+
+    <select id="findCustomsClearanceByUnregisteredEdmsMasterList" resultType="map">
+        /* 통관미등록 리스트(EDMS) */
+        SELECT datas.*
+        FROM (
+        SELECT impos.*
+        FROM (
+        SELECT distinct a.impo_bl_no AS 'BLNO',
+        'IMPORT' AS 'BIZTYPE', #{_defaultDB} AS 'JISA', #{teamCode} AS 'TEAM',
+        a.Impo_napse_code AS 'CODE', a.Impo_napse_sangho AS 'SANGHO', a.Impo_napse_saup AS 'SAUPNO',
+        c.customerKey AS 'CKEY'
+        FROM ${_defaultDB}.[kcba].[Impo1] a WITH (NOLOCK), soo_MST.dbo.TBR_MST_Customer c WITH (NOLOCK)
+        <where>
+            and c.customerDB = #{_defaultDB}
+        	and a.Impo_napse_code = c.customerCode
+        	and a.Impo_napse_saup = c.customerTaxNum
+            AND NOT EXISTS (
+	            SELECT *
+	            FROM [soo].[dbo].[TBR_EDMS_Master] b WITH (NOLOCK)
+	            WHERE a.impo_napse_saup = b.edmsComNum
+	            AND a.impo_bl_no 		= b.edmsNum
+	            AND b.edmsGubun 		= 'IMPORT'
+	            AND b.jisaCode 			= #{_defaultDB}
+	            AND b.useYn				= 'Y'
+            )
+            <if test='_dateType != null and _dateType != "ALL" and (startDay != null and startDay != "") and (endDay != null and endDay != "")'>
+                <choose>
+                    <when test='_dateType == "singoDay"'>AND a.impo_singo_date BETWEEN #{startDay} AND #{endDay} /* singoDay */</when>
+                    <when test='_dateType == "okDay"'>AND a.impo_ok_date BETWEEN #{startDay} AND #{endDay} /* okDay */</when>
+                </choose>
+            </if>
+            <if test='_customsUserId != null and _customsUserId != ""'>AND a.UserId = #{_customsUserId}</if>
+            <if test='impoNapseSangho != null and impoNapseSangho != ""'>AND a.Impo_napse_sangho LIKE '%' + #{impoNapseSangho} + '%'</if>
+            <if test='impoBlNo != null and impoBlNo != ""'>AND a.Impo_bl_no LIKE '%' + #{impoBlNo} + '%'</if>
+            <if test='impoSingoNo != null and impoSingoNo != ""'>AND a.Impo_singo_no LIKE '%' + #{impoSingoNo} + '%'</if>
+        </where>
+        ) impos
+
+        UNION ALL
+
+        SELECT expos.*
+        FROM (
+        SELECT distinct a.Expo_iv_no AS 'BLNO',
+        'EXPORT' AS 'BIZTYPE', #{_defaultDB} AS 'JISA', #{teamCode} AS 'TEAM',
+        a.Expo_suchulja_code AS 'CODE', a.Expo_suchulja_sangho AS 'SANGHO', a.Expo_SuchulSaupNo AS 'SAUPNO',
+        c.customerKey AS 'CKEY'
+        FROM ${_defaultDB}.[kcba].[Expo1] a WITH (NOLOCK), soo_MST.dbo.TBR_MST_Customer c WITH (NOLOCK)
+        <where>
+            and c.customerDB = #{_defaultDB}
+        	and a.Expo_suchulja_code = c.customerCode
+        	and a.Expo_SuchulSaupNo = c.customerTaxNum
+            AND NOT EXISTS (
+	            SELECT *
+	            FROM [soo].[dbo].[TBR_EDMS_Master] b WITH (NOLOCK)
+	            WHERE a.Expo_SuchulSaupNo 	= b.edmsComNum
+	            AND a.Expo_iv_no 			= b.edmsNum
+	            AND b.edmsGubun 			= 'EXPORT'
+	            AND b.jisaCode 				= #{_defaultDB}
+	            AND b.useYn					= 'Y'
+            )
+            <if test='_dateType != null and _dateType != "ALL" and (startDay != null and startDay != "") and (endDay != null and endDay != "")'>
+                <choose>
+                    <when test='_dateType == "singoDay"'>AND a.Expo_singo_date BETWEEN #{startDay} AND #{endDay} /* singoDay */</when>
+                    <when test='_dateType == "okDay"'>AND a.Expo_ok_date BETWEEN #{startDay} AND #{endDay} /* okDay */</when>
+                </choose>
+            </if>
+            <if test='_customsUserId != null and _customsUserId != ""'>AND a.UserId = #{_customsUserId}</if>
+            <if test='impoNapseSangho != null and impoNapseSangho != ""'>AND a.Expo_suchulja_sangho LIKE '%' + #{impoNapseSangho} + '%'</if>
+        </where>
+        ) expos
+        ) datas
+        <where>
+            <if test='BIZTYPE != null and BIZTYPE != ""'>AND datas.BIZTYPE LIKE #{BIZTYPE} + '%' /* BIZTYPE */</if>
+        </where>
+    </select>
+
+    <select id="findEdmsDivisionCopyTargetList" resultType="map">
+        /* 분할건Copy 대상 리스트(EDMS) */
+        SELECT datas.*
+        FROM (
+        SELECT ROW_NUMBER() OVER (ORDER BY a.Impo_key) AS 'rownum',
+        a.Impo_napse_code AS 'impoNapseCode', b.customerKey AS 'customerKey', b.customerCode AS 'customerCode', b.customerName AS 'customerName', b.customerTaxNum AS
+        'customerTaxNum',
+        a.Impo_napse_saup AS 'impoNapseSaup', a.Impo_receive_result AS 'impoReceiveResult',
+        a.Impo_bl_no AS 'impoBlNo', a.Impo_singo_no AS 'impoSingoNo',
+        a.Impo_mbl_no AS 'impoMblNo', a.Impo_mrn_no AS 'impoMrnNo',
+        a.Impo_iphang_date AS 'impoIphangDate', a.Impo_banip_date AS 'impoBanipDate', a.Impo_singo_date AS 'impoSingoDate', a.Impo_ok_date AS 'impoOkDate'
+        FROM [ncustoms_pj].[kcba].[Impo1] a WITH (NOLOCK)
+        INNER JOIN [soo_MST].[dbo].[TBR_MST_Customer] b WITH (NOLOCK)
+        ON b.customerDB = 'ncustoms_pj'
+        AND b.customerCode = a.Impo_napse_code
+        AND b.customerTaxNum = a.Impo_napse_saup
+        AND b.useYn = 'Y'
+        WHERE a.Impo_napse_saup = #{impoNapseSaup}
+        AND a.Impo_bl_no = #{impoBlNo}
+        ) datas
+        <if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+            WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+        </if>
+    </select>
+
+    <select id="findImpoBlNoStatus" resultType="map">
+        /* EDMS용 수입 BL 상태 */
+        SELECT datas.*
+        FROM (
+        SELECT ROW_NUMBER() OVER (ORDER BY a.Impo_napse_saup, a.Impo_bl_no, a.Impo_singo_no) AS 'rownum',
+        a.Impo_napse_saup AS 'impoNapseSaup', a.Impo_receive_result AS 'impoReceiveResult',
+        a.Impo_bl_no AS 'impoBlNo', a.Impo_singo_no AS 'impoSingoNo',
+        a.Impo_mbl_no AS 'impoMblNo', a.Impo_mrn_no AS 'impoMrnNo',
+        a.Impo_iphang_date AS 'impoIphangDate', a.Impo_banip_date AS 'impoBanipDate', a.Impo_singo_date AS 'impoSingoDate', a.Impo_ok_date AS 'impoOkDate'
+        FROM [ncustoms_pj].[kcba].[Impo1] a WITH (NOLOCK)
+        WHERE a.Impo_napse_saup = #{impoNapseSaup}
+        AND a.Impo_bl_no = #{impoBlNo}
+        AND ISNULL(a.Impo_jubsu_date, '') != ''
+        <choose>
+            <when test='impoSingoNo != null and impoSingoNo != ""'>AND a.Impo_singo_no = #{impoSingoNo} /* 수입신고번호 */</when>
+            <otherwise>AND a.Impo_key = (SELECT MAX(a1.Impo_key)
+                FROM [ncustoms_pj].[kcba].[Impo1] a1 WITH (NOLOCK)
+                WHERE a1.Impo_napse_saup = #{impoNapseSaup}
+                AND a1.Impo_bl_no = #{impoBlNo}
+                AND ISNULL(a1.Impo_jubsu_date, '') != '' )
+                <if test='_dateLimit == "Y"'>AND a.Impo_singo_date <![CDATA[>=]]> CONVERT(VARCHAR(8), DATEADD(YEAR, -1, GETDATE()), 112)</if>
+            </otherwise>
+        </choose>
+        <if test='_dateLimit == "Y"'>AND a.Impo_singo_date <![CDATA[>=]]> CONVERT(VARCHAR(8), DATEADD(YEAR, -1, GETDATE()), 112)</if>
+        ) datas
+        <if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+            WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+        </if>
+    </select>
+
+    <select id="findExpoInvoiceList" resultType="map">
+        /* EDMS용 수출 INVOICE 리스트(20160902 항목추가가능성 있음) */
+        SELECT datas.*
+        FROM (
+        SELECT ROW_NUMBER() OVER (ORDER BY a.Expo_iv_no) AS 'rownum',
+        a.Expo_iv_no, a.Expo_SuchulSaupNo, a.Expo_suchulja_code, a.Expo_suchulja_sangho, COUNT(*) AS 'expoInvoiceCount'
+        FROM [ncustoms_pj].[kcba].[Expo1] a WITH (NOLOCK)
+        WHERE a.Expo_SuchulSaupNo = #{geowsTaxNum}
+        <if test='expoKey != null and expoKey != ""'>AND a.Expo_key = #{expoKey} /* Expo_key(PK) */</if>
+        <if test='expoIvNo != null and expoIvNo != ""'>AND a.Expo_iv_no LIKE #{expoIvNo} + '%' /* Expo_iv_no */</if>
+        <if test='expoSuchulSaupNo != null and expoSuchulSaupNo != ""'>AND a.Expo_SuchulSaupNo LIKE #{expoSuchulSaupNo} + '%' /* Expo_SuchulSaupNo */</if>
+        <if test='expoSuchuljaCode != null and expoSuchuljaCode != ""'>AND a.Expo_suchulja_code LIKE #{expoSuchuljaCode} + '%' /* Expo_suchulja_code */</if>
+        <if test='expoSuchuljaSangho != null and expoSuchuljaSangho != ""'>AND a.Expo_suchulja_sangho LIKE #{expoSuchuljaSangho} + '%' /* Expo_suchulja_sangho */</if>
+        GROUP BY a.Expo_iv_no, a.Expo_SuchulSaupNo, a.Expo_suchulja_code, a.Expo_suchulja_sangho
+        ) datas
+        <if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+            WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+        </if>
+    </select>
+
+    <select id="findExpoInvoiceStatus" resultType="map">
+        /* EDMS용 수출 INVOICE 상태 */
+        SELECT datas.*
+        FROM (
+        SELECT ROW_NUMBER() OVER (ORDER BY a.Expo_singo_no, a.Expo_singo_date) AS 'rownum',
+        a.Expo_res_result AS 'expoResResult', a.Expo_singo_no AS 'expoSingoNo', a.Expo_singo_date AS 'expoSingoDate', a.Expo_ok_date AS 'expoOkDate'
+        FROM [ncustoms_pj].[kcba].[Expo1] a WITH (NOLOCK)
+        INNER JOIN (
+        SELECT MAX(a1.Expo_Key) AS 'Expo_Key'
+        FROM [ncustoms_pj].[kcba].[Expo1] a1 WITH (NOLOCK)
+        WHERE a1.Expo_iv_no = #{expoIvNo}
+        AND a1.Expo_SuchulSaupNo = #{expoSuchulSaupNo} ) b
+        ON a.Expo_Key = b.Expo_Key
+        AND a.Expo_iv_no = #{expoIvNo}
+        AND a.Expo_SuchulSaupNo = #{expoSuchulSaupNo}
+        ) datas
+        <if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+            WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+        </if>
+    </select>
+
+    <select id="findTeamXUserListWithAuth" resultType="map">
+		/* 권한별 선택가능 팀 리스트(팀) */
+		SELECT 'B' AS 'groupCode', a.team_seq AS 'teamSeq', a.team_name AS 'teamName', a.team_code AS 'teamCode'
+		FROM [soo].[dbo].[TBR_User_TeamXUser] a WITH (NOLOCK)
+			INNER JOIN [soo].[dbo].[TBR_User_Team] b WITH (NOLOCK)
+			ON b.team_useYn = 'Y'
+			AND b.team_seq = a.team_seq
+		WHERE a.ut_useYn = 'Y'
+		AND NOT EXISTS ( SELECT *
+							FROM [soo].[dbo].[TBR_User_UserSavedCustomer] b WITH (NOLOCK)
+							WHERE b.usc_group = 'B'
+							AND b.usc_userSeq = (SELECT [soo].[dbo].[UFN_commonUserInfo](#{_userId}, 'userSeq'))
+							AND b.usc_EntrepreneurNo=a.team_seq
+							AND b.usc_tradeCode=a.team_code )
+		<if test='_Auth != "admin"'>
+			<if test='_userId != null and _userId != ""'>AND a.ur_seq = (SELECT [soo].[dbo].[UFN_commonUserInfo](#{_userId}, 'userSeq'))</if>
+		</if>
+		<if test='teamSeq != null and teamSeq != ""'>AND a.team_seq LIKE [soo].[dbo].[UFN_공통_replaceSc](#{teamSeq}) + '%'	/* 팀시퀀스 */</if>
+		<if test='teamName != null and teamName != ""'>AND a.team_name LIKE [soo].[dbo].[UFN_공통_replaceSc](#{teamName}) + '%'	/* 팀명 */</if>
+		<if test='teamCode != null and teamCode != ""'>AND a.team_code LIKE [soo].[dbo].[UFN_공통_replaceSc](#{teamCode}) + '%'	/* 팀코드 */</if>
+		GROUP BY a.team_name, a.team_code, a.team_seq
+	</select>
+
+    <select id="findCustomerList" resultType="map">
+		SELECT a.customerKey AS 'KEYS', a.customerCode AS 'CODE', a.customerTaxNum AS 'TAXNUM', a.customerName AS 'NAME'
+		FROM [soo_MST].[dbo].[TBR_MST_Customer] a WITH (NOLOCK)
+		WHERE a.customerDB = [soo].[dbo].[UFN_공통_replaceSc](#{_defaultDB})
+		<if test='KEYS != null and KEYS != ""'> AND a.customerKey = [soo].[dbo].[UFN_공통_replaceSc](#{KEYS})</if>
+		<if test='CODE != null and CODE != ""'> AND a.customerCode LIKE [soo].[dbo].[UFN_공통_replaceSc](#{CODE}) + '%'</if>
+		<if test='NAME != null and NAME != ""'> AND a.customerName LIKE [soo].[dbo].[UFN_공통_replaceSc](#{NAME}) + '%'</if>
+		<if test='TAXNUM != null and TAXNUM != ""'> AND a.customerTaxNum LIKE [soo].[dbo].[UFN_공통_replaceSc](#{TAXNUM}) + '%'</if>
+		<if test='SEQ != null and SEQ != ""'> and a.customerKey not in (
+			select utc_tradeKey from [soo].[dbo].[TBR_User_TeamXCustomer]
+			where ut_team_seq = #{SEQ}
+			  and utc_useYn = 'Y')
+		</if>
+		ORDER BY a.customerCode desc
+	</select>
+
+    <select id="callSyncCustomerIndividualInfo" statementType="CALLABLE" resultType="map">
+        {call [soo_MST].[dbo].[USP_ETL_SYNC_Customer_개별](
+        @DB=#{db},
+        @CODE=#{code},
+        @addUserId=#{addUserId}
+        )}
+    </select>
+
+    <select id="findCmmnCodeList" resultType="map">
+	    SELECT CODE, NAME
+		FROM [soo].[dbo].[TBR_CD_MASTER] WITH (NOLOCK)
+		WHERE M_CODE = [soo].[dbo].[UFN_공통_replaceSc](#{mCode})
+		AND USEYN = 'Y'
+		<if test='geCode != null and geCode != ""'> AND CODE <![CDATA[>=]]> #{geCode} </if>
+		ORDER BY SORT_ORDER
+	</select>
+
+    <select id="findImpoMasterList" resultType="map">
+        /* 수입화물통관 impo1 조회 */
+        SELECT datas.*
+        FROM (
+        SELECT ROW_NUMBER() OVER (ORDER BY a.Impo_key DESC) AS 'rownum',
+        a.Impo_key, a.Impo_bl_no, a.Impo_mbl_no, a.Impo_singo_no, a.Impo_singo_date, a.Impo_Ok_date, a.Impo_hanggu_name,
+        a.Impo_pojang_su, a.Impo_total_jung, a.Impo_jung_danwi, a.Impo_pojang_danwi,
+        a.Impo_napse_code, a.Impo_napse_sangho, a.Impo_napse_saup,
+        a.Impo_napse_name, a.Impo_napse_tel, a.Impo_napse_email, a.Impo_napse_juso,
+        a.Impo_segwan, a.Impo_jangch_buho, a.Impo_jangch_name, a.Impo_jangch_jangso, a.Impo_banip_date
+        FROM ${_defaultDB}.[kcba].[Impo1] a WITH (NOLOCK)
+        WHERE 1=1
+        <if test='impoKey != null and impoKey != ""'>AND a.Impo_key = #{impoKey}</if>
+        ) datas
+        <if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+            WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+        </if>
+    </select>
+
+    <select id="findImpoPaperList" resultType="map">
+        /* 수입화물통관 면장등록 조회 */
+        SELECT datas.*
+        FROM (
+	        select ROW_NUMBER() OVER (ORDER BY b.edmsKey DESC) AS 'rownum', b.edmsKey
+	        from ${_defaultDB}.kcba.impo1 a WITH (NOLOCK), soo.dbo.TBR_EDMS_Master b WITH (NOLOCK)
+			where a.Impo_singo_no = #{singoNo}
+			and a.Impo_bl_no = b.edmsNum
+			and a.Impo_napse_code = b.edmsComCode
+			and a.Impo_napse_saup = b.edmsComNum
+			and b.useYn='Y'
+        ) datas
+        <if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+            WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+        </if>
+    </select>
+
+    <select id="findExpoPaperList" resultType="map">
+        /* 수출화물통관 면장등록 조회 */
+        SELECT datas.*
+        FROM (
+	        select ROW_NUMBER() OVER (ORDER BY b.edmsKey DESC) AS 'rownum', b.edmsKey
+	        from ${_defaultDB}.kcba.expo1 a WITH (NOLOCK), soo.dbo.TBR_EDMS_Master b WITH (NOLOCK)
+			where a.Expo_singo_no = #{singoNo}
+			and a.Expo_iv_no = b.edmsNum
+			and a.Expo_suchulja_code = b.edmsComCode
+			and a.Expo_SuchulSaupNo = b.edmsComNum
+			and b.useYn='Y'
+        ) datas
+        <if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+            WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+        </if>
+    </select>
+
+    <select id="findEdmsFileList1" resultType="map">
+        /* ASML 수입 문서 찾기 */
+        select *,
+        ISNULL((SELECT count(count) FROM rms.dbo.TBR_ASML_FTPLog WITH (NOLOCK) WHERE convert(varchar,edmsFileKey) = singoNum), 0) AS 'ftpFileCount'
+        from soo.dbo.TBR_EDMS_AttachFile WITH (NOLOCK)
+		where edmsParentKey = #{edmsParentKey}
+		and useYn = 'Y'
+    </select>
+
+    <select id="findFileDownList" resultType="map">
+        /* 파일 일괄다운로드 */
+        SELECT datas.*
+        FROM (
+	        select ROW_NUMBER() OVER (ORDER BY edmsFileKey DESC) AS 'rownum', *
+	        from soo.dbo.TBR_EDMS_AttachFile WITH (NOLOCK)
+			where useYn = 'Y'
+			<if test='edmsFileCategory != null and edmsFileCategory != ""'>AND edmsFileCategory = #{edmsFileCategory}</if>
+			and edmsParentKey in (
+			    SELECT edmsKey
+				from soo.dbo.TBR_EDMS_Master
+				<where>
+		            AND useYn= 'Y'
+		            <if test='edmsGubun != null and edmsGubun != ""'>AND edmsGubun LIKE #{edmsGubun} + '%'</if>
+		            <if test='edmsUploadType != null and edmsUploadType != ""'>AND edmsUploadType LIKE #{edmsUploadType} + '%'</if>
+		            <if test='edmsComKey != null and edmsComKey != ""'>AND edmsComKey = CAST(#{edmsComKey} AS NUMERIC)</if>
+		            <if test='edmsComName != null and edmsComName != ""'>AND edmsComName LIKE '%' + #{edmsComName} + '%'</if>
+		            <if test='edmsComCode != null and edmsComCode != ""'>AND edmsComCode LIKE #{edmsComCode} + '%'</if>
+		            <if test='edmsComNum != null and edmsComNum != ""'>AND edmsComNum LIKE #{edmsComNum} + '%'</if>
+		            <if test='edmsNum != null and edmsNum != ""'>AND edmsNum LIKE '%' + #{edmsNum} + '%'</if>
+		            <if test='_DateType != null and _DateType != "ALL" and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+		                <choose>
+		                    <when test='_DateType == "addDay"'>AND addDay BETWEEN #{strFromDate} AND #{strToDate}</when>
+		                </choose>
+		            </if>
+		        </where>
+			)
+        ) datas
+        <if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+            WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+        </if>
+        order by edmsParentKey
+    </select>
+
+    <select id="findAsmlImportFtpList" resultType="map">
+        /* ASML(인천공항) 수입 FTP 자동전송 */
+        select a.Impo_singo_no, c.edmsFileKey, c.edmsFilePath, c.edmsSaveFileName, c.edmsFileCategory, c.edmsFileExt
+		  from ncustoms_yj.kcba.impo1 a
+		  left outer join soo.dbo.TBR_EDMS_Master b
+		    on a.Impo_bl_no = b.edmsNum
+		   and a.Impo_singo_no = b.singoNum
+		  left outer join soo.dbo.TBR_EDMS_AttachFile c
+		    on b.edmsKey = c.edmsParentKey
+		  left outer join soo.dbo.TBR_Ftp_Send_Log d
+		    on c.edmsFileKey = d.edmsFileKey
+		 where a.Impo_napse_saup='1298119610'
+		   and a.Impo_ok_date = CONVERT (VARCHAR , GETDATE(), 112)
+		   and c.useYn='Y'
+		   and c.edmsFileCategory in ('A0001','A0002','A0003','B0001')
+		   and d.count is null
+    </select>
+
+    <select id="findScImportFtpList" resultType="map">
+        /* ASML(인천공항) 수입 쉥커FTP 자동전송 */
+        select a.Impo_singo_no, c.edmsFileKey, c.edmsFilePath, c.edmsSaveFileName, c.edmsFileExt
+		  from ncustoms_yj.kcba.impo1 a
+		  left outer join soo.dbo.TBR_EDMS_Master b
+		    on a.Impo_bl_no = b.edmsNum
+		   and a.Impo_singo_no = b.singoNum
+		  left outer join soo.dbo.TBR_EDMS_AttachFile c
+		    on b.edmsKey = c.edmsParentKey
+		  left outer join soo.dbo.TBR_Ftp_Send_Log d
+		    on c.edmsFileKey = d.edmsFileKey
+		 where a.Impo_napse_saup='1298119610'
+		   and a.Impo_ok_date = CONVERT (VARCHAR , GETDATE(), 112)
+		   and c.useYn='Y'
+		   and c.edmsFileCategory in ('B0001')
+		   and d.count is null
+    </select>
+
+    <select id="findAsmlExportFtpList" resultType="map">
+        /* ASML(인천공항) 수출 FTP 자동전송 */
+        select a.Expo_singo_no, c.edmsFileKey, c.edmsFilePath, c.edmsSaveFileName, c.edmsFileCategory, c.edmsFileExt
+		  from ncustoms_yj.kcba.expo1 a
+		  left outer join soo.dbo.TBR_EDMS_Master b
+		    on a.Expo_iv_no = b.edmsNum
+		  left outer join soo.dbo.TBR_EDMS_AttachFile c
+		    on b.edmsKey = c.edmsParentKey
+		  left outer join soo.dbo.TBR_Ftp_Send_Log d
+		    on c.edmsFileKey = d.edmsFileKey
+		 where a.Expo_SuchulSaupNo='1298119610'
+		   and a.Expo_ok_date = CONVERT (VARCHAR , GETDATE(), 112)
+		   and c.useYn='Y'
+		   and c.edmsFileCategory in ('A0001','A0002','A0003','B0001')
+		   and d.count is null
+    </select>
+
+    <select id="findScExportFtpList" resultType="map">
+        /* ASML(인천공항) 수출 쉥커FTP 자동전송 */
+        select a.Expo_singo_no, c.edmsFileKey, c.edmsFilePath, c.edmsSaveFileName, c.edmsFileExt
+		  from ncustoms_yj.kcba.expo1 a
+		  left outer join soo.dbo.TBR_EDMS_Master b
+		    on a.Expo_iv_no = b.edmsNum
+		  left outer join soo.dbo.TBR_EDMS_AttachFile c
+		    on b.edmsKey = c.edmsParentKey
+		  left outer join soo.dbo.TBR_Ftp_Send_Log d
+		    on c.edmsFileKey = d.edmsFileKey
+		 where a.Expo_SuchulSaupNo='1298119610'
+		   and a.Expo_ok_date = CONVERT (VARCHAR , GETDATE(), 112)
+		   and c.useYn='Y'
+		   and c.edmsFileCategory in ('B0001')
+		   and d.count is null
+    </select>
+
+    <select id="selectEdmsFileCountList" resultType="map">
+        /* 파일 카운트 추가 */
+        SELECT top 25 ROW_NUMBER() OVER (ORDER BY SDAAKey desc) AS 'rownum',
+        a.SDAAKey,a.EdmsParentGbn,a.EdmsNo,a.EdmsSingoNo,a.EdmsFileCategory,a.EdmsFilePath,a.EdmsSaveFileNm,a.EdmsOrgFileNm,
+		a.EdmsFileSize,a.EdmsFileExt,a.UseYn,a.AddUserId,a.AddUserNm,a.AddDtm,a.EditUserId,a.EditUserNm,a.EditDtm,
+        ISNULL((SELECT count(count) FROM soo.dbo.TBR_Ftp_Send_Log WITH (NOLOCK) WHERE a.SDAAKey = CAST(edmsFileKey AS NUMERIC)), 0) AS 'ftpFileCount'
+        FROM CPS.[dbo].[SDAA100] a
+        <where>
+            AND UseYn = 'Y'
+            <if test='edmsKey != null and edmsKey != ""'>AND a.SDAAKey = CAST(#{edmsKey} AS NUMERIC)</if>
+            <if test='edmsGubun != null and edmsGubun != ""'>AND a.EdmsParentGbn LIKE #{edmsGubun} + '%'</if>
+            <if test='edmsNo != null and edmsNo != "" and edmsSingoNo != null and edmsSingoNo != ""'>AND ((a.EdmsNo = #{edmsNo} and a.CommonYn='Y') OR (a.EdmsSingoNo = #{edmsSingoNo} and a.CommonYn='N'))</if>
+            <if test='edmsNo == "" and edmsSingoNo != null and edmsSingoNo != ""'>AND a.EdmsSingoNo = #{edmsSingoNo}</if>
+            <if test='edmsNo != null and edmsNo != "" and edmsSingoNo == ""'>AND a.EdmsNo = #{edmsNo}</if>
+            <if test='edmsJisaCode != null and edmsJisaCode != ""'>AND a.EdmsJisaCode = #{edmsJisaCode}</if>
+        </where>
+    </select>
+</mapper>

@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) SEIN
+  ~ All rights reserved.
+  ~ This software is the confidential and proprietary information of SEIN. ("Confidential Information").
+  -->
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.edwards.biz.itemMng.UnitPriceMapper">
+	<select id="findUnitPriceMasterList" resultType="map">
+		/* 단가마스터 조회 */
+		SELECT datas.*
+		FROM (
+		SELECT ROW_NUMBER() OVER (ORDER BY a.upv_FinalEdit_datetime DESC) AS 'rownum',
+		a.*
+		FROM ${_defaultRmsDb}.[dbo].[ktbl_upv_master] a WITH (NOLOCK)
+		WHERE a.upv_taxpayer_no IN ( SELECT EntrepreneurNo FROM [soo].[dbo].[UFN_공통_할당사업자번호](#{_userId}, #{_Auth}, 'ALL') ) /* 사업자번호function */
+		<if test='sType != null and sType != "ALL" and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+			<choose>
+				<when test='sType == "upv_singo_date"'>AND a.upv_singo_date BETWEEN #{strFromDate} AND #{strToDate} /* 신고일자 */</when>
+				<when test='sType == "upv_confirm_datetime"'>AND LEFT(a.upv_confirm_datetime, 8) BETWEEN #{strFromDate} AND #{strToDate} /* 확인일자 */</when>
+			</choose>
+		</if>
+		<if test='upvTaxpayerTradeName != null and upvTaxpayerTradeName != ""'>AND a.upv_taxpayer_TradeName = #{upvTaxpayerTradeName} /* 업체(납세자) */</if>
+		<if test='upvItemCode != null and upvItemCode != ""'>AND a.upv_ItemCode LIKE #{upvItemCode} + '%' /* 자재코드 */</if>
+		<if test='upvSingoNo != null and upvSingoNo != ""'>AND a.upv_singo_no LIKE '%' + #{upvSingoNo} + '%' /* 신고번호 */</if>
+		<if test='upvBlNo != null and upvBlNo != ""'>AND a.upv_bl_no LIKE #{upvBlNo} + '%' /* BL번호 */</if>
+		<if test='upvConfirmFlag != ""'>AND a.upv_confirm_flag LIKE #{upvConfirmFlag} + '%' /* 확정여부 */</if>
+		) datas
+		<if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+			WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+		</if>
+	</select>
+
+	<select id="findUnitPriceMaster" resultType="map">
+		/* 단가마스터 단건 조회 */
+		SELECT *
+		FROM ${_defaultRmsDb}.[dbo].[ktbl_upv_master] WITH (NOLOCK)
+		WHERE upv_key = #{upvKey}
+		AND upv_singo_no = #{upvSingoNo}
+		AND upv_singo_date = #{upvSingoDate}
+		AND upv_lan_no = #{upvLanNo}
+		AND upv_heang_no = #{upvHeangNo}
+	</select>
+
+	<select id="findUnitPriceDetailList" resultType="map">
+		/* 단가디테일 조회 */
+		SELECT datas.*
+		FROM (
+		SELECT ROW_NUMBER() OVER (ORDER BY a.upvd_ok_date DESC, a.upvd_singo_no, a.upvd_lan_no, a.upvd_heang_no) AS 'rownum',
+		a.upvd_MCount_no,
+		a.upvd_singo_no, a.upvd_lan_no, a.upvd_heang_no, a.upvd_ok_date,
+		a.upvd_importer_TradeName, a.upvd_taxpayer_division,
+		a.upvd_ShippingNation_code, a.upvd_ArrvalPort_code,
+		a.upvd_TransportMeans, a.upvd_incoterms, a.upvd_currency, a.upvd_PaymentOption,
+		a.upvd_qty, a.upvd_qty_unit, a.upvd_UnitPrice, a.upvd_amount,
+		a.upvd_hs_code, a.upvd_hs_kind, a.upvd_hs_rate, a.upvd_ItemCode,
+		a.upvd_customer_TradeName, a.upvd_bl_no, a.upvd_singo_date,
+		a.upvd_GoodNames, a.upvd_spec, a.upvd_ingredient,
+		a.upvd_history_transferName, a.upvd_history_datetime
+		FROM ${_defaultRmsDb}.[dbo].[ktbl_upv_Details] a WITH (NOLOCK)
+		<where>
+			<if test='upvKey != null and upvKey != ""'>AND a.upvd_key = #{upvKey} /* 20170802 오타 임시 처리 */</if>
+			<if test='upvdKey != null and upvdKey != ""'>AND a.upvd_key = #{upvdKey}</if>
+			<if test='upvdSingoNo != null and upvdSingoNo != ""'>AND a.upvd_singo_no = #{upvdSingoNo}</if>
+			<if test='upvdSingoDate != null and upvdSingoDate != ""'>AND a.upvd_singo_date = #{upvdSingoDate}</if>
+			<if test='upvdLanNo != null and upvdLanNo != ""'>AND a.upvd_lan_no = #{upvdLanNo}</if>
+			<if test='upvHeangNo != null and upvHeangNo != ""'>AND a.upvd_heang_no = #{upvHeangNo}</if>
+			<if test='upvdMCountNo != null and upvdMCountNo != ""'>AND a.upvd_MCount_no = #{upvdMCountNo}</if>
+		</where>
+		) datas
+		<if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+			WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+		</if>
+	</select>
+
+	<update id="updateUnitPriceConfirm">
+		/* rms.dbo.ktbl_upv_master 수정 */
+		UPDATE ${_defaultRmsDb}.[dbo].[ktbl_upv_master]
+		SET upv_FinalEditer = #{_userId}
+		, upv_FinalEdit_datetime = REPLACE(CONVERT(VARCHAR(8), GETDATE(), 112)+CONVERT(VARCHAR(8), GETDATE(), 114), ':','')
+		<if test='upvConfirmFlag == "Y"'>, upv_confirm_flag = 'Y'</if>
+		<if test='upvConfirmFlag == "Y"'>, upv_confirm_datetime = REPLACE(CONVERT(VARCHAR(8), GETDATE(), 112)+CONVERT(VARCHAR(8), GETDATE(), 114), ':','')</if>
+		<if test='upvConfirmFlag == "Y"'>, upv_confirmer = #{_userId}</if>
+		<if test='upvConfirmContent != ""'>, upv_confirm_content = #{upvConfirmContent}</if>
+		<if test='upvRemark != ""'>, upv_remark = #{upvRemark}</if>
+		WHERE upv_key = #{upvKey}
+		AND upv_singo_no = #{upvSingoNo}
+		AND upv_singo_date = #{upvSingoDate}
+		AND upv_lan_no = #{upvLanNo}
+		AND upv_heang_no = #{upvHeangNo}
+	</update>
+
+	<select id="findUnitPriceCustomsNameList" resultType="map">
+	    /* rms.dbo.ktbl_upv_Master 거래처명 조회  */
+	    SELECT DISTINCT a.upv_taxpayer_TradeName AS 'NAME'
+		FROM ${_defaultRmsDb}.[dbo].[ktbl_upv_Master] a WITH (NOLOCK)
+		WHERE a.upv_taxpayer_no IN ( SELECT EntrepreneurNo FROM [soo].[dbo].[UFN_공통_할당사업자번호](#{_userId}, #{_Auth}, 'ALL') )		/* 사업자번호function */
+		ORDER BY a.upv_taxpayer_TradeName
+	</select>
+
+	<select id="findUnitPriceDetailSameDeletedList" resultType="map">
+		/* 중복제거된 단가디테일 */
+		SELECT datas.*
+		FROM (
+		SELECT ROW_NUMBER() OVER (ORDER BY a.upvd_ok_date DESC, a.upvd_singo_no, a.upvd_lan_no, a.upvd_heang_no) AS 'rownum', a.upvd_singo_date, a.upvd_MCount_no, a.upvd_singo_no,
+		a.upvd_lan_no, a.upvd_heang_no,
+		a.upvd_ok_date, a.upvd_importer_TradeName, a.upvd_taxpayer_division, a.upvd_ShippingNation_code, a.upvd_ArrvalPort_code, a.upvd_TransportMeans,
+		a.upvd_incoterms, a.upvd_currency, a.upvd_PaymentOption, a.upvd_qty, a.upvd_qty_unit, a.upvd_UnitPrice, a.upvd_amount,
+		a.upvd_hs_code, a.upvd_hs_kind, a.upvd_hs_rate, a.upvd_ItemCode, a.upvd_customer_TradeName, a.upvd_bl_no,
+		a.upvd_GoodNames, a.upvd_spec, a.upvd_ingredient, a.upvd_history_transferName, a.upvd_history_datetime
+		FROM ${_defaultRmsDb}.[dbo].[ktbl_upv_Details] a WITH (NOLOCK)
+		INNER JOIN
+		(
+		SELECT MAX(upvd_key) AS 'upvd_key', MAX(a.upvd_singo_no) AS 'upvd_singo_no',
+		MAX(a.upvd_singo_date) AS 'upvd_singo_date', MAX(a.upvd_lan_no) AS 'upvd_lan_no', MAX(upvd_heang_no) AS 'upvd_heang_no', a.upvd_unitPrice
+		FROM ${_defaultRmsDb}.[dbo].[ktbl_upv_Details] a WITH (NOLOCK)
+		INNER JOIN (
+		SELECT upvd_unitPrice, MAX(upvd_singo_date) AS 'upvd_singo_date'/* 20160304제거 , max(upvd_singo_no) upvd_singo_no */
+		FROM ${_defaultRmsDb}.[dbo].[ktbl_upv_Details] a WITH (NOLOCK)
+		WHERE a.upvd_key = #{upvKey}
+		GROUP BY upvd_unitPrice
+		) b
+		ON a.upvd_unitPrice = b.upvd_unitPrice
+		/* 20160304제거 and a.upvd_singo_no = b.upvd_singo_no */
+		AND a.upvd_singo_date = b.upvd_singo_date
+		AND a.upvd_key = #{upvKey}
+		GROUP BY a.upvd_unitPrice
+		) b
+		ON a.upvd_key=b.upvd_key
+		AND a.upvd_singo_no=b.upvd_singo_no
+		AND a.upvd_singo_date=b.upvd_singo_date
+		AND a.upvd_lan_no=b.upvd_lan_no
+		AND a.upvd_heang_no=b.upvd_heang_no
+		AND a.upvd_key = #{upvKey}
+		) datas
+		<if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+			WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+		</if>
+	</select>
+</mapper>

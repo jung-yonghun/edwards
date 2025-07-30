@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.edwards.biz.codeManagement.SooMstCmmnCodeMapper">
+    <select id="selectSooMstCdHsRateWithTrrtTpcdList" resultType="map">
+        /* HS세율X관세율구분코드 리스트(soo_MST) */
+        SELECT datas.*
+        FROM (
+        SELECT ROW_NUMBER() OVER (ORDER BY a.BSAPKey ASC) AS 'rownum',
+        a.*,
+        b.CDAADKey, b.Mcd,
+        b.Cd, b.CdPrtNm, b.CdAbbHnm, b.CdAbbEnm,
+        b.CdSort, b.CdRemark
+        FROM CPS.dbo.BSAP100 a WITH (NOLOCK)
+        LEFT OUTER JOIN CPS.dbo.CDAA100D b WITH (NOLOCK)
+        ON a.HsRateGbn = b.Cd
+        AND a.UseYn = 'Y'
+        AND b.Mcd = 'TRRT_TPCD'
+        AND b.UseYn = 'Y'
+        <where>
+            <if test='keyTbrCdHsRate != null and keyTbrCdHsRate != ""'>AND a.BSAPKey = #{keyTbrCdHsRate}</if>
+            <if test='hs1 != null and hs1 != ""'>AND a.Hs1 LIKE [soo_MST].[dbo].[UFN_공통_replaceSc](#{hs1}) + '%'</if>
+            <if test='hs2 != null and hs2 != ""'>AND a.Hs2 = #{hs2}</if>
+            <if test='hs3 != null and hs3 != ""'>AND a.Hs3 = #{hs3}</if>
+            <if test='hs4 != null and hs4 != ""'>AND a.Hs4 = #{hs4}</if>
+            <if test='hsCode != null and hsCode != ""'>AND a.HsCode = #{hsCode}</if>
+            <if test='hsRateFlag != null and hsRateFlag != ""'>AND a.HsRateGbn = #{hsRateFlag}</if>
+            <if test='hsDtStart != null and hsDtStart != ""'>AND a.HsStDt like #{hsDtStart} + '%'</if>
+            <if test='useYn != null and useYn != ""'>AND a.UseYn = #{useYn}</if>
+        </where>
+        ) datas
+        <if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+            WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+        </if>
+    </select>
+
+
+
+
+
+
+
+
+	<select id="callSyncCustomerInfo" statementType="CALLABLE" resultType="map">
+		{call [soo_MST].[dbo].[USP_ETL_SYNC_Customer](
+             @yyyymmdd=#{yyyyMMdd},
+             @addUserId=#{addUserId}
+         )}
+	</select>
+
+    <select id="callSyncCustomerIndividualInfo" statementType="CALLABLE" resultType="map">
+        {call [soo_MST].[dbo].[USP_ETL_SYNC_Customer_개별](
+        @DB=#{db},
+        @CODE=#{code},
+        @addUserId=#{addUserId}
+        )}
+    </select>
+
+
+</mapper>

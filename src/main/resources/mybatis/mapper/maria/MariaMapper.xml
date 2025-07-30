@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.edwards.biz3.mariaManagement.MariaMapper">
+    <select id="selectBoardInfoList" resultType="map">
+		select * from gh_board_info
+		<where>
+		    and b_open = '1'
+            <if test='idx != null and idx != ""'>AND idx = #{idx}</if>
+            <if test='(strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>AND Date(regdate) BETWEEN #{strFromDate} AND #{strToDate}</if>
+            <if test='contents != null and contents != ""'>AND b_content like '%${contents}%'</if>
+        </where>
+        order by idx desc
+	</select>
+
+    <select id="selectBoardInfoSimpleList" resultType="map">
+		select
+		  idx, b_subject, regdate
+		from gh_board_info
+		where b_open = '1'
+		order by regdate desc
+	</select>
+</mapper>

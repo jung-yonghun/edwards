@@ -1,0 +1,2434 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.edwards.biz.accountManagement.AccountMapper">
+	<select id="selectImpoCostMasterList" resultType="map">
+		/* 비용관리 마스터 조회 */
+		SELECT 	 a.수입키
+				,a.무역거래처
+				,a.수입신고번호규격
+				,a.수입신고번호
+				,a.BL번호
+				,a.MBL번호
+				,a.수리일
+				,a.입항일
+				,a.반입일
+				,a.신고일
+				,a.[hidden Invoice Amount] AS 'hidden Invoice Amount'
+				,a.[Invoice Amount] AS 'Invoice Amount'
+				,a.결제통화
+				,a.결제환율
+				,a.과세운임
+				,a.과세가격
+				,a.관세
+				,a.부가세
+				,a.기타세
+				,a.총세액
+				,SUM(a.C005) AS 'C005'
+				,SUM(a.C006) AS 'C006'
+				,SUM(a.C010) AS 'C010'
+				,SUM(a.C013) AS 'C013'
+				,SUM(a.C014) AS 'C014'
+				,SUM(a.C018) AS 'C018'
+				,SUM(a.C019) AS 'C019'
+				,SUM(a.C023) AS 'C023'
+				,SUM(a.C026) AS 'C026'
+				,SUM(a.C043) AS 'C043'
+				,SUM(a.C060) AS 'C060'
+				,SUM(a.C079) AS 'C079'
+				,SUM(a.C080) AS 'C080'
+				,SUM(a.C084) AS 'C084'
+				,SUM(a.C086) AS 'C086'
+				,SUM(a.C090) AS 'C090'
+				,SUM(a.C094) AS 'C094'
+				,SUM(a.C097) AS 'C097'
+				,SUM(a.C107) AS 'C107'
+				,SUM(a.C108) AS 'C108'
+				,SUM(a.C110) AS 'C110'
+				,SUM(a.C117) AS 'C117'
+				,SUM(a.C120) AS 'C120'
+				,SUM(a.C124) AS 'C124'
+				,SUM(a.C125) AS 'C125'
+				,SUM(a.C142) AS 'C142'
+				,SUM(a.C150) AS 'C150'
+				,SUM(a.C152) AS 'C152'
+				,SUM(a.C153) AS 'C153'
+				,SUM(a.합계금액) AS '합계금액'
+				,a.징수형태
+		FROM (
+				SELECT	 a.Impo_key AS '수입키'
+						,a.Impo_Gonggub_Sangho AS '무역거래처'
+						,SUBSTRING(a.impo_singo_no, 1,5) +'-'+ SUBSTRING(a.impo_singo_no, 6,2) +'-'+ SUBSTRING(a.impo_singo_no, 8,7) AS '수입신고번호규격'
+						,a.impo_singo_no AS '수입신고번호'
+						,a.impo_bl_no AS 'BL번호'
+						,a.impo_mbl_no AS 'MBL번호'
+						,CASE WHEN ISNULL(a.impo_singo_date,'') = ''  THEN '' ELSE CONVERT(VARCHAR(10),CONVERT(DATETIME, a.impo_singo_date),120)  END AS '수리일'
+						,CASE WHEN ISNULL(a.Impo_iphang_date,'') = '' THEN '' ELSE CONVERT(VARCHAR(10),CONVERT(DATETIME, a.Impo_iphang_date),120) END AS '입항일'
+						,CASE WHEN ISNULL(a.Impo_banip_date,'') = ''  THEN '' ELSE CONVERT(VARCHAR(10),CONVERT(DATETIME, a.Impo_banip_date),120)  END AS '반입일'
+						,CASE WHEN ISNULL(a.impo_singo_date,'') = ''  THEN '' ELSE CONVERT(VARCHAR(10),CONVERT(DATETIME, a.impo_singo_date),120)  END AS '신고일'
+						,a.Impo_gyelje_input AS 'hidden Invoice Amount'
+						,a.Impo_gyelje_input AS 'Invoice Amount'
+						,a.Impo_gyelje_money AS '결제통화'
+						,a.Impo_exch_yul AS '결제환율'
+						,a.Impo_fre_won AS '과세운임'
+						,a.Impo_cif_total_won AS '과세가격'
+						,a.Impo_gwan_tax AS '관세'
+						,a.Impo_vat_tax AS '부가세'
+						,(a.Impo_total_tax-(a.Impo_gwan_tax+a.Impo_vat_tax)) AS '기타세'
+						,a.Impo_total_tax AS '총세액'
+						,CASE WHEN ISNULL(b.ADJ_CD,'') = 'C005' THEN b.sup_ek ELSE 0 END AS 'C005' /* 알콘  */
+						,CASE WHEN ISNULL(b.ADJ_CD,'') = 'C006' THEN b.sup_ek ELSE 0 END AS 'C006' /* 알콘  */
+						,CASE WHEN ISNULL(b.ADJ_CD,'') = 'C010' THEN b.sup_ek ELSE 0 END AS 'C010' /* 토즈  */
+						,CASE WHEN ISNULL(b.ADJ_CD,'') = 'C013' THEN b.sup_ek ELSE 0 END AS 'C013' /* 알콘,토즈,세브  */
+						,CASE WHEN ISNULL(b.ADJ_CD,'') = 'C014' THEN b.sup_ek ELSE 0 END AS 'C014' /* 알콘,토즈,세브  */
+						,CASE WHEN ISNULL(b.ADJ_CD,'') = 'C018' THEN b.sup_ek ELSE 0 END AS 'C018' /* 알콘,토즈,세브  */
+						,CASE WHEN ISNULL(b.ADJ_CD,'') = 'C019' THEN b.sup_ek ELSE 0 END AS 'C019' /* 알콘,세브  */
+						,CASE WHEN ISNULL(b.ADJ_CD,'') = 'C023' THEN b.sup_ek ELSE 0 END AS 'C023' /* 알콘,세브  */
+						,CASE WHEN ISNULL(b.ADJ_CD,'') = 'C026' THEN b.sup_ek ELSE 0 END AS 'C026' /* 알콘,토즈,세브  */
+						,CASE WHEN ISNULL(b.ADJ_CD,'') = 'C043' THEN b.sup_ek ELSE 0 END AS 'C043' /* 알콘,토즈,세브 */
+						,CASE WHEN ISNULL(b.ADJ_CD,'') = 'C060' THEN b.sup_ek ELSE 0 END AS 'C060' /* 알콘,토즈,세브  */
+						,CASE WHEN ISNULL(b.ADJ_CD,'') = 'C079' THEN b.sup_ek ELSE 0 END AS 'C079' /* 알콘,토즈,세브  */
+						,CASE WHEN ISNULL(b.ADJ_CD,'') = 'C080' THEN b.sup_ek ELSE 0 END AS 'C080' /* 알콘,세브  */
+						,CASE WHEN ISNULL(b.ADJ_CD,'') = 'C084' THEN b.sup_ek ELSE 0 END AS 'C084' /* 알콘,토즈,세브  */
+						,CASE WHEN ISNULL(b.ADJ_CD,'') = 'C086' THEN b.sup_ek ELSE 0 END AS 'C086' /* 알콘,토즈,세브  */
+						,CASE WHEN ISNULL(b.ADJ_CD,'') = 'C090' THEN b.sup_ek ELSE 0 END AS 'C090' /* 알콘,토즈,세브  */
+						,CASE WHEN ISNULL(b.ADJ_CD,'') = 'C094' THEN b.sup_ek ELSE 0 END AS 'C094' /* 알콘,토즈,세브  */
+						,CASE WHEN ISNULL(b.ADJ_CD,'') = 'C097' THEN b.sup_ek ELSE 0 END AS 'C097' /* 알콘,토즈,세브  */
+						,CASE WHEN ISNULL(b.ADJ_CD,'') = 'C107' THEN b.sup_ek ELSE 0 END AS 'C107' /* 알콘,토즈,세브  */
+						,CASE WHEN ISNULL(b.ADJ_CD,'') = 'C108' THEN b.sup_ek ELSE 0 END AS 'C108' /* 알콘,토즈,세브  */
+						,CASE WHEN ISNULL(b.ADJ_CD,'') = 'C110' THEN b.sup_ek ELSE 0 END AS 'C110' /* 알콘,토즈,세브  */
+						,CASE WHEN ISNULL(b.ADJ_CD,'') = 'C117' THEN b.sup_ek ELSE 0 END AS 'C117' /* 알콘,토즈,세브  */
+						,CASE WHEN ISNULL(b.ADJ_CD,'') = 'C120' THEN b.sup_ek ELSE 0 END AS 'C120' /* 알콘  */
+						,CASE WHEN ISNULL(b.ADJ_CD,'') = 'C124' THEN b.sup_ek ELSE 0 END AS 'C124' /* 알콘,토즈,세브  */
+						,CASE WHEN ISNULL(b.ADJ_CD,'') = 'C125' THEN b.sup_ek ELSE 0 END AS 'C125' /* 알콘,토즈,세브  */
+						,CASE WHEN ISNULL(b.ADJ_CD,'') = 'C142' THEN b.sup_ek ELSE 0 END AS 'C142' /* 토즈  */
+						,CASE WHEN ISNULL(b.ADJ_CD,'') = 'C150' THEN b.sup_ek ELSE 0 END AS 'C150' /* 토즈  */
+						,CASE WHEN ISNULL(b.ADJ_CD,'') = 'C152' THEN b.sup_ek ELSE 0 END AS 'C152' /* 토즈  */
+						,CASE WHEN ISNULL(b.ADJ_CD,'') = 'C153' THEN b.sup_ek ELSE 0 END AS 'C153' /* 토즈  */
+						,SUM(ISNULL(b.sup_ek,0)) AS '합계금액'
+						,a.impo_jingsu_type AS '징수형태'
+				FROM ${_defaultDB}.[kcba].[impo1] a WITH (NOLOCK) LEFT OUTER JOIN ${_defaultDB}.[kcba].[impo1_mDtl] b WITH (NOLOCK)
+				  ON a.Impo_key = b.Impo_key
+					<if test='strAccDt != "" and strAccDt != null'>AND b.acc_dt = #{strAccDt}</if>
+				<where>
+				<if test='taxNum != null and taxNum != ""'>
+	              <choose>
+	                <when test='taxNum == "all"'>AND a.Impo_napse_saup IN (select userSaup from soo.dbo.CPS_SaveCustomer where userKey = #{ID} and useYn = 'Y')</when>
+	                <otherwise>AND a.Impo_napse_saup = #{taxNum}</otherwise>
+	              </choose>
+			    </if>
+				<if test='strEntity != "" and strEntity != null'>
+					AND EXISTS ( SELECT * FROM ${_defaultDB}.[kcba].[Impo3] dd WITH (NOLOCK) WHERE a.Impo_key = dd.Impum_Key AND dd.Impum_jajae_code LIKE #{strEntity} + '%' )
+				</if>
+				<if test='strEntityList != "" and strEntityList != null'>
+					AND EXISTS ( SELECT * FROM ${_defaultDB}.[kcba].[Impo3] ddd WITH (NOLOCK) WHERE a.Impo_key = ddd.Impum_Key AND ddd.Impum_jajae_code IN ${strEntityList} )
+				</if>
+				<if test='strVendor != "" and strVendor != null'>AND a.Impo_Gonggub_Sangho LIKE '%' + #{strVendor} + '%'</if>
+				<if test='strDateType != "ALL" and strDateType != null and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+		             <choose>
+		                <when test='strDateType == "strIphang"'>AND a.Impo_iphang_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+		                <when test='strDateType == "strBanip"'>AND a.Impo_banip_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+		                <when test='strDateType == "strSingo"'>AND a.Impo_singo_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+		                <when test='strDateType == "strOk"'>AND a.Impo_ok_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+		              </choose>
+		        </if>
+		        <if test='strSingoDelay != "ALL" and strSingoDelay != null'>
+		             <choose>
+		                <when test='strSingoDelay == "SINGO"'>AND ISNULL(a.Impo_Jubsu_Date,'') != ''</when>
+		                <when test='strSingoDelay == "MISINGO"'>AND ISNULL(a.Impo_Jubsu_Date,'') = ''</when>
+		              </choose>
+		        </if>
+		        <if test='strSegwanDelay != "ALL" and strSegwanDelay != null'>
+		             <choose>
+		                <when test='strSegwanDelay == "SIMSA"'>
+		                    AND ISNULL(a.Impo_Jubsu_Date,'') != ''
+		                    AND ISNULL(a.Impo_ok_date,'') != ''
+		                </when>
+		                <when test='strSegwanDelay == "MISIMSA"'>
+		                    AND ISNULL(a.Impo_Jubsu_Date,'') != ''
+		                    AND ISNULL(a.Impo_ok_date,'') = ''
+		                </when>
+		              </choose>
+		        </if>
+				<if test='strSingoNo != "" and strSingoNo != null'>AND a.impo_singo_no LIKE '%' + #{strSingoNo} + '%'</if>
+				<if test='strBlNo != "" and strBlNo != null'>AND a.impo_bl_no LIKE #{strBlNo} + '%'</if>
+				<if test='strInvoiceNo != "" and strInvoiceNo != null'>
+					AND EXISTS ( SELECT * FROM ${_defaultDB}.[kcba].[impo3] a1 WITH (NOLOCK) WHERE a.Impo_key = a1.Impum_key AND a1.Impum_ivno = #{strInvoiceNo})
+				</if>
+				<if test='strInvNo != "" and strInvNo != null'>
+					AND EXISTS ( SELECT * FROM ${_defaultDB}.[kcba].[impo3] a1 WITH (NOLOCK) WHERE a.Impo_key = a1.Impum_key AND a1.Impum_sungbun3 = #{strInvNo})
+				</if>
+				<if test='strAccNm != "" and strAccNm != null'>AND b.acc_Nm LIKE #{strAccNm} + '%'</if>
+				<if test='strAccDt != "" and strAccDt != null'>
+					AND a.Impo_key IN (SELECT Impo_key FROM ${_defaultDB}.[kcba].[impo1_mDtl] WITH (NOLOCK) WHERE acc_dt = #{strAccDt})
+				</if>
+				<if test='strDateType != "ALL" and strDateType != null and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+					<choose>
+						<when test='strDateType == "strImpumInvoice"'>
+							AND a.Impo_key IN (SELECT Impo_key
+												FROM ${_defaultDB}.[kcba].[impo1_mDtl] WITH (NOLOCK)
+												WHERE impum_contactno BETWEEN #{strFromDate} AND #{strToDate}
+											  )
+						</when>
+					</choose>
+				</if>
+				<if test='strYogunNum != "" and strYogunNum != null'>
+					AND EXISTS ( SELECT *
+								FROM ${_defaultDB}.[kcba].[impo41] h WITH (NOLOCK)
+		     					WHERE h.SUIPYOGUN_KEY = a.Impo_key
+		     					AND h.SUIPYOGUN_NO = #{strYogunNum} )
+		        </if>
+		        <if test='strForwarder != "" and strForwarder != null'>
+					AND a.Impo_DaeSaupNo = #{strForwarder}
+				</if>
+				<if test='Impokey != null and Impokey != ""'>AND a.Impo_Key = #{Impokey}</if>
+		        </where>
+				GROUP BY  a.Impo_key
+						 ,a.Impo_Gonggub_Sangho
+						 ,SUBSTRING(a.impo_singo_no, 1,5) +'-'+ SUBSTRING(a.impo_singo_no, 6,2) +'-'+ SUBSTRING(a.impo_singo_no, 8,7)
+						 ,a.impo_singo_no
+						 ,a.impo_bl_no
+						 ,a.impo_mbl_no
+						 ,CASE WHEN ISNULL(a.impo_singo_date,'') = ''  THEN '' ELSE CONVERT(VARCHAR(10),CONVERT(DATETIME, a.impo_singo_date),120) END
+						 ,CASE WHEN ISNULL(a.Impo_iphang_date,'') = '' THEN '' ELSE CONVERT(VARCHAR(10),CONVERT(DATETIME, a.Impo_iphang_date),120) END
+						 ,CASE WHEN ISNULL(a.Impo_banip_date,'') = ''  THEN '' ELSE CONVERT(VARCHAR(10),CONVERT(DATETIME, a.Impo_banip_date),120) END
+						 ,a.Impo_gyelje_input
+						 ,a.Impo_gyelje_money
+						 ,a.Impo_exch_yul
+						 ,a.Impo_fre_won
+						 ,a.Impo_cif_total_won
+						 ,a.Impo_gwan_tax
+						 ,a.Impo_vat_tax
+						 ,(a.Impo_total_tax-(a.Impo_gwan_tax+a.Impo_vat_tax))
+						 ,a.Impo_total_tax
+						 ,ISNULL(b.ADJ_CD,'')
+						 ,b.sup_ek
+						 ,a.impo_jingsu_type
+				) a
+		GROUP BY a.수입키
+				,a.무역거래처
+				,a.수입신고번호규격
+				,a.수입신고번호
+				,a.BL번호
+				,a.MBL번호
+				,a.수리일
+				,a.입항일
+				,a.반입일
+				,a.신고일
+				,a.[hidden Invoice Amount]
+				,a.[Invoice Amount]
+				,a.결제통화
+				,a.결제환율
+				,a.과세운임
+				,a.과세가격
+				,a.관세
+				,a.부가세
+				,a.기타세
+				,a.총세액
+				,a.징수형태
+		ORDER BY a.수입키
+	</select>
+
+	<select id="selectImpoCostSubMasterList" resultType="map">
+		/* 비용관리 마스터안분 조회(계정별) */
+		SELECT	 a.KEY_impo1_mDtl AS 'mDtlKey'
+				,a.ADJ_CD AS '계정코드'
+				,a.ADJ_NM AS '계정명'
+				,a.sum_ek AS '합계금액'
+				,a.Acc_NM AS '청구처'
+				,SUBSTRING(a.Acc_DT, 1,4) +'-'+ SUBSTRING(a.Acc_DT, 5,2) AS '청구월'
+				,a.SUP_EK AS '공급가'
+				,a.TAX_EK AS '부가세'
+				,a.confYn
+		FROM ${_defaultDB}.[kcba].[impo1_mDtl] a WITH (NOLOCK)
+		WHERE a.Impo_key = #{strImpoKey}
+		<if test='strEntityList != "" and strEntityList != null'>
+			AND a.acc_nm = #{strAccNm}
+		</if>
+		<if test='strAccDt != "" and strAccDt != null'>
+			AND a.acc_dt = #{strAccDt}
+		</if>
+		ORDER BY a.ADJ_CD
+	</select>
+
+	<select id="selectImpoCostSubMasterByCustomsList" resultType="map">
+		/* 비용관리 마스터안분 조회(청구처별) */
+		SELECT	 a.Acc_NM AS '청구처'
+				,SUM(a.sum_ek) AS '합계금액'
+				,SUBSTRING(a.Acc_DT, 1,4) + '-' + SUBSTRING(a.Acc_DT, 5,2) AS '청구월'
+				,SUM(a.SUP_EK) AS '공급가'
+				,SUM(a.TAX_EK) AS '부가세'
+		FROM ${_defaultDB}.[kcba].[impo1_mDtl] a WITH (NOLOCK)
+		WHERE a.Impo_key = #{strImpoKey}
+		<if test='strAccDt != "" and strAccDt != null'>
+			AND a.acc_dt = #{strAccDt}
+		</if>
+		GROUP BY a.Acc_NM, a.Acc_DT
+		ORDER BY a.Acc_NM
+	</select>
+
+	<select id="selectTodsImpoCostDetailList" resultType="map">
+		/* 토즈 비용관리 impo3 인보이스 번호별 세목별 비용 조회 */
+		select kk.Impum_ivno
+		      ,SUM(kk.Impum_su) AS 'Impum_su'
+		      ,SUM(kk.Impum_danga) AS 'Impum_danga'
+		      ,SUM(kk.Impum_amt) AS 'Impum_amt'
+		      ,SUM(kk.C018) AS 'C018'
+		      ,SUM(kk.C026) AS 'C026'
+		from (
+			select k.Impum_ivno
+				  ,k.Impum_lan
+				  ,k.Impum_heang
+				  ,k.Impum_su
+				  ,k.Impum_danga
+				  ,k.Impum_amt
+				  ,SUM(k.C018) AS 'C018'
+				  ,SUM(k.C026) AS 'C026'
+			from (
+			 	SELECT a.Impum_ivno
+			 		  ,a.Impum_lan
+			 		  ,a.Impum_heang
+			 		  ,SUM(a.Impum_su) AS 'Impum_su'
+			 		  ,SUM(a.Impum_danga) AS 'Impum_danga'
+			 		  ,SUM(a.Impum_amt) AS 'Impum_amt'
+			 		  ,CASE WHEN ISNULL(b.ADJ_CD,'') = 'C018' THEN b.sum_ek ELSE 0 END AS 'C018'
+			 		  ,CASE WHEN ISNULL(b.ADJ_CD,'') = 'C026' THEN b.sum_ek ELSE 0 END AS 'C026'
+				FROM ${_defaultDB}.[kcba].[Impo3] a WITH (NOLOCK) LEFT OUTER JOIN ${_defaultDB}.[kcba].[impo3_mDtl] b WITH (NOLOCK)
+				  ON a.Impum_key = b.Impum_key
+				 AND a.Impum_lan = b.Impum_lan
+				 AND a.Impum_heang = b.Impum_heang
+				WHERE a.Impum_key = #{impumKey}
+				GROUP BY a.Impum_ivno
+				        ,a.Impum_lan
+				        ,a.Impum_heang
+				        ,ISNULL(b.ADJ_CD,'')
+				        ,b.sum_ek
+			 ) k
+			 GROUP BY k.Impum_ivno
+			         ,k.Impum_lan
+			         ,k.Impum_heang
+			         ,k.Impum_su
+			         ,k.Impum_danga
+			         ,k.Impum_amt
+		) kk
+		GROUP BY kk.Impum_ivno
+	</select>
+
+	<select id="selectTodsImpoCostSubDetailList" resultType="map">
+		/* 토즈 비용관리 impo3 인보이스 번호별 세목별 비용 상세 조회 */
+		SELECT a.Impum_lan
+		      ,a.Impum_heang
+		      ,a.Impum_ivno
+		      ,a.Impum_jajae_code
+		      ,ISNULL(b.cifwon,0) AS 'cifwon'
+		      ,ISNULL(b.fre,0) AS 'fre'
+		      ,ISNULL(b.ins,0) AS 'ins'
+		      ,ISNULL(b.plus,0) AS 'plus'
+		      ,ISNULL(b.duty,0) AS 'duty'
+		      ,ISNULL(b.tk,0) AS 'tk'
+		      ,ISNULL(b.kt,0) AS 'kt'
+		      ,ISNULL(b.ju,0) AS 'ju'
+		      ,ISNULL(b.edu,0) AS 'edu'
+		      ,ISNULL(b.nong,0) AS 'nong'
+		      ,ISNULL(b.vat,0) AS 'vat'
+		      ,ISNULL(b.tax,0) AS 'tax'
+		      ,ISNULL(b.vat_g,0) AS 'vat_g'
+		      ,ISNULL(b.gasan,0) AS 'gasan'
+		      ,ISNULL(b.misingo,0) AS 'misingo'
+		      ,a.Impum_su
+		      ,a.Impum_danga
+		      ,a.Impum_amt
+		FROM ${_defaultDB}.[kcba].[Impo3] a WITH (NOLOCK) LEFT OUTER JOIN ${_defaultDB}.[kcba].[Impo3_M] b WITH (NOLOCK)
+		  ON a.Impum_key = b.Impum_key
+		 AND a.Impum_lan = b.Impum_lan
+		 AND a.Impum_heang = b.Impum_heang
+	   WHERE a.Impum_key = #{impumKey}
+		 AND a.Impum_ivno = #{impumIvno}
+	</select>
+
+	<select id="selectDolceExcelList" resultType="map">
+		/* 돌체 엑셀다운로드 */
+		select
+			'Merchandise' as 'default',
+			p.impo_bl_no,
+			p.Impo_file_no1,
+			p.impum_ivno,
+			p.impum_contactno,
+			p.impum_chamjo_no,
+			replace(p.impum_jajae_code, ' ','') as 'impum_jajae_code',
+			case when len(replace(p.impum_jajae_code, ' ','')) > 15 then
+			left(replace(p.impum_jajae_code, ' ',''), 11) else '' end as 'Article',
+			case when len(replace(p.impum_jajae_code, ' ','')) > 15 then
+			left(p.impum_jajae_code, 6) else '' end as 'ART',
+			case when len(replace(p.impum_jajae_code, ' ','')) > 15 then
+			substring(p.impum_jajae_code,8,5) else '' end as 'MAT',
+			case when len(replace(p.impum_jajae_code, ' ','')) > 15 then
+			substring(p.impum_jajae_code,14,5) else '' end as 'COL',
+			p.imlan_hs,
+			p.impum_su,
+			p.impum_danga,
+			p.impum_amt,
+			p.Impo_gyelje_money,
+			p.Impo_exch_yul,
+			p.cifwon,
+			p.duty,
+			p.taxall,
+			p.sein,
+			p.tnl,
+			p.handing,
+			p.ttl as 'total'
+			from
+			(
+			select
+			z.impo_key,
+			z.impo_bl_no,
+			z.Impo_file_no1,
+			z.impum_ivno,
+			z.impum_contactno,
+			z.impum_chamjo_no,
+			z.impum_jajae_code,
+			z.imlan_hs,
+			ISNULL(SUM(z.impum_su),0) AS 'impum_su',
+			z.impum_danga,
+			ISNULL(SUM(z.impum_amt),0) AS 'impum_amt',
+			z.Impo_gyelje_money,
+			z.Impo_exch_yul,
+			ISNULL(SUM(z.cifwon),0) AS 'cifwon',
+			ISNULL(SUM(z.duty),0) AS 'duty',
+			ISNULL(SUM(z.tk),0) AS 'tk',
+			ISNULL(SUM(z.kt),0) AS 'kt',
+			ISNULL(SUM(z.ju),0) AS 'ju',
+			ISNULL(SUM(z.edu),0) AS 'edu',
+			ISNULL(SUM(z.tax),0) AS 'tax',
+			ISNULL(SUM(z.sein),0) AS 'sein',
+			ISNULL(SUM(z.tnl),0) AS 'tnl',
+			ISNULL(SUM(z.handing),0) AS 'handing',
+			ISNULL(SUM(z.total),0) AS 'total',
+			ISNULL(SUM(z.tk),0)+ISNULL(SUM(z.kt),0)+ISNULL(SUM(z.ju),0)+ISNULL(SUM(z.edu),0) as 'taxall',
+			ISNULL(SUM(z.cifwon),0)+ISNULL(SUM(z.duty),0)+ISNULL(SUM(z.tk),0)+ISNULL(SUM(z.kt),0)+ISNULL(SUM(z.ju),0)+ISNULL(SUM(z.edu),0)+ISNULL(SUM(z.total),0) as 'ttl'
+			from
+			(select k.*,
+				(select SUM(ISNULL(SUP_EK,0)) from ncustoms.[kcba].[impo3_mDtl] where Impum_key = k.impo_key  AND Impum_lan = k.Imlan_jechl_lan AND Impum_heang = k.Impum_heang and ADJ_GR_CD='1') as 'sein',
+				(select SUM(ISNULL(SUP_EK,0)) from ncustoms.[kcba].[impo3_mDtl] where Impum_key = k.impo_key  AND Impum_lan = k.Imlan_jechl_lan AND Impum_heang = k.Impum_heang and ADJ_GR_CD='4') as 'tnl',
+				(select SUM(ISNULL(SUP_EK,0)) from ncustoms.[kcba].[impo3_mDtl] where Impum_key = k.impo_key  AND Impum_lan = k.Imlan_jechl_lan AND Impum_heang = k.Impum_heang and ADJ_GR_CD='2') as 'handing',
+				(select SUM(ISNULL(SUP_EK,0)) from ncustoms.[kcba].[impo3_mDtl] where Impum_key = k.impo_key  AND Impum_lan = k.Imlan_jechl_lan AND Impum_heang = k.Impum_heang) as 'total'
+			from
+			(
+select
+			a.impo_key,
+			b.Imlan_jechl_lan,
+			c.Impum_heang,
+			a.impo_bl_no,
+			a.Impo_file_no1,
+			c.impum_ivno,
+			c.impum_contactno,
+			c.impum_chamjo_no,
+			c.impum_jajae_code,
+			b.imlan_hs,
+			c.impum_su,
+			c.impum_danga,
+			c.impum_amt,
+			a.Impo_gyelje_money,
+			a.Impo_exch_yul,
+			d.cifwon,
+			d.duty,
+			d.tk,
+			d.kt,
+			d.ju,
+			d.edu,
+			d.tax
+			from ncustoms.[kcba].[Impo1] a, ncustoms.[kcba].[Impo2] b,
+			ncustoms.[kcba].[Impo3] c, ncustoms.[kcba].[Impo3_m] d
+			where a.impo_napse_saup='5848601248'
+			<if test='strDateType != "ALL" and strDateType != null and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+	             <choose>
+	                <when test='strDateType == "srtIphang"'>AND a.Impo_iphang_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+	                <when test='strDateType == "strBanip"'>AND a.Impo_banip_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+	                <when test='strDateType == "strSingo"'>AND a.Impo_singo_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+	                <when test='strDateType == "strOk"'>AND a.Impo_ok_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+	              </choose>
+	        </if>
+			<if test='strBlNo != "" and strBlNo != null'>
+				and a.Impo_bl_no LIKE '%' + #{strBlNo} + '%'
+			</if>
+			<if test='strVendor != "" and strVendor != null'>
+				and a.Impo_Gonggub_Sangho LIKE '%' + #{strVendor} + '%'
+			</if>
+			<if test='strInvNo != "" and strInvNo != null'>
+				and c.impum_ivno LIKE '%' + #{strInvNo} + '%'
+			</if>
+			and a.impo_key = b.imlan_key
+			and a.impo_key = c.impum_key
+			and b.Imlan_jechl_lan = c.impum_lan
+			and a.impo_key = d.impum_key
+			and b.Imlan_jechl_lan = d.impum_lan
+			and c.Impum_heang = d.Impum_heang
+			) k
+			 ) z
+			group by z.impo_key,
+			z.impo_bl_no,
+			z.Impo_file_no1,
+			z.impum_ivno,
+			z.impum_contactno,
+			z.impum_chamjo_no,
+			z.impum_jajae_code,
+			z.imlan_hs,
+			z.impum_danga,
+			z.Impo_gyelje_money,
+			z.Impo_exch_yul) p LEFT OUTER JOIN ncustoms.[kcba].[impo1_mDtl] q WITH (NOLOCK)
+			ON p.impo_key = q.Impo_key
+			<if test='strAccDt != "" and strAccDt != null'>where  p.impo_key IN (SELECT Impo_key FROM ncustoms.[kcba].[impo1_mDtl] WITH (NOLOCK) WHERE acc_dt = #{strAccDt})</if>
+			group by p.impo_key,
+			p.impo_bl_no,
+			p.Impo_file_no1,
+			p.impum_ivno,
+			p.impum_contactno,
+			p.impum_chamjo_no,
+			p.impum_jajae_code,
+			p.imlan_hs,
+			p.impum_su,
+			p.impum_danga,
+			p.impum_amt,
+			p.Impo_gyelje_money,
+			p.Impo_exch_yul,
+			p.cifwon,
+			p.duty,
+			p.tk,
+			p.kt,
+			p.ju,
+			p.edu,
+			p.tax,
+			p.sein,
+			p.tnl,
+			p.handing,
+			p.total,
+			p.taxall,
+			p.ttl
+			order by p.impo_bl_no, p.impum_ivno, p.impum_jajae_code
+	</select>
+
+	<select id="selectDolceExcelList1" resultType="map">
+		/* 돌체 엑셀다운로드 IC_Summary */
+		select p.*, p.default1 as 'default' from
+		(select
+			'Merchandise' as 'default1'
+			,k.Impum_key
+			,e.Impo_bl_no
+			,e.Impo_file_no1
+			,k.Impum_ivno
+			,k.impum_contactno
+			,k.impum_chamjo_no
+			,ISNULL(SUM(k.Impum_su),0) AS 'Impum_su'
+			,ISNULL(SUM(k.Impum_danga),0) AS 'Impum_danga'
+			,ISNULL(SUM(k.Impum_amt),0) AS 'Impum_amt'
+			,e.Impo_gyelje_money
+			,e.Impo_exch_yul
+			,ISNULL(SUM(k.cifwon),0) AS 'cifwon'
+			,ISNULL(SUM(k.duty),0) AS 'duty'
+			,ISNULL(SUM(k.tnl),0) AS 'tnl'
+			,ISNULL(SUM(k.sein),0) AS 'sein'
+			,ISNULL(SUM(k.handing),0) AS 'handing'
+			,ISNULL(SUM(k.other),0) AS 'other'
+			,ISNULL(SUM(k.cifwon)+SUM(k.duty)+SUM(k.other)+SUM(k.total),0) AS 'total'
+			,case when LAG(k.Impum_key, 1, NULL) OVER (PARTITION BY k.Impum_key ORDER BY k.Impum_key, k.Impum_ivno) is null then e.Impo_gwan_tax
+			else '0' end as 'gwanTotal'
+			,case when LAG(k.Impum_key, 1, NULL) OVER (PARTITION BY k.Impum_key ORDER BY k.Impum_key, k.Impum_ivno) is null then (select ISNULL(sum(SUP_EK),0) from ncustoms.[kcba].[impo1_mDtl] where impo_key= k.Impum_key and acc_nm='세인티앤엘')
+			else '0' end as 'tnlTotal'
+			,case when LAG(k.Impum_key, 1, NULL) OVER (PARTITION BY k.Impum_key ORDER BY k.Impum_key, k.Impum_ivno) is null then (select ISNULL(sum(SUP_EK),0) from ncustoms.[kcba].[impo1_mDtl] where impo_key= k.Impum_key and acc_nm='세인관세법인')
+			else '0' end as 'seinTotal'
+			,case when LAG(k.Impum_key, 1, NULL) OVER (PARTITION BY k.Impum_key ORDER BY k.Impum_key, k.Impum_ivno) is null then (select ISNULL(sum(SUP_EK),0) from ncustoms.[kcba].[impo1_mDtl] where impo_key= k.Impum_key and acc_nm='케리항운')
+			else '0' end as 'handingTotal'
+			,case when LAG(k.Impum_key, 1, NULL) OVER (PARTITION BY k.Impum_key ORDER BY k.Impum_key, k.Impum_ivno) is null then (e.Impo_total_tax-(e.Impo_gwan_tax+e.Impo_vat_tax))
+			else '0' end as 'otherTotal'
+			from
+			ncustoms.[kcba].[Impo1] e,
+			(select c.*,
+				(select SUM(ISNULL(SUP_EK,0)) from ncustoms.[kcba].[impo3_mDtl] where Impum_key = c.Impum_key  AND Impum_lan = c.Impum_lan AND Impum_heang = c.Impum_heang and ADJ_GR_CD='1') as 'sein',
+				(select SUM(ISNULL(SUP_EK,0)) from ncustoms.[kcba].[impo3_mDtl] where Impum_key = c.Impum_key  AND Impum_lan = c.Impum_lan AND Impum_heang = c.Impum_heang and ADJ_GR_CD='4') as 'tnl',
+				(select SUM(ISNULL(SUP_EK,0)) from ncustoms.[kcba].[impo3_mDtl] where Impum_key = c.Impum_key  AND Impum_lan = c.Impum_lan AND Impum_heang = c.Impum_heang and ADJ_GR_CD='2') as 'handing',
+				(select SUM(ISNULL(SUP_EK,0)) from ncustoms.[kcba].[impo3_mDtl] where Impum_key = c.Impum_key  AND Impum_lan = c.Impum_lan AND Impum_heang = c.Impum_heang) as 'total'
+			from
+			(SELECT
+						a.Impum_key
+						,a.Impum_lan
+					      ,a.Impum_heang
+					      ,a.Impum_ivno
+						  ,a.impum_contactno
+						  ,a.impum_chamjo_no
+						  ,a.Impum_su
+					      ,a.Impum_danga
+					      ,a.Impum_amt
+						  ,ISNULL(b.duty,0) AS 'duty'
+						  ,ISNULL(b.tax-b.duty-b.vat,0) AS 'other'
+						  ,ISNULL(b.cifwon,0) AS 'cifwon'
+					FROM ncustoms.[kcba].[Impo3] a WITH (NOLOCK) LEFT OUTER JOIN ncustoms.[kcba].[Impo3_M] b WITH (NOLOCK)
+					  ON a.Impum_key = b.Impum_key
+					 AND a.Impum_lan = b.Impum_lan
+					 AND a.Impum_heang = b.Impum_heang) c ) k
+				   where e.impo_key = k.Impum_key
+				   and e.impo_napse_saup='5848601248'
+				   <if test='strDateType != "ALL" and strDateType != null and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+			             <choose>
+			                <when test='strDateType == "srtIphang"'>AND e.Impo_iphang_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+			                <when test='strDateType == "strBanip"'>AND e.Impo_banip_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+			                <when test='strDateType == "strSingo"'>AND e.Impo_singo_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+			                <when test='strDateType == "strOk"'>AND e.Impo_ok_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+			              </choose>
+			        </if>
+					<if test='strBlNo != "" and strBlNo != null'>
+						and e.Impo_bl_no LIKE '%' + #{strBlNo} + '%'
+					</if>
+					<if test='strVendor != "" and strVendor != null'>
+						and e.Impo_Gonggub_Sangho LIKE '%' + #{strVendor} + '%'
+					</if>
+					<if test='strInvNo != "" and strInvNo != null'>
+						and k.impum_ivno LIKE '%' + #{strInvNo} + '%'
+					</if>
+				   group by  k.Impum_key
+				   ,k.Impum_ivno
+							,k.impum_contactno
+							,k.impum_chamjo_no
+							,e.Impo_bl_no
+							,e.Impo_file_no1
+			,e.Impo_gyelje_money
+			,e.Impo_exch_yul
+			,e.Impo_gwan_tax
+			,e.Impo_total_tax
+			,e.Impo_vat_tax
+			) p LEFT OUTER JOIN ncustoms.[kcba].[impo1_mDtl] q WITH (NOLOCK)
+			ON p.Impum_key = q.Impo_key
+			<if test='strAccDt != "" and strAccDt != null'>where  p.Impum_key IN (SELECT Impo_key FROM ncustoms.[kcba].[impo1_mDtl] WITH (NOLOCK) WHERE acc_dt = #{strAccDt})</if>
+			group by p.default1
+			,p.Impum_key
+			,p.Impum_ivno
+			,p.impum_contactno
+			,p.impum_chamjo_no
+			,p.Impo_bl_no
+			,p.Impo_file_no1
+			,p.Impo_gyelje_money
+			,p.Impo_exch_yul
+			,p.Impum_su
+			,p.Impum_danga
+			,p.Impum_amt
+			,p.cifwon
+			,p.duty
+			,p.tnl
+			,p.sein
+			,p.handing
+			,p.other
+			,p.total
+			,p.gwanTotal
+			,p.tnlTotal
+			,p.seinTotal
+			,p.handingTotal
+			,p.otherTotal
+			order by p.Impum_key, p.Impum_ivno
+	</select>
+
+
+
+
+
+
+
+
+
+
+
+
+	<select id="selectImpoCostDetailList" resultType="map">
+		/* 비용관리 디테일 조회 */
+		select a.Impum_key, a.Impum_lan, a.Impum_heang,
+				a.란번호,
+				a.행번호,
+				a.자재코드,
+				a.규격,
+				a.Impum_sungbun3,
+				a.수량,
+				a.단가,
+				a.금액,
+				a.Impum_su_danwi,
+				SUM(a.C090) AS 'C090',
+				SUM(a.C108) AS 'C108',
+				SUM(a.C117) AS 'C117',
+				SUM(a.C125) AS 'C125',
+				SUM(a.C086) AS 'C086',
+				SUM(a.C107) AS 'C107',
+				SUM(a.C097) AS 'C097',
+				SUM(a.C018) AS 'C018',
+				SUM(a.C026) AS 'C026',
+				SUM(a.C043) AS 'C043',
+				SUM(a.C014) AS 'C014',
+				SUM(a.C084) AS 'C084',
+				SUM(a.C124) AS 'C124',
+				SUM(a.C094) AS 'C094',
+				SUM(a.C079) AS 'C079',
+				SUM(a.C110) AS 'C110',
+				SUM(a.C060) AS 'C060',
+				SUM(a.C013) AS 'C013',
+				SUM(a.C080) AS 'C080',
+				SUM(a.합계금액) AS '합계금액'
+		FROM	(
+					SELECT a.Impum_key, a.Impum_lan, a.Impum_heang,
+							a.Impum_lan AS '란번호',
+							a.Impum_heang AS '행번호',
+							a.Impum_jajae_code AS '자재코드',
+							a.Impum_gukyk1 + ' ' + a.Impum_gukyk2 + ' ' + a.Impum_gukyk3 AS '규격',
+							a.Impum_sungbun3,
+							a.Impum_su AS '수량',
+							a.Impum_danga AS '단가',
+							a.Impum_Amt AS '금액',
+							a.Impum_su_danwi,
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C090' THEN b.sup_ek ELSE 0 END AS 'C090',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C108' THEN b.sup_ek ELSE 0 END AS 'C108',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C117' THEN b.sup_ek ELSE 0 END AS 'C117',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C125' THEN b.sup_ek ELSE 0 END AS 'C125',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C086' THEN b.sup_ek ELSE 0 END AS 'C086',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C107' THEN b.sup_ek ELSE 0 END AS 'C107',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C097' THEN b.sup_ek ELSE 0 END AS 'C097',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C018' THEN b.sup_ek ELSE 0 END AS 'C018',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C026' THEN b.sup_ek ELSE 0 END AS 'C026',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C043' THEN b.sup_ek ELSE 0 END AS 'C043',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C014' THEN b.sup_ek ELSE 0 END AS 'C014',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C084' THEN b.sup_ek ELSE 0 END AS 'C084',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C124' THEN b.sup_ek ELSE 0 END AS 'C124',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C094' THEN b.sup_ek ELSE 0 END AS 'C094',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C079' THEN b.sup_ek ELSE 0 END AS 'C079',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C110' THEN b.sup_ek ELSE 0 END AS 'C110',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C060' THEN b.sup_ek ELSE 0 END AS 'C060',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C013' THEN b.sup_ek ELSE 0 END AS 'C013',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C080' THEN b.sup_ek ELSE 0 END AS 'C080',
+							SUM(ISNULL(b.sup_ek,0)) AS '합계금액'
+					FROM [ncustoms].[kcba].[Impo3] a WITH (NOLOCK)
+							LEFT OUTER JOIN [ncustoms].[kcba].[impo3_mdtl] b WITH (NOLOCK)
+							ON a.Impum_key=b.Impum_key
+							AND a.Impum_lan=b.Impum_lan
+							AND a.Impum_heang=b.Impum_heang
+					WHERE a.Impum_key = #{strImpumKey}
+					GROUP BY a.Impum_key, a.Impum_lan, a.Impum_heang,
+							a.Impum_jajae_code,
+							a.Impum_gukyk1 + ' ' + a.Impum_gukyk2 + ' ' + a.Impum_gukyk3,
+							a.Impum_sungbun3,
+							a.Impum_su,
+							a.Impum_danga,
+							a.Impum_Amt,
+							a.Impum_su_danwi,
+							ISNULL(b.ADJ_CD,''),
+							b.sup_ek
+					) a
+		GROUP BY 	a.Impum_key, a.Impum_lan, a.Impum_heang,
+					a.란번호,
+					a.행번호,
+					a.자재코드,
+					a.규격,
+					a.Impum_sungbun3,
+					a.수량,
+					a.단가,
+					a.금액,
+					a.Impum_su_danwi
+	</select>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	<select id="selectImpoCostSubDetailList" resultType="map">
+		/* 마이클코어스 비용관리 디테일안분 조회 */
+		SELECT	a.ADJ_CD AS '계정코드',
+				a.ADJ_NM AS '계정명',
+				a.sum_ek AS '합계금액',
+				a.SUP_EK AS '공급가',
+				a.TAX_EK AS '부가세'
+		FROM [ncustoms].[kcba].[impo3_mDtl] a WITH (NOLOCK)
+		WHERE a.Impum_key= #{strImpumKey}
+		AND a.Impum_lan = #{strImpumLan}
+		AND a.Impum_heang = #{strImpumHeang}
+		ORDER BY a.ADJ_CD
+	</select>
+
+
+
+	<select id="selectImpoCompanySumData" resultType="map">
+	    /* 마이클코어스 회사별 월 청구비용합계 */
+	    SELECT LTRIM(RTRIM(b.회사)) '회사', SUM(b.회사별합계) '회사별월청구비용합계'
+	    FROM [ncustoms].[kcba].[impo1] a WITH (NOLOCK)
+	   			INNER JOIN (
+								SELECT Impo_key, acc_nm '회사', SUM(sup_ek) '회사별합계'
+								FROM [ncustoms].[kcba].[impo1_mDtl] WITH (NOLOCK)
+								WHERE acc_dt = #{strAccDt}
+								GROUP BY Impo_key, acc_nm
+							) b
+							ON a.Impo_key = b.Impo_key
+	   	WHERE a.Impo_napse_saup = '1208818888'
+		GROUP BY LTRIM(RTRIM(b.회사))
+	</select>
+
+	<select id="selectImpoCostChargeForCustomerList" resultType="map">
+		/* 마이클코어스 비용관리 청구처별 청구리스트(엑셀) */
+		SELECT
+		  ROW_NUMBER() OVER (ORDER BY aa.Impo_singo_no) AS 'rownum',
+		  aa.Impo_hanggu_gubun,
+		  aa.Impo_Gonggub_Sangho AS 'Vendor',
+		  aa.Impo_iphang_date AS 'ETA',
+		  aa.Impo_Ok_date,
+		  aa.Impo_segwan,
+		  aa.Impo_gele_gubun,
+		  aa.Impo_singo_no,
+		  aa.Impo_bl_no,
+		  aa.Impo_gyelje_money,
+		  aa.Impo_exch_yul,
+		  aa.Impo_gyelje_input,
+		  aa.Impo_indo_jogun,
+		  aa.Impo_Forwarder_Code,
+		  aa.Impo_pojang_su,
+		  aa.Impo_total_jung,
+		  aa.Impo_cif_total_won,
+		  aa.Impo_gwan_tax,
+		  aa.Impo_vat_tax,
+		  SUM(aa.[마레&amp;영동&amp;세인TNL]) AS '마레&amp;영동&amp;세인TNL',
+		  SUM(aa.[CLASQUIN &amp; PANALPINA]) AS 'CLASQUIN &amp; PANALPINA',
+		  SUM(aa.[DSV]) AS 'DSV',
+		  SUM(aa.[HYUNDAI &amp; YONGMA]) AS 'HYUNDAI &amp; YONGMA',
+		  SUM(aa.[SEIN]) AS 'SEIN',
+		  SUM(aa.[미분류회사]) AS '미분류회사'
+		FROM (SELECT
+		  a.Impo_hanggu_gubun,
+		  a.Impo_Gonggub_Sangho,
+		  a.Impo_iphang_date,
+		  a.Impo_Ok_date,
+		  a.Impo_segwan,
+		  a.Impo_gele_gubun,
+		  a.Impo_singo_no,
+		  a.Impo_bl_no,
+		  a.Impo_gyelje_money,
+		  a.Impo_exch_yul,
+		  a.Impo_gyelje_input,
+		  a.Impo_indo_jogun,
+		  a.Impo_Forwarder_Code,
+		  a.Impo_pojang_su,
+		  a.Impo_total_jung,
+		  a.Impo_cif_total_won,
+		  a.Impo_gwan_tax,
+		  a.Impo_vat_tax,
+ 		 CASE WHEN d.acc_nm = '마레&amp;영동&amp;세인TNL' THEN d.sup_ek ELSE 0 END AS '마레&amp;영동&amp;세인TNL',
+		 CASE WHEN d.acc_nm = 'CLASQUIN &amp; PANALPINA' THEN d.sup_ek ELSE 0 END AS 'CLASQUIN &amp; PANALPINA',
+		 CASE WHEN d.acc_nm = 'DSV' THEN d.sup_ek ELSE 0 END AS 'DSV',
+		 CASE WHEN d.acc_nm = 'HYUNDAI &amp; YONGMA' THEN d.sup_ek ELSE 0 END AS 'HYUNDAI &amp; YONGMA',
+		 CASE WHEN d.acc_nm = 'SEIN' THEN d.sup_ek ELSE 0 END AS 'SEIN',
+		 CASE WHEN d.acc_nm NOT IN ('마레&amp;영동&amp;세인TNL', 'CLASQUIN &amp; PANALPINA', 'DSV', 'HYUNDAI &amp; YONGMA', 'SEIN') THEN d.sup_ek ELSE 0 END AS '미분류회사'
+		FROM [ncustoms].[kcba].[impo1] a WITH (NOLOCK)
+		LEFT OUTER JOIN (SELECT
+		  Impo_key,
+		  acc_nm,
+		  SUM(sup_ek) AS 'sup_ek'
+		FROM [ncustoms].[kcba].[impo1_mDtl] WITH (NOLOCK)
+		<where>
+			<if test='strAccDt != "" and strAccDt != null'>AND acc_dt = #{strAccDt}</if>
+		</where>
+		GROUP BY Impo_key,
+		         ADJ_CD,
+		         acc_nm) d
+		  ON a.Impo_key = d.Impo_key
+		/* 검색조건 시작 */
+		WHERE a.Impo_napse_saup = '1208818888'
+
+		<if test='strEntity != "" and strEntity != null'>
+			AND EXISTS ( SELECT * FROM [ncustoms].[kcba].[Impo3] d1 WITH (NOLOCK) WHERE a.Impo_key = d1.Impum_Key AND d1.Impum_jajae_code LIKE #{strEntity} + '%' )
+		</if>
+		<if test='strEntityList != "" and strEntityList != null'>
+			AND EXISTS ( SELECT * FROM [ncustoms].[kcba].[Impo3] d2 WITH (NOLOCK) WHERE a.Impo_key = d2.Impum_Key AND d2.Impum_jajae_code IN ${strEntityList} )
+		</if>
+		<if test='strPoNo != "" and strPoNo != null'>
+			AND EXISTS ( SELECT * FROM [ncustoms].[kcba].[Impo3] d3 WITH (NOLOCK) WHERE a.Impo_key = d3.Impum_Key AND d3.Impum_sungbun3 LIKE #{strPoNo} + '%' )
+		</if>
+		<if test='strVendor != "" and strVendor != null'>AND a.Impo_Gonggub_Sangho LIKE '%' + #{strVendor} + '%'</if>
+		<if test='_DateType != "ALL" and _DateType != null and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+		<choose>
+			<when test='_DateType == "Impo_iphang_date_Day"'>AND a.Impo_iphang_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+			<when test='_DateType == "Impo_banip_date_Day"'>AND a.Impo_banip_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+			<when test='_DateType == "Impo_singo_date_Day"'>AND a.Impo_singo_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+			<when test='_DateType == "Impo_ok_date_Day"'>AND a.Impo_ok_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+		</choose>
+		</if>
+		<if test='strSingoDelay != "ALL" and strSingoDelay != null'>
+		<choose>
+			<when test='strSingoDelay == "SINGO"'>AND ISNULL(a.Impo_Jubsu_Date,'') != ''</when>
+			<when test='strSingoDelay == "MISINGO"'>AND ISNULL(a.Impo_Jubsu_Date,'') = ''</when>
+		</choose>
+		</if>
+		<if test='strSegwanDelay != "ALL" and strSegwanDelay != null'>
+		<choose>
+			<when test='strSegwanDelay == "SIMSA"'>AND ISNULL(a.Impo_Jubsu_Date,'') != '' AND ISNULL(a.Impo_ok_date,'') != ''</when>
+			<when test='strSegwanDelay == "MISIMSA"'>AND ISNULL(a.Impo_Jubsu_Date,'') != '' AND ISNULL(a.Impo_ok_date,'') = ''</when>
+		</choose>
+		</if>
+		<if test='strSingoNo != "" and strSingoNo != null'>AND a.Impo_singo_no LIKE '%' + #{strSingoNo} + '%'</if>
+		<if test='strBlNo != "" and strBlNo != null'>AND a.Impo_bl_no LIKE #{strBlNo} + '%'</if>
+		<if test='strInvNo != null and strInvNo != ""'>AND a.Impo_file_no2 LIKE #{strInvNo} + '%'</if>
+		<if test='strAccNm != "" and strAccNm != null'>AND b.acc_Nm LIKE #{strAccNm} + '%'</if>
+		<if test='strAccDt != "" and strAccDt != null'>
+			AND EXISTS (SELECT * FROM [ncustoms].[kcba].[impo1_mDtl] WITH (NOLOCK) WHERE Impo_key=a.Impo_key AND acc_dt = #{strAccDt})
+		</if>
+		/* 검색조건 종료 */
+		) aa
+		GROUP BY aa.Impo_hanggu_gubun,
+		         aa.Impo_Gonggub_Sangho,
+		         aa.Impo_iphang_date,
+		         aa.Impo_Ok_date,
+		         aa.Impo_segwan,
+		         aa.Impo_gele_gubun,
+		         aa.Impo_singo_no,
+		         aa.Impo_bl_no,
+		         aa.Impo_gyelje_money,
+		         aa.Impo_exch_yul,
+		         aa.Impo_gyelje_input,
+		         aa.Impo_indo_jogun,
+		         aa.Impo_Forwarder_Code,
+		         aa.Impo_pojang_su,
+		         aa.Impo_total_jung,
+		         aa.Impo_cif_total_won,
+		         aa.Impo_gwan_tax,
+		         aa.Impo_vat_tax
+	</select>
+
+	<select id="selectImpoCostChargeList" resultType="map">
+		/* 마이클코어스 비용관리 청구리스트 조회(엑셀) */
+		SELECT
+		  ROW_NUMBER() OVER (ORDER BY aa.impo_singo_no) AS 'rownum',
+		  aa.Impo_hanggu_gubun,
+		  aa.Impo_Gonggub_Sangho AS 'Vendor',
+		  aa.Impo_iphang_date AS 'ETA',
+		  aa.Impo_Ok_date,
+		  aa.Impo_segwan,
+		  aa.Impo_gele_gubun,
+		  aa.Impo_singo_no,
+		  aa.Impo_bl_no,
+		  aa.Impo_gyelje_money,
+		  aa.Impo_exch_yul,
+		  aa.Impo_gyelje_input,
+		  aa.Impo_indo_jogun,
+		  aa.Impo_Forwarder_Code,
+		  aa.Impo_pojang_su,
+		  aa.Impo_total_jung,
+		  aa.Impo_cif_total_won,
+		  aa.Impo_gwan_tax,
+		  aa.Impo_vat_tax,
+		  SUM(aa.C090) AS 'C090',
+		  SUM(aa.C108) AS 'C108',
+		  SUM(aa.C117) AS 'C117',
+		  SUM(aa.C125) AS 'C125',
+		  SUM(aa.C086) AS 'C086',
+		  SUM(aa.C107) AS 'C107',
+		  SUM(aa.C097) AS 'C097',
+		  SUM(aa.C018) AS 'C018',
+		  SUM(aa.C026) AS 'C026',
+		  SUM(aa.C043) AS 'C043',
+		  SUM(aa.C014) AS 'C014',
+		  SUM(aa.C084) AS 'C084',
+		  SUM(aa.C124) AS 'C124',
+		  SUM(aa.C094) AS 'C094',
+		  SUM(aa.C079) AS 'C079',
+		  SUM(aa.C110) AS 'C110',
+		  SUM(aa.C060) AS 'C060',
+		  SUM(aa.C013) AS 'C013',
+		  SUM(aa.C080) AS 'C080',
+		  SUM(aa.ETC_AMT) AS '미분류금액'
+		FROM (SELECT
+			  a.Impo_hanggu_gubun,
+			  a.Impo_Gonggub_Sangho,
+			  a.Impo_iphang_date,
+			  a.Impo_Ok_date,
+			  a.Impo_segwan,
+			  a.Impo_gele_gubun,
+			  a.Impo_singo_no,
+			  a.Impo_bl_no,
+			  a.Impo_gyelje_money,
+			  a.Impo_exch_yul,
+			  a.Impo_gyelje_input,
+			  a.Impo_indo_jogun,
+			  a.Impo_Forwarder_Code,
+			  a.Impo_pojang_su,
+			  a.Impo_total_jung,
+			  a.Impo_cif_total_won,
+			  a.Impo_gwan_tax,
+			  a.Impo_vat_tax,
+			  CASE WHEN ISNULL(b.ADJ_CD, '') = 'C090' THEN b.sup_ek ELSE 0 END AS 'C090',
+			  CASE WHEN ISNULL(b.ADJ_CD, '') = 'C108' THEN b.sup_ek ELSE 0 END AS 'C108',
+			  CASE WHEN ISNULL(b.ADJ_CD, '') = 'C117' THEN b.sup_ek ELSE 0 END AS 'C117',
+			  CASE WHEN ISNULL(b.ADJ_CD, '') = 'C125' THEN b.sup_ek ELSE 0 END AS 'C125',
+			  CASE WHEN ISNULL(b.ADJ_CD, '') = 'C086' THEN b.sup_ek ELSE 0 END AS 'C086',
+			  CASE WHEN ISNULL(b.ADJ_CD, '') = 'C107' THEN b.sup_ek ELSE 0 END AS 'C107',
+			  CASE WHEN ISNULL(b.ADJ_CD, '') = 'C097' THEN b.sup_ek ELSE 0 END AS 'C097',
+			  CASE WHEN ISNULL(b.ADJ_CD, '') = 'C018' THEN b.sup_ek ELSE 0 END AS 'C018',
+			  CASE WHEN ISNULL(b.ADJ_CD, '') = 'C026' THEN b.sup_ek ELSE 0 END AS 'C026',
+			  CASE WHEN ISNULL(b.ADJ_CD, '') = 'C043' THEN b.sup_ek ELSE 0 END AS 'C043',
+			  CASE WHEN ISNULL(b.ADJ_CD, '') = 'C014' THEN b.sup_ek ELSE 0 END AS 'C014',
+			  CASE WHEN ISNULL(b.ADJ_CD, '') = 'C084' THEN b.sup_ek ELSE 0 END AS 'C084',
+			  CASE WHEN ISNULL(b.ADJ_CD, '') = 'C124' THEN b.sup_ek ELSE 0 END AS 'C124',
+			  CASE WHEN ISNULL(b.ADJ_CD, '') = 'C094' THEN b.sup_ek ELSE 0 END AS 'C094',
+			  CASE WHEN ISNULL(b.ADJ_CD, '') = 'C079' THEN b.sup_ek ELSE 0 END AS 'C079',
+			  CASE WHEN ISNULL(b.ADJ_CD, '') = 'C110' THEN b.sup_ek ELSE 0 END AS 'C110',
+			  CASE WHEN ISNULL(b.ADJ_CD, '') = 'C060' THEN b.sup_ek ELSE 0 END AS 'C060',
+			  CASE WHEN ISNULL(b.ADJ_CD, '') = 'C013' THEN b.sup_ek ELSE 0 END AS 'C013',
+			  CASE WHEN ISNULL(b.ADJ_CD, '') = 'C080' THEN b.sup_ek ELSE 0 END AS 'C080',
+			  CASE WHEN ISNULL(b.ADJ_CD, '') NOT IN ('C090', 'C108', 'C117', 'C125', 'C086',
+			  										'C107', 'C097', 'C018', 'C026', 'C043',
+			  										'C014', 'C084', 'C124', 'C094', 'C079',
+			  										'C110', 'C060', 'C013', 'C080' )
+					THEN ISNULL(b.sup_ek, 0) ELSE 0 END AS 'ETC_AMT'
+			FROM [ncustoms].[kcba].[impo1] a WITH (NOLOCK)
+			LEFT OUTER JOIN [ncustoms].[kcba].[impo1_mDtl] b WITH (NOLOCK)
+			  ON a.Impo_key = b.Impo_key
+			<if test='strAccDt != "" and strAccDt != null'>AND b.acc_dt = #{strAccDt}</if>
+			/* 검색조건 시작 */
+			WHERE a.Impo_napse_saup = '1208818888'
+
+			<if test='strEntity != "" and strEntity != null'>
+				AND EXISTS ( SELECT * FROM [ncustoms].[kcba].[Impo3] dd WITH (NOLOCK) WHERE a.Impo_key = dd.Impum_Key AND dd.Impum_jajae_code LIKE #{strEntity} + '%' )
+			</if>
+			<if test='strEntityList != "" and strEntityList != null'>
+				AND EXISTS ( SELECT * FROM [ncustoms].[kcba].[Impo3] ddd WITH (NOLOCK) WHERE a.Impo_key = ddd.Impum_Key AND ddd.Impum_jajae_code IN ${strEntityList} )
+			</if>
+			<if test='strVendor != "" and strVendor != null'>AND a.Impo_Gonggub_Sangho LIKE '%' + #{strVendor} + '%'</if>
+			<if test='_DateType != "ALL" and _DateType != null and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+			<choose>
+				<when test='_DateType == "Impo_iphang_date_Day"'>AND a.Impo_iphang_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+				<when test='_DateType == "Impo_banip_date_Day"'>AND a.Impo_banip_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+				<when test='_DateType == "Impo_singo_date_Day"'>AND a.Impo_singo_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+				<when test='_DateType == "Impo_ok_date_Day"'>AND a.Impo_ok_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+			</choose>
+			</if>
+			<if test='strSingoDelay != "ALL" and strSingoDelay != null'>
+			<choose>
+				<when test='strSingoDelay == "SINGO"'>AND ISNULL(a.Impo_Jubsu_Date,'') != ''</when>
+				<when test='strSingoDelay == "MISINGO"'>AND ISNULL(a.Impo_Jubsu_Date,'') = ''</when>
+			</choose>
+			</if>
+			<if test='strSegwanDelay != "ALL" and strSegwanDelay != null'>
+			<choose>
+				<when test='strSegwanDelay == "SIMSA"'>AND ISNULL(a.Impo_Jubsu_Date,'') != '' AND ISNULL(a.Impo_ok_date,'') != ''</when>
+				<when test='strSegwanDelay == "MISIMSA"'>AND ISNULL(a.Impo_Jubsu_Date,'') != '' AND ISNULL(a.Impo_ok_date,'') = ''</when>
+			</choose>
+			</if>
+			<if test='strSingoNo != "" and strSingoNo != null'>AND a.Impo_singo_no LIKE '%' + #{strSingoNo} + '%'</if>
+			<if test='strBlNo != "" and strBlNo != null'>AND a.Impo_bl_no LIKE #{strBlNo} + '%'</if>
+			<if test='strInvNo != null and strInvNo != ""'>AND a.Impo_file_no2 LIKE #{strInvNo} + '%'</if>
+			<if test='strAccNm != "" and strAccNm != null'>AND b.acc_Nm LIKE #{strAccNm} + '%'</if>
+			<if test='strAccDt != "" and strAccDt != null'>
+				AND EXISTS (SELECT * FROM [ncustoms].[kcba].[impo1_mDtl] WITH (NOLOCK) WHERE Impo_key=a.Impo_key AND acc_dt = #{strAccDt})
+			</if>
+			/* 검색조건 종료 */
+		) aa
+		GROUP BY aa.Impo_hanggu_gubun,
+		         aa.Impo_Gonggub_Sangho,
+		         aa.Impo_iphang_date,
+		         aa.Impo_Ok_date,
+		         aa.Impo_segwan,
+		         aa.Impo_gele_gubun,
+		         aa.Impo_singo_no,
+		         aa.Impo_bl_no,
+		         aa.Impo_gyelje_money,
+		         aa.Impo_exch_yul,
+		         aa.Impo_gyelje_input,
+		         aa.Impo_indo_jogun,
+		         aa.Impo_Forwarder_Code,
+		         aa.Impo_pojang_su,
+		         aa.Impo_total_jung,
+		         aa.Impo_cif_total_won,
+		         aa.Impo_gwan_tax,
+		         aa.Impo_vat_tax
+	</select>
+
+	<select id="selectImpoCostChargeForMaterialList" resultType="map">
+		/* 마이클코어스 비용관리 자재별 청구리스트(엑셀) */
+		SELECT
+		  ROW_NUMBER() OVER (ORDER BY aa.impo_singo_no) AS 'rownum',
+		  aa.Impo_hanggu_gubun,
+		  aa.Impo_Gonggub_Sangho AS 'Vendor',
+		  aa.Impo_iphang_date AS 'ETA',
+		  aa.Impo_Ok_date,
+		  aa.Impo_segwan,
+		  aa.Impo_gele_gubun,
+		  aa.Impo_singo_no,
+		  aa.Impo_bl_no,
+		  aa.Impo_gyelje_money,
+		  aa.Impo_exch_yul,
+		  aa.Impo_gyelje_input,
+		  aa.Impo_indo_jogun,
+		  aa.Impo_Forwarder_Code,
+		  aa.Impo_pojang_su,
+		  aa.Impo_total_jung,
+		  aa.Impo_cif_total_won,
+		  aa.Impo_gwan_tax,
+		  aa.Impo_vat_tax,
+		  aa.Impum_lan,
+		  aa.Impum_heang,
+		  aa.Impum_jajae_code,
+		  aa.[규격] AS '규격',
+		  aa.Impum_su,
+		  aa.Impum_danga,
+		  aa.Impum_Amt,
+		  SUM(aa.C090) AS 'C090',
+		  SUM(aa.C108) AS 'C108',
+		  SUM(aa.C117) AS 'C117',
+		  SUM(aa.C125) AS 'C125',
+		  SUM(aa.C086) AS 'C086',
+		  SUM(aa.C107) AS 'C107',
+		  SUM(aa.C097) AS 'C097',
+		  SUM(aa.C018) AS 'C018',
+		  SUM(aa.C026) AS 'C026',
+		  SUM(aa.C043) AS 'C043',
+		  SUM(aa.C014) AS 'C014',
+		  SUM(aa.C084) AS 'C084',
+		  SUM(aa.C124) AS 'C124',
+		  SUM(aa.C094) AS 'C094',
+		  SUM(aa.C079) AS 'C079',
+		  SUM(aa.C110) AS 'C110',
+		  SUM(aa.C060) AS 'C060',
+		  SUM(aa.C013) AS 'C013',
+		  SUM(aa.C080) AS 'C080',
+		  SUM(aa.ETC_AMT) AS '미분류금액'
+		FROM (SELECT
+		  a.Impo_hanggu_gubun,
+		  a.Impo_Gonggub_Sangho,
+		  a.Impo_iphang_date,
+		  a.Impo_Ok_date,
+		  a.Impo_segwan,
+		  a.Impo_gele_gubun,
+		  a.Impo_singo_no,
+		  a.Impo_bl_no,
+		  a.Impo_gyelje_money,
+		  a.Impo_exch_yul,
+		  a.Impo_gyelje_input,
+		  a.Impo_indo_jogun,
+		  a.Impo_Forwarder_Code,
+		  a.Impo_pojang_su,
+		  a.Impo_total_jung,
+		  a.Impo_cif_total_won,
+		  a.Impo_gwan_tax,
+		  a.Impo_vat_tax,
+		  d.Impum_lan,
+		  d.Impum_heang,
+		  d.Impum_jajae_code,
+		  d.Impum_gukyk1 + ' ' + d.Impum_gukyk2 + ' ' + d.Impum_gukyk3 AS '규격',
+		  d.Impum_su,
+		  d.Impum_danga,
+		  d.Impum_Amt,
+		  CASE WHEN ISNULL(e.ADJ_CD, '') = 'C090' THEN e.sup_ek ELSE 0 END AS 'C090',
+		  CASE WHEN ISNULL(e.ADJ_CD, '') = 'C108' THEN e.sup_ek ELSE 0 END AS 'C108',
+		  CASE WHEN ISNULL(e.ADJ_CD, '') = 'C117' THEN e.sup_ek ELSE 0 END AS 'C117',
+		  CASE WHEN ISNULL(e.ADJ_CD, '') = 'C125' THEN e.sup_ek ELSE 0 END AS 'C125',
+		  CASE WHEN ISNULL(e.ADJ_CD, '') = 'C086' THEN e.sup_ek ELSE 0 END AS 'C086',
+		  CASE WHEN ISNULL(e.ADJ_CD, '') = 'C107' THEN e.sup_ek ELSE 0 END AS 'C107',
+		  CASE WHEN ISNULL(e.ADJ_CD, '') = 'C097' THEN e.sup_ek ELSE 0 END AS 'C097',
+		  CASE WHEN ISNULL(e.ADJ_CD, '') = 'C018' THEN e.sup_ek ELSE 0 END AS 'C018',
+		  CASE WHEN ISNULL(e.ADJ_CD, '') = 'C026' THEN e.sup_ek ELSE 0 END AS 'C026',
+		  CASE WHEN ISNULL(e.ADJ_CD, '') = 'C043' THEN e.sup_ek ELSE 0 END AS 'C043',
+		  CASE WHEN ISNULL(e.ADJ_CD, '') = 'C014' THEN e.sup_ek ELSE 0 END AS 'C014',
+		  CASE WHEN ISNULL(e.ADJ_CD, '') = 'C084' THEN e.sup_ek ELSE 0 END AS 'C084',
+		  CASE WHEN ISNULL(e.ADJ_CD, '') = 'C124' THEN e.sup_ek ELSE 0 END AS 'C124',
+		  CASE WHEN ISNULL(e.ADJ_CD, '') = 'C094' THEN e.sup_ek ELSE 0 END AS 'C094',
+		  CASE WHEN ISNULL(e.ADJ_CD, '') = 'C079' THEN e.sup_ek ELSE 0 END AS 'C079',
+		  CASE WHEN ISNULL(e.ADJ_CD, '') = 'C110' THEN e.sup_ek ELSE 0 END AS 'C110',
+		  CASE WHEN ISNULL(e.ADJ_CD, '') = 'C060' THEN e.sup_ek ELSE 0 END AS 'C060',
+		  CASE WHEN ISNULL(e.ADJ_CD, '') = 'C013' THEN e.sup_ek ELSE 0 END AS 'C013',
+		  CASE WHEN ISNULL(e.ADJ_CD, '') = 'C080' THEN e.sup_ek ELSE 0 END AS 'C080',
+		  CASE WHEN ISNULL(e.ADJ_CD, '') NOT IN ('C090', 'C108', 'C117', 'C125', 'C086',
+		  										'C107', 'C097', 'C018', 'C026', 'C043',
+		  										'C014', 'C084', 'C124', 'C094', 'C079',
+		  										'C110', 'C060', 'C013', 'C080' )
+										THEN ISNULL(e.sup_ek, 0) ELSE 0 END AS 'ETC_AMT'
+		FROM [ncustoms].[kcba].[impo1] a WITH (NOLOCK)
+		LEFT OUTER JOIN [ncustoms].[kcba].[Impo3] d WITH (NOLOCK)
+		  ON a.Impo_key = d.Impum_key
+		LEFT OUTER JOIN [ncustoms].[kcba].[impo3_mdtl] e WITH (NOLOCK)
+		  ON d.Impum_key = e.Impum_key
+		  AND d.Impum_lan = e.Impum_lan
+		  AND d.Impum_heang = e.Impum_heang
+		/* 검색조건 시작 */
+		WHERE a.Impo_napse_saup = '1208818888'
+
+		<if test='strEntity != "" and strEntity != null'>
+			AND EXISTS ( SELECT * FROM [ncustoms].[kcba].[Impo3] dd WITH (NOLOCK) WHERE a.Impo_key = dd.Impum_Key AND dd.Impum_jajae_code LIKE #{strEntity} + '%' )
+		</if>
+		<if test='strEntityList != "" and strEntityList != null'>
+			AND EXISTS ( SELECT * FROM [ncustoms].[kcba].[Impo3] ddd WITH (NOLOCK) WHERE a.Impo_key = ddd.Impum_Key AND ddd.Impum_jajae_code IN ${strEntityList} )
+		</if>
+		<if test='strVendor != "" and strVendor != null'>AND a.Impo_Gonggub_Sangho LIKE '%' + #{strVendor} + '%'</if>
+		<if test='_DateType != "ALL" and _DateType != null and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+		<choose>
+			<when test='_DateType == "Impo_iphang_date_Day"'>AND a.Impo_iphang_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+			<when test='_DateType == "Impo_banip_date_Day"'>AND a.Impo_banip_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+			<when test='_DateType == "Impo_singo_date_Day"'>AND a.Impo_singo_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+			<when test='_DateType == "Impo_ok_date_Day"'>AND a.Impo_ok_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+		</choose>
+		</if>
+		<if test='strSingoDelay != "ALL" and strSingoDelay != null'>
+		<choose>
+			<when test='strSingoDelay == "SINGO"'>AND ISNULL(a.Impo_Jubsu_Date,'') != ''</when>
+			<when test='strSingoDelay == "MISINGO"'>AND ISNULL(a.Impo_Jubsu_Date,'') = ''</when>
+		</choose>
+		</if>
+		<if test='strSegwanDelay != "ALL" and strSegwanDelay != null'>
+		<choose>
+			<when test='strSegwanDelay == "SIMSA"'>AND ISNULL(a.Impo_Jubsu_Date,'') != '' AND ISNULL(a.Impo_ok_date,'') != ''</when>
+			<when test='strSegwanDelay == "MISIMSA"'>AND ISNULL(a.Impo_Jubsu_Date,'') != '' AND ISNULL(a.Impo_ok_date,'') = ''</when>
+		</choose>
+		</if>
+		<if test='strSingoNo != "" and strSingoNo != null'>AND a.Impo_singo_no LIKE '%' + #{strSingoNo} + '%'</if>
+		<if test='strBlNo != "" and strBlNo != null'>AND a.Impo_bl_no LIKE #{strBlNo} + '%'</if>
+		<if test='strInvNo != null and strInvNo != ""'>AND a.Impo_file_no2 LIKE #{strInvNo} + '%'</if>
+		<if test='strAccNm != "" and strAccNm != null'>AND b.acc_Nm LIKE #{strAccNm} + '%'</if>
+		<if test='strAccDt != "" and strAccDt != null'>
+			AND EXISTS (SELECT * FROM [ncustoms].[kcba].[impo1_mDtl] WITH (NOLOCK) WHERE Impo_key=a.Impo_key AND acc_dt = #{strAccDt})
+		</if>
+		/* 검색조건 종료 */
+		) aa
+		GROUP BY aa.Impo_hanggu_gubun,
+		         aa.Impo_Gonggub_Sangho,
+		         aa.Impo_iphang_date,
+		         aa.Impo_Ok_date,
+		         aa.Impo_segwan,
+		         aa.Impo_gele_gubun,
+		         aa.Impo_singo_no,
+		         aa.Impo_bl_no,
+		         aa.Impo_gyelje_money,
+		         aa.Impo_exch_yul,
+		         aa.Impo_gyelje_input,
+		         aa.Impo_indo_jogun,
+		         aa.Impo_Forwarder_Code,
+		         aa.Impo_pojang_su,
+		         aa.Impo_total_jung,
+		         aa.Impo_cif_total_won,
+		         aa.Impo_gwan_tax,
+		         aa.Impo_vat_tax,
+		         aa.Impum_lan,
+		         aa.Impum_heang,
+		         aa.Impum_jajae_code,
+		         aa.[규격],
+		         aa.Impum_su,
+		         aa.Impum_danga,
+		         aa.Impum_Amt
+	</select>
+
+
+
+
+
+	<select id="selectTodsImpoCompanySumData" resultType="map">
+	    /* 토즈 회사별 월 청구비용합계 */
+	    SELECT LTRIM(RTRIM(b.회사)) '회사', SUM(b.회사별합계) '회사별월청구비용합계'
+	    FROM [ncustoms].[kcba].[impo1] a WITH (NOLOCK)
+	   			INNER JOIN (
+								SELECT Impo_key, acc_nm '회사', SUM(sup_ek) '회사별합계'
+								FROM [ncustoms].[kcba].[impo1_mDtl] WITH (NOLOCK)
+								WHERE acc_dt = #{strAccDt}
+								GROUP BY Impo_key, acc_nm
+							) b
+							ON a.Impo_key = b.Impo_key
+	   	WHERE a.Impo_napse_saup = '1018624901'
+		GROUP BY LTRIM(RTRIM(b.회사))
+	</select>
+
+	<select id="selectTodsPrintMasterList" resultType="map">
+		/* 토즈 비용관리 프린터 마스터 조회 */
+		SELECT	b.Impo_key, b.impo_bl_no, b.Impo_total_tax,
+		ISNULL((select SUM(ISNULL(a.sum_ek,0)) from ncustoms.kcba.impo1_mDtl a
+		where a.Impo_key = b.Impo_key
+		and a.ADJ_CD not in ('C018','C026')),0) as 'forwarder',
+		ISNULL((select SUM(ISNULL(a.sum_ek,0)) from ncustoms.kcba.impo1_mDtl a
+		where a.Impo_key = b.Impo_key
+		and a.ADJ_CD in ('C018','C026')),0) as 'customs',
+		ISNULL((select SUM(ISNULL(a.tax_ek,0)) from ncustoms.kcba.impo1_mDtl a
+		where a.Impo_key = b.Impo_key),0) as 'totalVat',
+		ISNULL((select a.sum_ek from ncustoms.kcba.impo1_mDtl a
+		where a.Impo_key = b.Impo_key
+		and a.ADJ_CD='C018'),0) as 'sein',
+		ISNULL((select SUM(ISNULL(a.Impum_su,0)) from ncustoms.kcba.impo3 a
+		where a.Impum_key = b.Impo_key),0) as 'totalQty'
+		from [ncustoms].[kcba].[impo1] b
+		where b.Impo_key = #{Impokey}
+	</select>
+
+	<select id="selectTodsInvoicePrintMasterList" resultType="map">
+		/* 토즈 비용관리 인보이스 프린터 마스터 조회 */
+		select b.impum_ivno, SUM(ISNULL(b.Impum_amt,0)) as 'amount',
+		(select SUM(ISNULL(a.Impum_amt,0)) from ncustoms.kcba.impo3 a
+				where a.Impum_key = #{Impokey}) as 'total',
+		SUM(ISNULL(b.Impum_su,0)) as 'suTotal'
+		from ncustoms.kcba.impo3 b
+		where b.Impum_key = #{Impokey}
+		group by b.impum_ivno
+	</select>
+
+	<select id="selectImpoSebCostMasterList" resultType="map">
+		/* 세브 비용관리 마스터 조회 */
+		SELECT a.Impo_key,
+				a.Vendor,
+				a.수입신고번호,
+				a.BL번호,
+				a.MBL번호,
+				a.수리일,
+				a.입항일,
+				a.반입일,
+				a.신고일,
+				a.[hidden Invoice Amount] AS 'hidden Invoice Amount',
+				a.[Invoice Amount] AS 'Invoice Amount',
+				a.Impo_gyelje_money,
+				a.Impo_exch_yul,
+				a.과세운임,
+				a.과세가격,
+				a.관세,
+				a.부가세,
+				a.기타세,
+				a.총세액,
+				SUM(a.C090) AS 'C090',
+				SUM(a.C108) AS 'C108',
+				SUM(a.C117) AS 'C117',
+				SUM(a.C125) AS 'C125',
+				SUM(a.C086) AS 'C086',
+				SUM(a.C107) AS 'C107',
+				SUM(a.C097) AS 'C097',
+				SUM(a.C018) AS 'C018',
+				SUM(a.C026) AS 'C026',
+				SUM(a.C043) AS 'C043',
+				SUM(a.C014) AS 'C014',
+				SUM(a.C084) AS 'C084',
+				SUM(a.C124) AS 'C124',
+				SUM(a.C094) AS 'C094',
+				SUM(a.C079) AS 'C079',
+				SUM(a.C110) AS 'C110',
+				SUM(a.C060) AS 'C060',
+				SUM(a.C013) AS 'C013',
+				SUM(a.C080) AS 'C080',
+				SUM(a.C019) AS 'C019',
+				SUM(a.C023) AS 'C023',
+				SUM(a.합계금액) AS '합계금액'
+		FROM	(
+					SELECT	a.Impo_key,
+							a.Impo_Gonggub_Sangho AS 'Vendor',
+							SUBSTRING(a.impo_singo_no, 1,5) + '-' + SUBSTRING(a.impo_singo_no, 6,2) + '-' + SUBSTRING(a.impo_singo_no, 8,7) AS '수입신고번호',
+							a.impo_bl_no AS 'BL번호',
+							a.impo_mbl_no AS 'MBL번호',
+							CASE WHEN ISNULL(a.Impo_ok_date,'')='' THEN '' ELSE CONVERT(VARCHAR(10),CONVERT(DATETIME, a.Impo_ok_date),120) END AS '수리일',
+							CASE WHEN ISNULL(a.Impo_iphang_date,'')='' THEN '' ELSE CONVERT(VARCHAR(10),CONVERT(DATETIME, a.Impo_iphang_date),120) END AS '입항일',
+							CASE WHEN ISNULL(a.Impo_banip_date,'')='' THEN '' ELSE CONVERT(VARCHAR(10),CONVERT(DATETIME, a.Impo_banip_date),120) END AS '반입일',
+							CASE WHEN ISNULL(a.impo_singo_date,'')='' THEN '' ELSE CONVERT(VARCHAR(10),CONVERT(DATETIME, a.impo_singo_date),120) END  AS '신고일',
+							a.Impo_gyelje_input AS 'hidden Invoice Amount',
+							a.Impo_gyelje_input AS 'Invoice Amount',
+							a.Impo_gyelje_money,
+							a.Impo_exch_yul,
+							a.Impo_fre_won AS '과세운임',
+							a.Impo_cif_total_won AS '과세가격',
+							a.Impo_gwan_tax AS '관세',
+							a.Impo_vat_tax AS '부가세',
+							(a.Impo_total_tax-(a.Impo_gwan_tax+a.Impo_vat_tax)) AS '기타세',
+							a.Impo_total_tax AS '총세액',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C090' THEN b.sup_ek ELSE 0 END AS 'C090',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C108' THEN b.sup_ek ELSE 0 END AS 'C108',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C117' THEN b.sup_ek ELSE 0 END AS 'C117',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C125' THEN b.sup_ek ELSE 0 END AS 'C125',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C086' THEN b.sup_ek ELSE 0 END AS 'C086',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C107' THEN b.sup_ek ELSE 0 END AS 'C107',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C097' THEN b.sup_ek ELSE 0 END AS 'C097',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C018' THEN b.sup_ek ELSE 0 END AS 'C018',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C026' THEN b.sup_ek ELSE 0 END AS 'C026',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C043' THEN b.sup_ek ELSE 0 END AS 'C043',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C014' THEN b.sup_ek ELSE 0 END AS 'C014',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C084' THEN b.sup_ek ELSE 0 END AS 'C084',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C124' THEN b.sup_ek ELSE 0 END AS 'C124',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C094' THEN b.sup_ek ELSE 0 END AS 'C094',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C079' THEN b.sup_ek ELSE 0 END AS 'C079',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C110' THEN b.sup_ek ELSE 0 END AS 'C110',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C060' THEN b.sup_ek ELSE 0 END AS 'C060',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C013' THEN b.sup_ek ELSE 0 END AS 'C013',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C080' THEN b.sup_ek ELSE 0 END AS 'C080',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C019' THEN b.sup_ek ELSE 0 END AS 'C019',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C023' THEN b.sup_ek ELSE 0 END AS 'C023',
+							SUM(ISNULL(b.sup_ek,0)) AS '합계금액'
+					FROM [ncustoms_sn].[kcba].[impo1] a WITH (NOLOCK)
+						LEFT OUTER JOIN [ncustoms_sn].[kcba].[impo1_mDtl] b WITH (NOLOCK)
+						ON a.Impo_key=b.Impo_key
+						<if test='strAccDt != "" and strAccDt != null'>AND b.acc_dt = #{strAccDt}</if>
+					WHERE a.Impo_napse_saup IN ('2208146671')
+
+					<if test='strEntity != "" and strEntity != null'>
+						AND EXISTS ( SELECT * FROM [ncustoms_sn].[kcba].[Impo3] dd WITH (NOLOCK) WHERE a.Impo_key = dd.Impum_Key AND dd.Impum_jajae_code LIKE #{strEntity} + '%' )
+					</if>
+					<if test='strEntityList != "" and strEntityList != null'>
+						AND EXISTS ( SELECT * FROM [ncustoms_sn].[kcba].[Impo3] ddd WITH (NOLOCK) WHERE a.Impo_key = ddd.Impum_Key AND ddd.Impum_jajae_code IN ${strEntityList} )
+					</if>
+					<if test='strVendor != "" and strVendor != null'>AND a.Impo_Gonggub_Sangho LIKE '%' + #{strVendor} + '%'</if>
+					<if test='_DateType != "ALL" and _DateType != null and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+			             <choose>
+			                <when test='_DateType == "Impo_iphang_date_Day"'>AND a.Impo_iphang_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+			                <when test='_DateType == "Impo_banip_date_Day"'>AND a.Impo_banip_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+			                <when test='_DateType == "Impo_singo_date_Day"'>AND a.Impo_singo_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+			                <when test='_DateType == "Impo_ok_date_Day"'>AND a.Impo_ok_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+			              </choose>
+			        </if>
+			        <if test='strSingoDelay != "ALL" and strSingoDelay != null'>
+			             <choose>
+			                <when test='strSingoDelay == "SINGO"'>AND ISNULL(a.Impo_Jubsu_Date,'') != ''</when>
+			                <when test='strSingoDelay == "MISINGO"'>AND ISNULL(a.Impo_Jubsu_Date,'') = ''</when>
+			              </choose>
+			        </if>
+			        <if test='strSegwanDelay != "ALL" and strSegwanDelay != null'>
+			             <choose>
+			                <when test='strSegwanDelay == "SIMSA"'>
+			                    AND ISNULL(a.Impo_Jubsu_Date,'') != ''
+			                    AND ISNULL(a.Impo_ok_date,'') != ''
+			                </when>
+			                <when test='strSegwanDelay == "MISIMSA"'>
+			                    AND ISNULL(a.Impo_Jubsu_Date,'') != ''
+			                    AND ISNULL(a.Impo_ok_date,'') = ''
+			                </when>
+			              </choose>
+			        </if>
+					<if test='strSingoNo != "" and strSingoNo != null'>AND a.impo_singo_no LIKE '%' + #{strSingoNo} + '%'</if>
+					<if test='strBlNo != "" and strBlNo != null'>AND a.impo_bl_no LIKE #{strBlNo} + '%'</if>
+					<if test='strInvoiceNo != "" and strInvoiceNo != null'>
+						AND EXISTS ( SELECT * FROM [ncustoms_sn].[kcba].[impo3] a1 WITH (NOLOCK) WHERE a.Impo_key=a1.Impum_key AND a1.Impum_sungbun3 = #{strInvoiceNo})
+					</if>
+					<if test='strAccNm != "" and strAccNm != null'>AND b.acc_Nm LIKE #{strAccNm} + '%'</if>
+					<if test='strAccDt != "" and strAccDt != null'>
+						AND a.Impo_key IN (SELECT Impo_key FROM [ncustoms_sn].[kcba].[impo1_mDtl] WITH (NOLOCK) WHERE acc_dt = #{strAccDt})
+					</if>
+					GROUP BY a.Impo_key,
+							a.Impo_Gonggub_Sangho,
+							SUBSTRING(a.impo_singo_no, 1,5) + '-' + SUBSTRING(a.impo_singo_no, 6,2) + '-' + SUBSTRING(a.impo_singo_no, 8,7),
+							a.impo_bl_no,
+							a.impo_mbl_no,
+							CASE WHEN ISNULL(a.impo_ok_date,'')='' THEN '' ELSE CONVERT(VARCHAR(10),CONVERT(DATETIME, a.impo_ok_date),120) END,
+							CASE WHEN ISNULL(a.Impo_iphang_date,'')='' THEN '' ELSE CONVERT(VARCHAR(10),CONVERT(DATETIME, a.Impo_iphang_date),120) END,
+							CASE WHEN ISNULL(a.Impo_banip_date,'')='' THEN '' ELSE CONVERT(VARCHAR(10),CONVERT(DATETIME, a.Impo_banip_date),120) END,
+							CASE WHEN ISNULL(a.impo_singo_date,'')='' THEN '' ELSE CONVERT(VARCHAR(10),CONVERT(DATETIME, a.impo_singo_date),120) END,
+							a.Impo_gyelje_input,
+							a.Impo_gyelje_money,
+							a.Impo_exch_yul,
+							a.Impo_fre_won,
+							a.Impo_cif_total_won,
+							a.Impo_gwan_tax,
+							a.Impo_vat_tax,
+							(a.Impo_total_tax-(a.Impo_gwan_tax+a.Impo_vat_tax)),
+							a.Impo_total_tax,
+							ISNULL(b.ADJ_CD,''),
+							b.sup_ek
+				) a
+
+		GROUP BY a.Impo_key,
+				a.Vendor,
+				a.수입신고번호,
+				a.BL번호,
+				a.MBL번호,
+				a.수리일,
+				a.입항일,
+				a.반입일,
+				a.신고일,
+				a.[hidden Invoice Amount],
+				a.[Invoice Amount],
+				a.Impo_gyelje_money,
+				a.Impo_exch_yul,
+				a.과세운임,
+				a.과세가격,
+				a.관세,
+				a.부가세,
+				a.기타세,
+				a.총세액
+		ORDER BY a.Impo_key
+	</select>
+
+	<select id="selectImpoSebCompanySumData" resultType="map">
+	    /* 세브 회사별 월 청구비용합계 */
+	    SELECT LTRIM(RTRIM(b.회사)) AS '회사', b.청구처구분 AS '청구처구분', SUM(b.회사별합계) AS '회사별월청구비용합계'
+	    FROM [ncustoms_sn].[kcba].[impo1] a WITH (NOLOCK)
+	   			INNER JOIN (
+								SELECT Impo_key, acc_nm AS '회사', ADJ_GR_CD AS '청구처구분', SUM(sup_ek) AS '회사별합계'
+								FROM [ncustoms_sn].[kcba].[impo1_mDtl] WITH (NOLOCK)
+								WHERE acc_dt = #{strAccDt}
+								GROUP BY Impo_key, acc_nm, ADJ_GR_CD
+							) b
+							ON a.Impo_key = b.Impo_key
+		WHERE a.Impo_napse_saup IN ('2208146671')
+
+		GROUP BY LTRIM(RTRIM(b.회사)), b.청구처구분
+	</select>
+
+	<select id="selectImpoSebCostDetailList" resultType="map">
+		/* 세브 비용관리 디테일 조회 */
+		select a.Impum_key, a.Impum_lan, a.Impum_heang,
+				a.란번호,
+				a.행번호,
+				a.자재코드,
+				a.규격,
+				a.수량,
+				a.단가,
+				a.금액,
+				a.Impum_su_danwi,
+				SUM(a.C090) AS 'C090',
+				SUM(a.C108) AS 'C108',
+				SUM(a.C117) AS 'C117',
+				SUM(a.C125) AS 'C125',
+				SUM(a.C086) AS 'C086',
+				SUM(a.C107) AS 'C107',
+				SUM(a.C097) AS 'C097',
+				SUM(a.C018) AS 'C018',
+				SUM(a.C026) AS 'C026',
+				SUM(a.C043) AS 'C043',
+				SUM(a.C014) AS 'C014',
+				SUM(a.C084) AS 'C084',
+				SUM(a.C124) AS 'C124',
+				SUM(a.C094) AS 'C094',
+				SUM(a.C079) AS 'C079',
+				SUM(a.C110) AS 'C110',
+				SUM(a.C060) AS 'C060',
+				SUM(a.C013) AS 'C013',
+				SUM(a.C080) AS 'C080',
+				SUM(a.C019) AS 'C019',
+				SUM(a.C023) AS 'C023',
+				SUM(a.합계금액) AS '합계금액'
+		FROM	(
+					SELECT a.Impum_key, a.Impum_lan, a.Impum_heang,
+							a.Impum_lan AS '란번호',
+							a.Impum_heang AS '행번호',
+							a.Impum_jajae_code AS '자재코드',
+							a.Impum_gukyk1 + ' ' + a.Impum_gukyk2 + ' ' + a.Impum_gukyk3 AS '규격',
+							a.Impum_su AS '수량',
+							a.Impum_danga AS '단가',
+							a.Impum_Amt AS '금액',
+							a.Impum_su_danwi,
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C090' THEN b.sup_ek ELSE 0 END AS 'C090',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C108' THEN b.sup_ek ELSE 0 END AS 'C108',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C117' THEN b.sup_ek ELSE 0 END AS 'C117',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C125' THEN b.sup_ek ELSE 0 END AS 'C125',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C086' THEN b.sup_ek ELSE 0 END AS 'C086',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C107' THEN b.sup_ek ELSE 0 END AS 'C107',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C097' THEN b.sup_ek ELSE 0 END AS 'C097',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C018' THEN b.sup_ek ELSE 0 END AS 'C018',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C026' THEN b.sup_ek ELSE 0 END AS 'C026',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C043' THEN b.sup_ek ELSE 0 END AS 'C043',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C014' THEN b.sup_ek ELSE 0 END AS 'C014',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C084' THEN b.sup_ek ELSE 0 END AS 'C084',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C124' THEN b.sup_ek ELSE 0 END AS 'C124',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C094' THEN b.sup_ek ELSE 0 END AS 'C094',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C079' THEN b.sup_ek ELSE 0 END AS 'C079',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C110' THEN b.sup_ek ELSE 0 END AS 'C110',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C060' THEN b.sup_ek ELSE 0 END AS 'C060',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C013' THEN b.sup_ek ELSE 0 END AS 'C013',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C080' THEN b.sup_ek ELSE 0 END AS 'C080',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C019' THEN b.sup_ek ELSE 0 END AS 'C019',
+							CASE WHEN ISNULL(b.ADJ_CD,'')='C023' THEN b.sup_ek ELSE 0 END AS 'C023',
+							SUM(ISNULL(b.sup_ek,0)) AS '합계금액'
+					FROM [ncustoms_sn].[kcba].[Impo3] a WITH (NOLOCK)
+							LEFT OUTER JOIN [ncustoms_sn].[kcba].[impo3_mdtl] b WITH (NOLOCK)
+							ON a.Impum_key=b.Impum_key
+							AND a.Impum_lan=b.Impum_lan
+							AND a.Impum_heang=b.Impum_heang
+					WHERE a.Impum_key = #{strImpumKey}
+					GROUP BY a.Impum_key, a.Impum_lan, a.Impum_heang,
+							a.Impum_jajae_code,
+							a.Impum_gukyk1 + ' ' + a.Impum_gukyk2 + ' ' + a.Impum_gukyk3,
+							a.Impum_su,
+							a.Impum_danga,
+							a.Impum_Amt,
+							a.Impum_su_danwi,
+							ISNULL(b.ADJ_CD,''),
+							b.sup_ek
+					) a
+		GROUP BY 	a.Impum_key, a.Impum_lan, a.Impum_heang,
+					a.란번호,
+					a.행번호,
+					a.자재코드,
+					a.규격,
+					a.수량,
+					a.단가,
+					a.금액,
+					a.Impum_su_danwi
+	</select>
+
+	<select id="selectImpoSebCostSubDetailList" resultType="map">
+		/* 세브 비용관리 디테일안분 조회 */
+		SELECT	a.ADJ_CD AS '계정코드',
+				a.ADJ_NM AS '계정명',
+				a.sum_ek AS '합계금액',
+				a.SUP_EK AS '공급가',
+				a.TAX_EK AS '부가세'
+		FROM [ncustoms_sn].[kcba].[impo3_mDtl] a WITH (NOLOCK)
+		WHERE a.Impum_key= #{strImpumKey}
+		AND a.Impum_lan = #{strImpumLan}
+		AND a.Impum_heang = #{strImpumHeang}
+		ORDER BY a.ADJ_CD
+	</select>
+
+	<select id="selectImpoSebCostSubMasterList" resultType="map">
+		/* 세브 비용관리 마스터안분 조회(계정별) */
+		SELECT	a.ADJ_CD AS '계정코드',
+				a.ADJ_NM AS '계정명',
+				a.sum_ek AS '합계금액',
+				a.Acc_NM AS '청구처',
+				SUBSTRING(a.Acc_DT, 1,4) + '-' + SUBSTRING(a.Acc_DT, 5,2) AS '청구월',
+				a.SUP_EK AS '공급가',
+				a.TAX_EK AS '부가세'
+		FROM [ncustoms_sn].[kcba].[impo1_mDtl] a WITH (NOLOCK)
+		WHERE a.Impo_key= #{strImpoKey}
+		ORDER BY a.ADJ_CD
+	</select>
+
+	<select id="selectImpoSebCostSubMasterByCustomsList" resultType="map">
+		/* 세브 비용관리 마스터안분 조회(청구처별) */
+		SELECT	a.Acc_NM AS '청구처',
+				SUM(a.sum_ek) AS '합계금액',
+				SUBSTRING(a.Acc_DT, 1,4) + '-' + SUBSTRING(a.Acc_DT, 5,2) AS '청구월',
+				SUM(a.SUP_EK) AS '공급가',
+				SUM(a.TAX_EK) AS '부가세'
+		FROM [ncustoms_sn].[kcba].[impo1_mDtl] a WITH (NOLOCK)
+		WHERE a.Impo_key= #{strImpoKey}
+		GROUP BY a.Acc_NM, a.Acc_DT
+		ORDER BY a.Acc_NM
+	</select>
+
+	<select id="selectImpoSebCostChargeForCustomerList" resultType="map">
+		/* 세브 비용관리 청구처별 청구리스트(엑셀) */
+		SELECT
+		  ROW_NUMBER() OVER (ORDER BY aa.Impo_singo_no) AS 'rownum',
+		  aa.Impo_hanggu_gubun,
+		  aa.Impo_Gonggub_Sangho AS 'Vendor',
+		  aa.Impo_iphang_date AS 'ETA',
+		  aa.Impo_Ok_date,
+		  aa.Impo_segwan,
+		  aa.Impo_gele_gubun,
+		  aa.Impo_singo_no,
+		  aa.Impo_bl_no,
+		  aa.Impo_gyelje_money,
+		  aa.Impo_exch_yul,
+		  aa.Impo_gyelje_input,
+		  aa.Impo_indo_jogun,
+		  aa.Impo_Forwarder_Code,
+		  aa.Impo_pojang_su,
+		  aa.Impo_total_jung,
+		  aa.Impo_cif_total_won,
+		  aa.Impo_gwan_tax,
+		  aa.Impo_vat_tax,
+		  SUM(aa.[DSV]) AS 'DSV',
+		  SUM(aa.[CLASQUIN]) AS 'CLASQUIN',
+		  SUM(aa.[PANALPINA]) AS 'PANALPINA',
+		  SUM(aa.[세인관세법인]) AS '세인관세법인',
+		  SUM(aa.[현대로지스틱스]) AS '현대로지스틱스',
+		  SUM(aa.[용마로지스]) AS '용마로지스',
+		  SUM(aa.[세인티앤엘]) AS '세인티앤엘',
+		  SUM(aa.[영동]) AS '영동',
+		  SUM(aa.[덕양]) AS '덕양',
+		  SUM(aa.[덕양유엘씨]) AS '덕양유엘씨',
+		  SUM(aa.[롯데글로벌로지스]) AS '롯데글로벌로지스',
+		  SUM(aa.[CJ대한통운]) AS '대한통운',
+		  SUM(aa.[미분류회사]) AS '미분류회사'
+		FROM (SELECT
+		  a.Impo_hanggu_gubun,
+		  a.Impo_Gonggub_Sangho,
+		  a.Impo_iphang_date,
+		  a.Impo_Ok_date,
+		  a.Impo_segwan,
+		  a.Impo_gele_gubun,
+		  a.Impo_singo_no,
+		  a.Impo_bl_no,
+		  a.Impo_gyelje_money,
+		  a.Impo_exch_yul,
+		  a.Impo_gyelje_input,
+		  a.Impo_indo_jogun,
+		  a.Impo_Forwarder_Code,
+		  a.Impo_pojang_su,
+		  a.Impo_total_jung,
+		  a.Impo_cif_total_won,
+		  a.Impo_gwan_tax,
+		  a.Impo_vat_tax,
+		 CASE WHEN d.acc_nm = 'DSV' THEN d.sup_ek ELSE 0 END AS 'DSV',
+		 CASE WHEN d.acc_nm = 'CLASQUIN' THEN d.sup_ek ELSE 0 END AS 'CLASQUIN',
+		 CASE WHEN d.acc_nm = 'PANALPINA' THEN d.sup_ek ELSE 0 END AS 'PANALPINA', /* 포워더 */
+		 CASE WHEN d.acc_nm = '세인관세법인' THEN d.sup_ek ELSE 0 END AS '세인관세법인', /* 관세사 */
+		 CASE WHEN d.acc_nm = '현대로지스틱스' THEN d.sup_ek ELSE 0 END AS '현대로지스틱스',
+		 CASE WHEN d.acc_nm = '용마로지스' THEN d.sup_ek ELSE 0 END AS '용마로지스',
+		 CASE WHEN d.acc_nm = '세인티앤엘' THEN d.sup_ek ELSE 0 END AS '세인티앤엘',
+		 CASE WHEN d.acc_nm = '영동' THEN d.sup_ek ELSE 0 END AS '영동',
+		 CASE WHEN d.acc_nm = '덕양' THEN d.sup_ek ELSE 0 END AS '덕양', /* 운송사 */
+		 CASE WHEN d.acc_nm = '덕양유엘씨' THEN d.sup_ek ELSE 0 END AS '덕양유엘씨',
+		 CASE WHEN d.acc_nm = '롯데글로벌로지스' THEN d.sup_ek ELSE 0 END AS '롯데글로벌로지스',
+		 CASE WHEN d.acc_nm = 'CJ대한통운' THEN d.sup_ek ELSE 0 END AS 'CJ대한통운',
+		 CASE WHEN d.acc_nm NOT IN ('DSV', 'CLASQUIN', 'PANALPINA', '세인관세법인', '현대로지스틱스', '용마로지스', '세인티앤엘', '영동', '덕양', '덕양유엘씨', '롯데글로벌로지스', 'CJ대한통운') THEN d.sup_ek ELSE 0 END AS '미분류회사'
+ 		 <!-- CASE WHEN d.acc_nm = '마레&amp;영동&amp;세인TNL' THEN d.sup_ek ELSE 0 END AS '마레&amp;영동&amp;세인TNL', -->
+		FROM [ncustoms_sn].[kcba].[impo1] a WITH (NOLOCK)
+		LEFT OUTER JOIN (SELECT
+		  Impo_key,
+		  acc_nm,
+		  SUM(sup_ek) AS 'sup_ek'
+		FROM [ncustoms_sn].[kcba].[impo1_mDtl] WITH (NOLOCK)
+		<where>
+			<if test='strAccDt != "" and strAccDt != null'>AND acc_dt = #{strAccDt}</if>
+		</where>
+		GROUP BY Impo_key,
+		         ADJ_CD,
+		         acc_nm) d
+		  ON a.Impo_key = d.Impo_key
+		/* 검색조건 시작 */
+		WHERE a.Impo_napse_saup IN ('2208146671')
+
+		<if test='strEntity != "" and strEntity != null'>
+			AND EXISTS ( SELECT * FROM [ncustoms_sn].[kcba].[Impo3] dd WITH (NOLOCK) WHERE a.Impo_key = dd.Impum_Key AND dd.Impum_jajae_code LIKE #{strEntity} + '%' )
+		</if>
+		<if test='strEntityList != "" and strEntityList != null'>
+			AND EXISTS ( SELECT * FROM [ncustoms_sn].[kcba].[Impo3] ddd WITH (NOLOCK) WHERE a.Impo_key = ddd.Impum_Key AND ddd.Impum_jajae_code IN ${strEntityList} )
+		</if>
+		<if test='strVendor != "" and strVendor != null'>AND a.Impo_Gonggub_Sangho LIKE '%' + #{strVendor} + '%'</if>
+		<if test='_DateType != "ALL" and _DateType != null and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+		<choose>
+			<when test='_DateType == "Impo_iphang_date_Day"'>AND a.Impo_iphang_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+			<when test='_DateType == "Impo_banip_date_Day"'>AND a.Impo_banip_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+			<when test='_DateType == "Impo_singo_date_Day"'>AND a.Impo_singo_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+			<when test='_DateType == "Impo_ok_date_Day"'>AND a.Impo_ok_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+		</choose>
+		</if>
+		<if test='strSingoDelay != "ALL" and strSingoDelay != null'>
+		<choose>
+			<when test='strSingoDelay == "SINGO"'>AND ISNULL(a.Impo_Jubsu_Date,'') != ''</when>
+			<when test='strSingoDelay == "MISINGO"'>AND ISNULL(a.Impo_Jubsu_Date,'') = ''</when>
+		</choose>
+		</if>
+		<if test='strSegwanDelay != "ALL" and strSegwanDelay != null'>
+		<choose>
+			<when test='strSegwanDelay == "SIMSA"'>AND ISNULL(a.Impo_Jubsu_Date,'') != '' AND ISNULL(a.Impo_ok_date,'') != ''</when>
+			<when test='strSegwanDelay == "MISIMSA"'>AND ISNULL(a.Impo_Jubsu_Date,'') != '' AND ISNULL(a.Impo_ok_date,'') = ''</when>
+		</choose>
+		</if>
+		<if test='strSingoNo != "" and strSingoNo != null'>AND a.Impo_singo_no LIKE '%' + #{strSingoNo} + '%'</if>
+		<if test='strBlNo != "" and strBlNo != null'>AND a.Impo_bl_no LIKE #{strBlNo} + '%'</if>
+		<if test='strInvoiceNo != "" and strInvoiceNo != null'>
+			AND EXISTS ( SELECT * FROM [ncustoms_sn].[kcba].[impo3] a1 WITH (NOLOCK) WHERE a.Impo_key=a1.Impum_key AND a1.Impum_sungbun3 = #{strInvoiceNo})
+		</if>
+		<if test='strAccNm != "" and strAccNm != null'>AND b.acc_Nm LIKE #{strAccNm} + '%'</if>
+		<if test='strAccDt != "" and strAccDt != null'>
+			AND EXISTS (SELECT * FROM [ncustoms_sn].[kcba].[impo1_mDtl] WITH (NOLOCK) WHERE Impo_key=a.Impo_key AND acc_dt = #{strAccDt})
+		</if>
+		/* 검색조건 종료 */
+		) aa
+		GROUP BY aa.Impo_hanggu_gubun,
+		         aa.Impo_Gonggub_Sangho,
+		         aa.Impo_iphang_date,
+		         aa.Impo_Ok_date,
+		         aa.Impo_segwan,
+		         aa.Impo_gele_gubun,
+		         aa.Impo_singo_no,
+		         aa.Impo_bl_no,
+		         aa.Impo_gyelje_money,
+		         aa.Impo_exch_yul,
+		         aa.Impo_gyelje_input,
+		         aa.Impo_indo_jogun,
+		         aa.Impo_Forwarder_Code,
+		         aa.Impo_pojang_su,
+		         aa.Impo_total_jung,
+		         aa.Impo_cif_total_won,
+		         aa.Impo_gwan_tax,
+		         aa.Impo_vat_tax
+	</select>
+
+	<select id="selectImpoSebCostChargeForMaterialList" resultType="map">
+		/* 세브 비용관리 자재별 청구리스트(엑셀) */
+		SELECT
+		  ROW_NUMBER() OVER (ORDER BY aa.impo_singo_no) AS 'rownum',
+		  aa.Impo_hanggu_gubun,
+		  aa.Impo_Gonggub_Sangho AS 'Vendor',
+		  aa.Impo_iphang_date AS 'ETA',
+		  aa.Impo_Ok_date,
+		  aa.Impo_segwan,
+		  aa.Impo_gele_gubun,
+		  aa.Impo_singo_no,
+		  aa.Impo_bl_no,
+		  aa.Impo_gyelje_money,
+		  aa.Impo_exch_yul,
+		  aa.Impo_gyelje_input,
+		  aa.Impo_indo_jogun,
+		  aa.Impo_Forwarder_Code,
+		  aa.Impo_pojang_su,
+		  aa.Impo_total_jung,
+		  aa.Impo_cif_total_won,
+		  aa.Impo_gwan_tax,
+		  aa.Impo_vat_tax,
+		  aa.Impum_lan,
+		  aa.Impum_heang,
+		  aa.Impum_jajae_code,
+		  aa.[규격] AS '규격',
+		  aa.Impum_su,
+		  aa.Impum_danga,
+		  aa.Impum_Amt,
+		  SUM(aa.C090) AS 'C090',
+		  SUM(aa.C108) AS 'C108',
+		  SUM(aa.C117) AS 'C117',
+		  SUM(aa.C125) AS 'C125',
+		  SUM(aa.C086) AS 'C086',
+		  SUM(aa.C107) AS 'C107',
+		  SUM(aa.C097) AS 'C097',
+		  SUM(aa.C018) AS 'C018',
+		  SUM(aa.C026) AS 'C026',
+		  SUM(aa.C043) AS 'C043',
+		  SUM(aa.C014) AS 'C014',
+		  SUM(aa.C084) AS 'C084',
+		  SUM(aa.C124) AS 'C124',
+		  SUM(aa.C094) AS 'C094',
+		  SUM(aa.C079) AS 'C079',
+		  SUM(aa.C110) AS 'C110',
+		  SUM(aa.C060) AS 'C060',
+		  SUM(aa.C013) AS 'C013',
+		  SUM(aa.C080) AS 'C080',
+		  SUM(aa.C019) AS 'C019',
+		  SUM(aa.C023) AS 'C023',
+		  SUM(aa.ETC_AMT) AS '미분류금액'
+		FROM (SELECT
+		  a.Impo_hanggu_gubun,
+		  a.Impo_Gonggub_Sangho,
+		  a.Impo_iphang_date,
+		  a.Impo_Ok_date,
+		  a.Impo_segwan,
+		  a.Impo_gele_gubun,
+		  a.Impo_singo_no,
+		  a.Impo_bl_no,
+		  a.Impo_gyelje_money,
+		  a.Impo_exch_yul,
+		  a.Impo_gyelje_input,
+		  a.Impo_indo_jogun,
+		  a.Impo_Forwarder_Code,
+		  a.Impo_pojang_su,
+		  a.Impo_total_jung,
+		  a.Impo_cif_total_won,
+		  a.Impo_gwan_tax,
+		  a.Impo_vat_tax,
+		  d.Impum_lan,
+		  d.Impum_heang,
+		  d.Impum_jajae_code,
+		  d.Impum_gukyk1 + ' ' + d.Impum_gukyk2 + ' ' + d.Impum_gukyk3 AS '규격',
+		  d.Impum_su,
+		  d.Impum_danga,
+		  d.Impum_Amt,
+		  CASE WHEN ISNULL(e.ADJ_CD, '') = 'C090' THEN e.sup_ek ELSE 0 END AS 'C090',
+		  CASE WHEN ISNULL(e.ADJ_CD, '') = 'C108' THEN e.sup_ek ELSE 0 END AS 'C108',
+		  CASE WHEN ISNULL(e.ADJ_CD, '') = 'C117' THEN e.sup_ek ELSE 0 END AS 'C117',
+		  CASE WHEN ISNULL(e.ADJ_CD, '') = 'C125' THEN e.sup_ek ELSE 0 END AS 'C125',
+		  CASE WHEN ISNULL(e.ADJ_CD, '') = 'C086' THEN e.sup_ek ELSE 0 END AS 'C086',
+		  CASE WHEN ISNULL(e.ADJ_CD, '') = 'C107' THEN e.sup_ek ELSE 0 END AS 'C107',
+		  CASE WHEN ISNULL(e.ADJ_CD, '') = 'C097' THEN e.sup_ek ELSE 0 END AS 'C097',
+		  CASE WHEN ISNULL(e.ADJ_CD, '') = 'C018' THEN e.sup_ek ELSE 0 END AS 'C018',
+		  CASE WHEN ISNULL(e.ADJ_CD, '') = 'C026' THEN e.sup_ek ELSE 0 END AS 'C026',
+		  CASE WHEN ISNULL(e.ADJ_CD, '') = 'C043' THEN e.sup_ek ELSE 0 END AS 'C043',
+		  CASE WHEN ISNULL(e.ADJ_CD, '') = 'C014' THEN e.sup_ek ELSE 0 END AS 'C014',
+		  CASE WHEN ISNULL(e.ADJ_CD, '') = 'C084' THEN e.sup_ek ELSE 0 END AS 'C084',
+		  CASE WHEN ISNULL(e.ADJ_CD, '') = 'C124' THEN e.sup_ek ELSE 0 END AS 'C124',
+		  CASE WHEN ISNULL(e.ADJ_CD, '') = 'C094' THEN e.sup_ek ELSE 0 END AS 'C094',
+		  CASE WHEN ISNULL(e.ADJ_CD, '') = 'C079' THEN e.sup_ek ELSE 0 END AS 'C079',
+		  CASE WHEN ISNULL(e.ADJ_CD, '') = 'C110' THEN e.sup_ek ELSE 0 END AS 'C110',
+		  CASE WHEN ISNULL(e.ADJ_CD, '') = 'C060' THEN e.sup_ek ELSE 0 END AS 'C060',
+		  CASE WHEN ISNULL(e.ADJ_CD, '') = 'C013' THEN e.sup_ek ELSE 0 END AS 'C013',
+		  CASE WHEN ISNULL(e.ADJ_CD, '') = 'C080' THEN e.sup_ek ELSE 0 END AS 'C080',
+		  CASE WHEN ISNULL(e.ADJ_CD, '') = 'C019' THEN e.sup_ek ELSE 0 END AS 'C019',
+		  CASE WHEN ISNULL(e.ADJ_CD, '') = 'C023' THEN e.sup_ek ELSE 0 END AS 'C023',
+		  CASE WHEN ISNULL(e.ADJ_CD, '') NOT IN ('C090', 'C108', 'C117', 'C125', 'C086',
+		  										'C107', 'C097', 'C018', 'C026', 'C043',
+		  										'C014', 'C084', 'C124', 'C094', 'C079',
+		  										'C110', 'C060', 'C013', 'C080', 'C019',
+		  										'C023' )
+										THEN ISNULL(e.sup_ek, 0) ELSE 0 END AS 'ETC_AMT'
+		FROM [ncustoms_sn].[kcba].[impo1] a WITH (NOLOCK)
+		LEFT OUTER JOIN [ncustoms_sn].[kcba].[Impo3] d WITH (NOLOCK)
+		  ON a.Impo_key = d.Impum_key
+		LEFT OUTER JOIN [ncustoms_sn].[kcba].[impo3_mdtl] e WITH (NOLOCK)
+		  ON d.Impum_key = e.Impum_key
+		  AND d.Impum_lan = e.Impum_lan
+		  AND d.Impum_heang = e.Impum_heang
+		/* 검색조건 시작 */
+		WHERE a.Impo_napse_saup IN ('2208146671')
+
+		<if test='strEntity != "" and strEntity != null'>
+			AND EXISTS ( SELECT * FROM [ncustoms_sn].[kcba].[Impo3] dd WITH (NOLOCK) WHERE a.Impo_key = dd.Impum_Key AND dd.Impum_jajae_code LIKE #{strEntity} + '%' )
+		</if>
+		<if test='strEntityList != "" and strEntityList != null'>
+			AND EXISTS ( SELECT * FROM [ncustoms_sn].[kcba].[Impo3] ddd WITH (NOLOCK) WHERE a.Impo_key = ddd.Impum_Key AND ddd.Impum_jajae_code IN ${strEntityList} )
+		</if>
+		<if test='strVendor != "" and strVendor != null'>AND a.Impo_Gonggub_Sangho LIKE '%' + #{strVendor} + '%'</if>
+		<if test='_DateType != "ALL" and _DateType != null and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+		<choose>
+			<when test='_DateType == "Impo_iphang_date_Day"'>AND a.Impo_iphang_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+			<when test='_DateType == "Impo_banip_date_Day"'>AND a.Impo_banip_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+			<when test='_DateType == "Impo_singo_date_Day"'>AND a.Impo_singo_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+			<when test='_DateType == "Impo_ok_date_Day"'>AND a.Impo_ok_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+		</choose>
+		</if>
+		<if test='strSingoDelay != "ALL" and strSingoDelay != null'>
+		<choose>
+			<when test='strSingoDelay == "SINGO"'>AND ISNULL(a.Impo_Jubsu_Date,'') != ''</when>
+			<when test='strSingoDelay == "MISINGO"'>AND ISNULL(a.Impo_Jubsu_Date,'') = ''</when>
+		</choose>
+		</if>
+		<if test='strSegwanDelay != "ALL" and strSegwanDelay != null'>
+		<choose>
+			<when test='strSegwanDelay == "SIMSA"'>AND ISNULL(a.Impo_Jubsu_Date,'') != '' AND ISNULL(a.Impo_ok_date,'') != ''</when>
+			<when test='strSegwanDelay == "MISIMSA"'>AND ISNULL(a.Impo_Jubsu_Date,'') != '' AND ISNULL(a.Impo_ok_date,'') = ''</when>
+		</choose>
+		</if>
+		<if test='strSingoNo != "" and strSingoNo != null'>AND a.Impo_singo_no LIKE '%' + #{strSingoNo} + '%'</if>
+		<if test='strBlNo != "" and strBlNo != null'>AND a.Impo_bl_no LIKE #{strBlNo} + '%'</if>
+		<if test='strInvoiceNo != "" and strInvoiceNo != null'>
+			AND EXISTS ( SELECT * FROM [ncustoms_sn].[kcba].[impo3] a1 WITH (NOLOCK) WHERE a.Impo_key=a1.Impum_key AND a1.Impum_sungbun3 = #{strInvoiceNo})
+		</if>
+		<if test='strAccNm != "" and strAccNm != null'>AND b.acc_Nm LIKE #{strAccNm} + '%'</if>
+		<if test='strAccDt != "" and strAccDt != null'>
+			AND EXISTS (SELECT * FROM [ncustoms_sn].[kcba].[impo1_mDtl] WITH (NOLOCK) WHERE Impo_key=a.Impo_key AND acc_dt = #{strAccDt})
+		</if>
+		/* 검색조건 종료 */
+		) aa
+		GROUP BY aa.Impo_hanggu_gubun,
+		         aa.Impo_Gonggub_Sangho,
+		         aa.Impo_iphang_date,
+		         aa.Impo_Ok_date,
+		         aa.Impo_segwan,
+		         aa.Impo_gele_gubun,
+		         aa.Impo_singo_no,
+		         aa.Impo_bl_no,
+		         aa.Impo_gyelje_money,
+		         aa.Impo_exch_yul,
+		         aa.Impo_gyelje_input,
+		         aa.Impo_indo_jogun,
+		         aa.Impo_Forwarder_Code,
+		         aa.Impo_pojang_su,
+		         aa.Impo_total_jung,
+		         aa.Impo_cif_total_won,
+		         aa.Impo_gwan_tax,
+		         aa.Impo_vat_tax,
+		         aa.Impum_lan,
+		         aa.Impum_heang,
+		         aa.Impum_jajae_code,
+		         aa.[규격],
+		         aa.Impum_su,
+		         aa.Impum_danga,
+		         aa.Impum_Amt
+	</select>
+
+	<select id="selectImpoDolceCostList" resultType="map">
+		/* 돌체 비용관리 마스터 조회 */
+		SELECT 	 a.수입키
+				,a.무역거래처
+				,a.수입신고번호규격
+				,a.수입신고번호
+				,a.BL번호
+				,a.REF1
+				,a.MBL번호
+				,a.수리일
+				,a.입항일
+				,a.반입일
+				,a.신고일
+				,a.[hidden Invoice Amount] AS 'hidden Invoice Amount'
+				,a.[Invoice Amount] AS 'Invoice Amount'
+				,a.결제통화
+				,a.결제환율
+				,a.과세운임
+				,a.과세가격
+				,a.관세
+				,a.부가세
+				,a.기타세
+				,a.총세액
+				,SUM(a.C018) AS 'C018'
+				,SUM(a.C091) AS 'C091'
+				,SUM(a.tnl) AS 'tnl'
+				,SUM(a.통관수수료) AS '통관수수료'
+				,SUM(a.요건수수료) AS '요건수수료'
+				,SUM(a.창고료) AS '창고료'
+				,SUM(a.창고기타) AS '창고기타'
+				,SUM(a.내륙운송료) AS '내륙운송료'
+				,SUM(a.Handling) AS 'Handling'
+				,a.과세가격+a.총세액+SUM(a.합계금액) AS '합계금액'
+				,a.징수형태
+		FROM (
+				SELECT	 a.Impo_key AS '수입키'
+						,a.Impo_Gonggub_Sangho AS '무역거래처'
+						,SUBSTRING(a.impo_singo_no, 1,5) +'-'+ SUBSTRING(a.impo_singo_no, 6,2) +'-'+ SUBSTRING(a.impo_singo_no, 8,7) AS '수입신고번호규격'
+						,a.impo_singo_no AS '수입신고번호'
+						,a.impo_bl_no AS 'BL번호'
+						,a.Impo_file_no1 AS 'REF1'
+						,a.impo_mbl_no AS 'MBL번호'
+						,CASE WHEN ISNULL(a.impo_singo_date,'') = ''  THEN '' ELSE CONVERT(VARCHAR(10),CONVERT(DATETIME, a.impo_singo_date),120)  END AS '수리일'
+						,CASE WHEN ISNULL(a.Impo_iphang_date,'') = '' THEN '' ELSE CONVERT(VARCHAR(10),CONVERT(DATETIME, a.Impo_iphang_date),120) END AS '입항일'
+						,CASE WHEN ISNULL(a.Impo_banip_date,'') = ''  THEN '' ELSE CONVERT(VARCHAR(10),CONVERT(DATETIME, a.Impo_banip_date),120)  END AS '반입일'
+						,CASE WHEN ISNULL(a.impo_singo_date,'') = ''  THEN '' ELSE CONVERT(VARCHAR(10),CONVERT(DATETIME, a.impo_singo_date),120)  END AS '신고일'
+						,a.Impo_gyelje_input AS 'hidden Invoice Amount'
+						,a.Impo_gyelje_input AS 'Invoice Amount'
+						,a.Impo_gyelje_money AS '결제통화'
+						,a.Impo_exch_yul AS '결제환율'
+						,a.Impo_fre_won AS '과세운임'
+						,a.Impo_cif_total_won AS '과세가격'
+						,a.Impo_gwan_tax AS '관세'
+						,a.Impo_vat_tax AS '부가세'
+						,(a.Impo_total_tax-(a.Impo_gwan_tax+a.Impo_vat_tax)) AS '기타세'
+						,a.Impo_total_tax AS '총세액'
+						,CASE WHEN ISNULL(b.acc_nm,'') = '세인관세법인' THEN SUM(ISNULL(b.sup_ek,0)) ELSE 0 END AS 'C018'
+						,CASE WHEN ISNULL(b.acc_nm,'') = '케리항운' THEN SUM(ISNULL(b.sup_ek,0)) ELSE 0 END AS 'C091'
+						,CASE WHEN ISNULL(b.acc_nm,'') = '세인티앤엘' THEN SUM(ISNULL(b.sup_ek,0)) ELSE 0 END AS 'tnl'
+						,CASE WHEN ISNULL(b.ADJ_NM,'') = '통관수수료' THEN SUM(ISNULL(b.sup_ek,0)) ELSE 0 END AS '통관수수료'
+						,CASE WHEN ISNULL(b.ADJ_NM,'') = '요건수수료' THEN SUM(ISNULL(b.sup_ek,0)) ELSE 0 END AS '요건수수료'
+						,CASE WHEN ISNULL(b.ADJ_NM,'') = '창고료' THEN SUM(ISNULL(b.sup_ek,0)) ELSE 0 END AS '창고료'
+						,CASE WHEN ISNULL(b.ADJ_NM,'') = '창고기타' THEN SUM(ISNULL(b.sup_ek,0)) ELSE 0 END AS '창고기타'
+						,CASE WHEN ISNULL(b.ADJ_NM,'') = '내륙운송료' THEN SUM(ISNULL(b.sup_ek,0)) ELSE 0 END AS '내륙운송료'
+						,CASE WHEN ISNULL(b.acc_nm,'') = '케리항운' THEN SUM(ISNULL(b.sup_ek,0)) ELSE 0 END AS 'Handling'
+						,SUM(ISNULL(b.sup_ek,0)) AS '합계금액'
+						,a.impo_jingsu_type AS '징수형태'
+				FROM ${_defaultDB}.[kcba].[impo1] a WITH (NOLOCK) LEFT OUTER JOIN ${_defaultDB}.[kcba].[impo1_mDtl] b WITH (NOLOCK)
+				  ON a.Impo_key = b.Impo_key
+					<if test='strAccDt != "" and strAccDt != null'>AND b.acc_dt = #{strAccDt}</if>
+				<where>
+				<if test='taxNum != null and taxNum != ""'>
+	              <choose>
+	                <when test='taxNum == "all"'>AND a.Impo_napse_saup IN (select userSaup from soo.dbo.CPS_SaveCustomer where userKey = #{ID} and useYn = 'Y')</when>
+	                <otherwise>AND a.Impo_napse_saup = #{taxNum}</otherwise>
+	              </choose>
+			    </if>
+				<if test='strEntity != "" and strEntity != null'>
+					AND EXISTS ( SELECT * FROM ${_defaultDB}.[kcba].[Impo3] dd WITH (NOLOCK) WHERE a.Impo_key = dd.Impum_Key AND dd.Impum_jajae_code LIKE #{strEntity} + '%' )
+				</if>
+				<if test='strEntityList != "" and strEntityList != null'>
+					AND EXISTS ( SELECT * FROM ${_defaultDB}.[kcba].[Impo3] ddd WITH (NOLOCK) WHERE a.Impo_key = ddd.Impum_Key AND ddd.Impum_jajae_code IN ${strEntityList} )
+				</if>
+				<if test='strVendor != "" and strVendor != null'>AND a.Impo_Gonggub_Sangho LIKE '%' + #{strVendor} + '%'</if>
+				<if test='strDateType != "ALL" and strDateType != null and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+		             <choose>
+		                <when test='strDateType == "strIphang"'>AND a.Impo_iphang_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+		                <when test='strDateType == "strBanip"'>AND a.Impo_banip_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+		                <when test='strDateType == "strSingo"'>AND a.Impo_singo_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+		                <when test='strDateType == "strOk"'>AND a.Impo_ok_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+		              </choose>
+		        </if>
+		        <if test='strSingoDelay != "ALL" and strSingoDelay != null'>
+		             <choose>
+		                <when test='strSingoDelay == "SINGO"'>AND ISNULL(a.Impo_Jubsu_Date,'') != ''</when>
+		                <when test='strSingoDelay == "MISINGO"'>AND ISNULL(a.Impo_Jubsu_Date,'') = ''</when>
+		              </choose>
+		        </if>
+		        <if test='strSegwanDelay != "ALL" and strSegwanDelay != null'>
+		             <choose>
+		                <when test='strSegwanDelay == "SIMSA"'>
+		                    AND ISNULL(a.Impo_Jubsu_Date,'') != ''
+		                    AND ISNULL(a.Impo_ok_date,'') != ''
+		                </when>
+		                <when test='strSegwanDelay == "MISIMSA"'>
+		                    AND ISNULL(a.Impo_Jubsu_Date,'') != ''
+		                    AND ISNULL(a.Impo_ok_date,'') = ''
+		                </when>
+		              </choose>
+		        </if>
+				<if test='strSingoNo != "" and strSingoNo != null'>AND a.impo_singo_no LIKE '%' + #{strSingoNo} + '%'</if>
+				<if test='strBlNo != "" and strBlNo != null'>AND a.impo_bl_no LIKE #{strBlNo} + '%'</if>
+				<if test='strInvoiceNo != "" and strInvoiceNo != null'>
+					AND EXISTS ( SELECT * FROM ${_defaultDB}.[kcba].[impo3] a1 WITH (NOLOCK) WHERE a.Impo_key = a1.Impum_key AND a1.Impum_ivno = #{strInvoiceNo})
+				</if>
+				<if test='strInvNo != "" and strInvNo != null'>
+					AND EXISTS ( SELECT * FROM ${_defaultDB}.[kcba].[impo3] a1 WITH (NOLOCK) WHERE a.Impo_key = a1.Impum_key AND a1.Impum_sungbun3 = #{strInvNo})
+				</if>
+				<if test='strAccNm != "" and strAccNm != null'>AND b.acc_Nm LIKE #{strAccNm} + '%'</if>
+				<if test='strAccDt != "" and strAccDt != null'>
+					AND a.Impo_key IN (SELECT Impo_key FROM ${_defaultDB}.[kcba].[impo1_mDtl] WITH (NOLOCK) WHERE acc_dt = #{strAccDt})
+				</if>
+				<if test='strDateType != "ALL" and strDateType != null and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+					<choose>
+						<when test='strDateType == "strImpumInvoice"'>
+							AND a.Impo_key IN (SELECT Impo_key
+												FROM ${_defaultDB}.[kcba].[impo1_mDtl] WITH (NOLOCK)
+												WHERE impum_contactno BETWEEN #{strFromDate} AND #{strToDate}
+											  )
+						</when>
+					</choose>
+				</if>
+				<if test='strYogunNum != "" and strYogunNum != null'>
+					AND EXISTS ( SELECT *
+								FROM ${_defaultDB}.[kcba].[impo41] h WITH (NOLOCK)
+		     					WHERE h.SUIPYOGUN_KEY = a.Impo_key
+		     					AND h.SUIPYOGUN_NO = #{strYogunNum} )
+		        </if>
+		        <if test='strForwarder != "" and strForwarder != null'>
+					AND a.Impo_DaeSaupNo = #{strForwarder}
+				</if>
+				<if test='Impokey != null and Impokey != ""'>AND a.Impo_Key = #{Impokey}</if>
+		        </where>
+				GROUP BY  a.Impo_key
+						 ,a.Impo_Gonggub_Sangho
+						 ,SUBSTRING(a.impo_singo_no, 1,5) +'-'+ SUBSTRING(a.impo_singo_no, 6,2) +'-'+ SUBSTRING(a.impo_singo_no, 8,7)
+						 ,a.impo_singo_no
+						 ,a.impo_bl_no
+						 ,a.Impo_file_no1
+						 ,a.impo_mbl_no
+						 ,CASE WHEN ISNULL(a.impo_singo_date,'') = ''  THEN '' ELSE CONVERT(VARCHAR(10),CONVERT(DATETIME, a.impo_singo_date),120) END
+						 ,CASE WHEN ISNULL(a.Impo_iphang_date,'') = '' THEN '' ELSE CONVERT(VARCHAR(10),CONVERT(DATETIME, a.Impo_iphang_date),120) END
+						 ,CASE WHEN ISNULL(a.Impo_banip_date,'') = ''  THEN '' ELSE CONVERT(VARCHAR(10),CONVERT(DATETIME, a.Impo_banip_date),120) END
+						 ,a.Impo_gyelje_input
+						 ,a.Impo_gyelje_money
+						 ,a.Impo_exch_yul
+						 ,a.Impo_fre_won
+						 ,a.Impo_cif_total_won
+						 ,a.Impo_gwan_tax
+						 ,a.Impo_vat_tax
+						 ,(a.Impo_total_tax-(a.Impo_gwan_tax+a.Impo_vat_tax))
+						 ,a.Impo_total_tax
+						 ,ISNULL(b.acc_nm,'')
+						 ,ISNULL(b.ADJ_NM,'')
+						 ,b.sup_ek
+						 ,a.impo_jingsu_type
+				) a
+		GROUP BY a.수입키
+				,a.무역거래처
+				,a.수입신고번호규격
+				,a.수입신고번호
+				,a.BL번호
+				,a.REF1
+				,a.MBL번호
+				,a.수리일
+				,a.입항일
+				,a.반입일
+				,a.신고일
+				,a.[hidden Invoice Amount]
+				,a.[Invoice Amount]
+				,a.결제통화
+				,a.결제환율
+				,a.과세운임
+				,a.과세가격
+				,a.관세
+				,a.부가세
+				,a.기타세
+				,a.총세액
+				,a.징수형태
+		ORDER BY a.수입키
+	</select>
+
+	<select id="selectDolceImpoCostSubDetailList" resultType="map">
+		/* 돌체 비용관리 impo3 인보이스 번호별 세목별 비용 상세 조회 */
+		select c.*,
+		(select SUM(ISNULL(SUP_EK,0)) from ${_defaultDB}.[kcba].[impo3_mDtl] where Impum_key = c.Impum_key  AND Impum_lan = c.Impum_lan AND Impum_heang = c.Impum_heang and ADJ_GR_CD='1') as 'sein',
+		(select SUM(ISNULL(SUP_EK,0)) from ${_defaultDB}.[kcba].[impo3_mDtl] where Impum_key = c.Impum_key  AND Impum_lan = c.Impum_lan AND Impum_heang = c.Impum_heang and ADJ_GR_CD='4') as 'tnl',
+		(select SUM(ISNULL(SUP_EK,0)) from ${_defaultDB}.[kcba].[impo3_mDtl] where Impum_key = c.Impum_key  AND Impum_lan = c.Impum_lan AND Impum_heang = c.Impum_heang and ADJ_GR_CD='2') as 'handing',
+		c.cifwon+c.duty+c.other+(select SUM(ISNULL(SUP_EK,0)) from ${_defaultDB}.[kcba].[impo3_mDtl] where Impum_key = c.Impum_key  AND Impum_lan = c.Impum_lan AND Impum_heang = c.Impum_heang) as 'total'
+		from
+		(SELECT
+			 a.Impum_key
+			,a.Impum_lan
+		    ,a.Impum_heang
+		    ,a.Impum_ivno
+		    ,a.Impum_jajae_code
+			,a.Impum_su
+		    ,a.Impum_danga
+		    ,a.Impum_amt
+		    ,ISNULL(b.cifwon,0) AS 'cifwon'
+			,ISNULL(b.duty,0) AS 'duty'
+			,ISNULL(b.tax-b.duty-b.vat,0) AS 'other'
+		FROM ${_defaultDB}.[kcba].[Impo3] a WITH (NOLOCK) LEFT OUTER JOIN ${_defaultDB}.[kcba].[Impo3_M] b WITH (NOLOCK)
+		  ON a.Impum_key = b.Impum_key
+		 AND a.Impum_lan = b.Impum_lan
+		 AND a.Impum_heang = b.Impum_heang
+	   WHERE a.Impum_key = #{impumKey}
+		 AND a.Impum_ivno = #{impumIvno}) c
+	</select>
+
+	<select id="selectDolceImpoCostDetailList" resultType="map">
+		/* 돌체 비용관리 impo3 인보이스 번호별 세목별 비용 조회 */
+		select
+			k.Impum_ivno
+			,k.Impo_gyelje_money
+			,k.impum_contactno
+			,k.impum_chamjo_no
+			,SUM(k.Impum_su) AS 'Impum_su'
+			,SUM(k.Impum_danga) AS 'Impum_danga'
+			,SUM(k.Impum_amt) AS 'Impum_amt'
+			,SUM(k.duty) AS 'duty'
+			,SUM(k.other) AS 'other'
+			,SUM(k.cifwon) AS 'cifwon'
+			,SUM(k.sein) AS 'sein'
+			,SUM(k.tnl) AS 'tnl'
+			,SUM(k.handing) AS 'handing'
+			,SUM(k.cifwon)+SUM(k.duty)+SUM(k.other)+SUM(k.total) AS 'total'
+			from
+			(select c.*,
+			(select SUM(ISNULL(SUP_EK,0)) from ${_defaultDB}.[kcba].[impo3_mDtl] where Impum_key = c.Impum_key  AND Impum_lan = c.Impum_lan AND Impum_heang = c.Impum_heang and ADJ_GR_CD='1') as 'sein',
+			(select SUM(ISNULL(SUP_EK,0)) from ${_defaultDB}.[kcba].[impo3_mDtl] where Impum_key = c.Impum_key  AND Impum_lan = c.Impum_lan AND Impum_heang = c.Impum_heang and ADJ_GR_CD='4') as 'tnl',
+			(select SUM(ISNULL(SUP_EK,0)) from ${_defaultDB}.[kcba].[impo3_mDtl] where Impum_key = c.Impum_key  AND Impum_lan = c.Impum_lan AND Impum_heang = c.Impum_heang and ADJ_GR_CD='2') as 'handing',
+			(select SUM(ISNULL(SUP_EK,0)) from ${_defaultDB}.[kcba].[impo3_mDtl] where Impum_key = c.Impum_key  AND Impum_lan = c.Impum_lan AND Impum_heang = c.Impum_heang) as 'total'
+			from
+			(SELECT
+						a.Impum_key
+						,a.Impum_lan
+					      ,a.Impum_heang
+					      ,a.Impum_ivno
+						  ,a.impum_contactno
+						  ,a.impum_chamjo_no
+						  ,a.Impum_su
+					      ,a.Impum_danga
+					      ,a.Impum_amt
+						  ,ISNULL(b.duty,0) AS 'duty'
+						  ,ISNULL(b.tax-b.duty-b.vat,0) AS 'other'
+						  ,ISNULL(b.cifwon,0) AS 'cifwon'
+						  ,(select Impo_gyelje_money from ${_defaultDB}.[kcba].[Impo1] where impo_key = a.Impum_key) as 'Impo_gyelje_money'
+					FROM ${_defaultDB}.[kcba].[Impo3] a WITH (NOLOCK) LEFT OUTER JOIN ${_defaultDB}.[kcba].[Impo3_M] b WITH (NOLOCK)
+					  ON a.Impum_key = b.Impum_key
+					 AND a.Impum_lan = b.Impum_lan
+					 AND a.Impum_heang = b.Impum_heang
+				   WHERE a.Impum_key = #{impumKey}) c ) k
+				   group by k.Impum_ivno
+							,k.Impo_gyelje_money
+							,k.impum_contactno
+							,k.impum_chamjo_no
+	</select>
+
+	<select id="selectAlconImpoCostDetailList" resultType="map">
+		/* 알콘 impo3 인보이스 번호별 세목별 비용 조회 */
+		SELECT a.Impum_ivno,
+				SUM(ISNULL(b.cifwon,0)) AS 'cifwon', SUM(ISNULL(b.fre,0)) AS 'fre', SUM(ISNULL(b.ins,0)) AS 'ins',
+				SUM(ISNULL(b.plus,0)) AS 'plus', SUM(ISNULL(b.duty,0)) AS 'duty', SUM(ISNULL(b.tk,0)) AS 'tk',
+				SUM(ISNULL(b.kt,0)) AS 'kt', SUM(ISNULL(b.vat,0)) AS 'vat', SUM(ISNULL(b.tax,0)) AS 'tax',
+				SUM(ISNULL(b.vat_g,0)) AS 'vat_g', SUM(ISNULL(b.gasan,0)) AS 'gasan', SUM(ISNULL(b.misingo,0)) AS 'misingo',
+				SUM(a.Impum_su) AS 'Impum_su', SUM(a.Impum_danga) AS 'Impum_danga', SUM(a.Impum_amt) AS 'Impum_amt'
+		FROM ${_defaultDB}.[kcba].[Impo3] a WITH (NOLOCK)
+			LEFT OUTER JOIN ${_defaultDB}.[kcba].[Impo3_M] b WITH (NOLOCK)
+						ON a.Impum_key=b.Impum_key
+						AND a.Impum_lan=b.Impum_lan
+						AND a.Impum_heang=b.Impum_heang
+		WHERE a.Impum_key = #{impumKey}
+		GROUP BY a.Impum_ivno
+	</select>
+
+    <select id="selectAlconImpoCostSubDetailList" resultType="map">
+		/* 알콘 impo3 인보이스 번호별 세목별 비용 상세 조회 */
+		SELECT a.Impum_key, a.Impum_lan, a.Impum_heang, a.Impum_ivno, a.Impum_jajae_code,
+				ISNULL(b.cifwon,0) AS 'cifwon', ISNULL(b.fre,0) AS 'fre', ISNULL(b.ins,0) AS 'ins',
+				ISNULL(b.plus,0) AS 'plus', ISNULL(b.duty,0) AS 'duty', ISNULL(b.tk,0) AS 'tk',
+				ISNULL(b.kt,0) AS 'kt', ISNULL(b.vat,0) AS 'vat', ISNULL(b.tax,0) AS 'tax',
+				ISNULL(b.vat_g,0) AS 'vat_g', ISNULL(b.gasan,0) AS 'gasan', ISNULL(b.misingo,0) AS 'misingo',
+				a.Impum_su, a.Impum_danga, a.Impum_amt,
+				c.Mdivision_code
+		FROM ${_defaultDB}.[kcba].[Impo3] a WITH (NOLOCK)
+		LEFT OUTER JOIN ${_defaultDB}.[kcba].[Impo3_M] b WITH (NOLOCK)
+		ON a.Impum_key=b.Impum_key
+		AND a.Impum_lan=b.Impum_lan
+		AND a.Impum_heang=b.Impum_heang
+		LEFT OUTER JOIN CPS.[dbo].[MAAA100] c WITH (NOLOCK)
+		ON a.Impum_jajae_code=c.Mmodel_code
+		WHERE a.Impum_key = #{impumKey}
+		AND a.Impum_ivno = #{impumIvno}
+	</select>
+
+    <select id="selectAlconImpoCostSubMasterDetailList" resultType="map">
+		/* 알콘 비용관리 impo3_mDtl 조회 */
+		SELECT	a.ADJ_NM AS '계정명',
+				a.SUP_EK AS '공급가',
+				a.TAX_EK AS '부가세',
+				a.sum_ek AS '합계금액'
+		FROM ${_defaultDB}.[kcba].[impo3_mDtl] a WITH (NOLOCK)
+		WHERE a.Impum_key= #{Impum_key}
+		 and a.Impum_lan= #{Impum_lan}
+		 and a.Impum_heang= #{Impum_heang}
+	</select>
+
+    <select id="selectAlconImpoCompanySumData" resultType="map">
+	    /* 알콘 회사별 월 청구비용합계 */
+	    SELECT LTRIM(RTRIM(b.회사)) AS '회사', b.청구처구분 AS '청구처구분', SUM(b.회사별합계) AS '회사별월청구비용합계'
+	    FROM ${_defaultDB}.[kcba].[impo1] a WITH (NOLOCK)
+	   			INNER JOIN (
+								SELECT Impo_key, acc_nm AS '회사', ADJ_GR_CD AS '청구처구분', SUM(sup_ek) AS '회사별합계'
+								FROM ${_defaultDB}.[kcba].[impo1_mDtl] WITH (NOLOCK)
+								WHERE acc_dt = #{strAccDt}
+								  and (acc_dt != '201707' or acc_dt != '201708')
+								GROUP BY Impo_key, acc_nm, ADJ_GR_CD
+							) b
+							ON a.Impo_key = b.Impo_key
+		WHERE a.Impo_napse_saup = '1168403700'
+		GROUP BY LTRIM(RTRIM(b.회사)), b.청구처구분
+	</select>
+
+    <select id="selectImpoDanfossCostMasterList" resultType="map">
+		/* 댄포스 비용관리 마스터 조회 */
+		SELECT
+		    a.Impo_key AS '수입키'
+			,a.Impo_Gonggub_Sangho AS '무역거래처'
+			,a.impo_singo_no AS '수입신고번호'
+			,a.impo_bl_no AS 'BL번호'
+			,a.impo_mbl_no AS 'MBL번호'
+			,CASE WHEN ISNULL(a.impo_singo_date,'') = ''  THEN '' ELSE CONVERT(VARCHAR(10),CONVERT(DATETIME, a.impo_singo_date),120)  END AS '수리일'
+			,CASE WHEN ISNULL(a.Impo_iphang_date,'') = '' THEN '' ELSE CONVERT(VARCHAR(10),CONVERT(DATETIME, a.Impo_iphang_date),120) END AS '입항일'
+			,CASE WHEN ISNULL(a.Impo_banip_date,'') = ''  THEN '' ELSE CONVERT(VARCHAR(10),CONVERT(DATETIME, a.Impo_banip_date),120)  END AS '반입일'
+			,CASE WHEN ISNULL(a.impo_singo_date,'') = ''  THEN '' ELSE CONVERT(VARCHAR(10),CONVERT(DATETIME, a.impo_singo_date),120)  END AS '신고일'
+			,a.Impo_gyelje_money AS '결제통화'
+			,a.Impo_exch_yul AS '결제환율'
+			,a.Impo_gyelje_input AS '결제금액'
+			,a.Impo_fre_won AS '운임원화'
+			,a.impo_ins_input AS '보험료원화'
+			,a.impo_plus_won AS '가산금원화'
+			,a.impo_charge_won as '기타금액원화'
+			,a.Impo_cif_total_won AS '과세가격'
+			,a.impo_cif_total_usd AS '과세가격달러'
+			,a.Impo_gwan_tax AS '관세'
+			,a.Impo_vat_tax AS '부가세'
+			,(a.Impo_total_tax-(a.Impo_gwan_tax+a.Impo_vat_tax)) AS '기타세'
+			,a.Impo_total_tax AS '총세액'
+			FROM ncustoms.[kcba].[impo1] a
+			<where>
+				<if test='taxNum != null and taxNum != ""'>
+	              <choose>
+	                <when test='taxNum == "all"'>AND a.Impo_napse_saup IN (select userSaup from soo.dbo.CPS_SaveCustomer where userKey = #{ID} and useYn = 'Y')</when>
+	                <otherwise>AND a.Impo_napse_saup = #{taxNum}</otherwise>
+	              </choose>
+			    </if>
+				<if test='strVendor != "" and strVendor != null'>AND a.Impo_Gonggub_Sangho LIKE '%' + #{strVendor} + '%'</if>
+				<if test='strDateType != "ALL" and strDateType != null and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+		             <choose>
+		                <when test='strDateType == "strIphang"'>AND a.Impo_iphang_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+		                <when test='strDateType == "strBanip"'>AND a.Impo_banip_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+		                <when test='strDateType == "strSingo"'>AND a.Impo_singo_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+		                <when test='strDateType == "strOk"'>AND a.Impo_ok_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+		              </choose>
+		        </if>
+				<if test='strSingoNo != "" and strSingoNo != null'>AND a.impo_singo_no LIKE '%' + #{strSingoNo} + '%'</if>
+				<if test='strBlNo != "" and strBlNo != null'>AND a.impo_bl_no LIKE #{strBlNo} + '%'</if>
+				<if test='strInvNo != "" and strInvNo != null'>
+					AND EXISTS ( SELECT * FROM ${_defaultDB}.[kcba].[impo3] a1 WITH (NOLOCK) WHERE a.Impo_key = a1.Impum_key AND a1.Impum_sungbun3 = #{strInvNo})
+				</if>
+				<if test='Impokey != null and Impokey != ""'>AND a.Impo_Key = #{Impokey}</if>
+		     </where>
+			 ORDER BY a.Impo_key
+	</select>
+
+    <select id="selectDanfossImpoCostDetailList" resultType="map">
+		/* 댄포스 비용관리 란 조회 */
+		SELECT
+			Imlan_jechl_lan,
+			Imlan_hs,
+			Imlan_seyul_gubun,
+			Imlan_gwan_seyulc,
+			Imlan_gurae_pum,
+			Imlan_cost,
+			Imlan_cif_won,
+			Imlan_cif_usd,
+			Imlan_gwan_tax,
+			Imlan_vat_tax,
+			(Imlan_total_tax-(Imlan_gwan_tax+Imlan_vat_tax)) as 'etcTax',
+			Imlan_total_tax
+		FROM ncustoms.[kcba].[impo2]
+			<where>
+				<if test='imlanKey != "" and imlanKey != null'>AND Imlan_key = #{imlanKey}</if>
+		     </where>
+		ORDER BY Imlan_jechl_lan
+	</select>
+
+    <select id="selectDanfossImpoCostSubDetailList" resultType="map">
+		/* 댄포스 비용관리 행 조회 */
+		SELECT a.Impum_heang
+		      ,a.Impum_jajae_code
+			  ,a.Impum_su
+			  ,a.Impum_danga
+			  ,a.Impum_amt
+		      ,ISNULL(b.cifwon,0) AS 'cifwon'
+		      ,ISNULL(b.duty,0) AS 'duty'
+		      ,ISNULL(b.vat,0) AS 'vat'
+			  ,ISNULL((b.tk+b.kt+b.ju+b.edu+b.nong+b.gasan+b.misingo),0) AS 'etc'
+		      ,ISNULL(b.tax,0) AS 'tax'
+		FROM ncustoms.[kcba].[Impo3] a WITH (NOLOCK) LEFT OUTER JOIN ncustoms.[kcba].[Impo3_M] b WITH (NOLOCK)
+		  ON a.Impum_key = b.Impum_key
+		 AND a.Impum_lan = b.Impum_lan
+		 AND a.Impum_heang = b.Impum_heang
+		<where>
+			<if test='impumKey != "" and impumKey != null'>AND a.Impum_key = #{impumKey}</if>
+			<if test='lanNo != "" and lanNo != null'>AND a.Impum_lan = #{lanNo}</if>
+		</where>
+		ORDER BY a.Impum_heang
+	</select>
+
+    <select id="selectDanfossImpoCostAllList" resultType="map">
+		/* 댄포스 비용관리 엑셀다운 */
+		select d.*
+			,ISNULL(e.cifwon,0) AS '행과세가격(KRW)'
+			,ISNULL(e.duty,0) AS '행관세'
+			,ISNULL(e.vat,0) AS '행부가세'
+			,ISNULL((e.tk+e.kt+e.ju+e.edu+e.nong+e.gasan+e.misingo),0) AS '행기타세'
+			,ISNULL(e.tax,0) AS '행총세액'
+			from
+			(SELECT	 a.Impo_key AS '수입키'
+			,a.Impo_Gonggub_Sangho AS '무역거래처'
+			,a.impo_singo_no AS '수입신고번호'
+			,a.impo_bl_no AS 'BL번호'
+			,CASE WHEN ISNULL(a.impo_singo_date,'') = ''  THEN '' ELSE CONVERT(VARCHAR(10),CONVERT(DATETIME, a.impo_singo_date),120)  END AS '수리일'
+			,a.Impo_gyelje_money AS '결제통화'
+			,a.Impo_exch_yul AS '결제환율'
+			,a.Impo_gyelje_input AS '결제금액'
+			,a.Impo_fre_won AS '운임원화'
+			,a.impo_ins_input AS '보험료원화'
+			,a.impo_plus_won AS '가산금원화'
+			,a.impo_charge_won as '기타금액원화'
+			,a.Impo_cif_total_won AS '과세가격(KRW)'
+			,a.impo_cif_total_usd AS '과세가격(USD)'
+			,a.Impo_gwan_tax AS '관세'
+			,a.Impo_vat_tax AS '부가세'
+			,(a.Impo_total_tax-(a.Impo_gwan_tax+a.Impo_vat_tax)) AS '기타세'
+			,a.Impo_total_tax AS '총세액'
+			,b.Imlan_jechl_lan AS '란번호'
+			,b.Imlan_hs AS '세번부호'
+			,b.Imlan_seyul_gubun AS '세종'
+			,b.Imlan_gwan_seyulc AS '세율'
+			,b.Imlan_gurae_pum AS '거래품명'
+			,b.Imlan_cost AS '란결제금액'
+			,b.Imlan_cif_won AS '란과세가격(KRW)'
+			,b.Imlan_cif_usd AS '란과세가격(USD)'
+			,b.Imlan_gwan_tax AS '란관세'
+			,b.Imlan_vat_tax AS '란부가세'
+			,(b.Imlan_total_tax-(b.Imlan_gwan_tax+b.Imlan_vat_tax))  AS '란기타세'
+			,b.Imlan_total_tax AS '란총세액'
+			,c.Impum_heang AS '행번호'
+		    ,c.Impum_jajae_code AS '자재코드'
+			,replace(replace(c.Impum_gukyk1,char(10),''),char(13),'') AS '규격1'
+			,replace(replace(c.Impum_gukyk2,char(10),''),char(13),'') AS '규격2'
+			,replace(replace(c.Impum_gukyk3,char(10),''),char(13),'') AS '규격3'
+			,c.Impum_sungbun1 AS '성분1'
+			,c.Impum_sungbun2 AS '성분2'
+			,c.Impum_sungbun3 AS '성분3'
+			,c.Impum_su AS '수량'
+			,c.Impum_danga AS '단가'
+			,c.Impum_amt AS '금액'
+			FROM ncustoms.[kcba].[impo1] a, ncustoms.[kcba].[impo2] b, ncustoms.[kcba].[Impo3] c
+			<where>
+				and a.Impo_key = b.imlan_key
+				and a.Impo_key = c.impum_key
+				and b.Imlan_jechl_lan = c.Impum_lan
+				<if test='taxNum != null and taxNum != ""'>
+	              <choose>
+	                <when test='taxNum == "all"'>AND a.Impo_napse_saup IN (select userSaup from soo.dbo.CPS_SaveCustomer where userKey = #{ID} and useYn = 'Y')</when>
+	                <otherwise>AND a.Impo_napse_saup = #{taxNum}</otherwise>
+	              </choose>
+			    </if>
+				<if test='strVendor != "" and strVendor != null'>AND a.Impo_Gonggub_Sangho LIKE '%' + #{strVendor} + '%'</if>
+				<if test='strDateType != "ALL" and strDateType != null and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+		             <choose>
+		                <when test='strDateType == "strIphang"'>AND a.Impo_iphang_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+		                <when test='strDateType == "strBanip"'>AND a.Impo_banip_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+		                <when test='strDateType == "strSingo"'>AND a.Impo_singo_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+		                <when test='strDateType == "strOk"'>AND a.Impo_ok_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+		              </choose>
+		        </if>
+				<if test='strSingoNo != "" and strSingoNo != null'>AND a.impo_singo_no LIKE '%' + #{strSingoNo} + '%'</if>
+				<if test='strBlNo != "" and strBlNo != null'>AND a.impo_bl_no LIKE #{strBlNo} + '%'</if>
+				<if test='strInvNo != "" and strInvNo != null'>
+					AND EXISTS ( SELECT * FROM ${_defaultDB}.[kcba].[impo3] a1 WITH (NOLOCK) WHERE a.Impo_key = a1.Impum_key AND a1.Impum_sungbun3 = #{strInvNo})
+				</if>
+				<if test='Impokey != null and Impokey != ""'>AND a.Impo_Key = #{Impokey}</if>
+		     </where>
+			) d LEFT OUTER JOIN ncustoms.[kcba].[Impo3_M] e
+			ON d.수입키 = e.Impum_key
+		 AND d.란번호 = e.Impum_lan
+		 AND d.행번호 = e.Impum_heang
+		 order by d.수입신고번호, d.란번호, d.행번호
+	</select>
+</mapper>

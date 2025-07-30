@@ -1,0 +1,735 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.edwards.biz.customsManagement.NewImpoCustomsMapper">
+    <select id="selectImportFieldAllStatusList" resultType="map">
+        /* 전체 엔컴 수입통관현황 (현장) */
+        select * from
+		(
+		SELECT
+		a.Impo_key, a.Impo_receive_result, a.Impo_cs, a.Impo_napse_sangho, a.Impo_bl_no, a.Impo_mbl_no, a.Impo_singo_no, a.Impo_ok_date,
+		a.Impo_singo_date, a.Impo_jubsu_date, a.impo_damdang_no, a.impo_damdang_name, a.impo_segwan, '본사' as 'jisa', a.Impo_send_result,
+		CASE WHEN a.impo_segwan != '' and a.impo_gwa !='' then a.impo_segwan + '-' +a.impo_gwa
+		     ELSE a.impo_segwan end AS 'segwan', a.Impo_bl_no as 'orgBl', a.Impo_singo_no as 'orgSingo', a.Impo_napse_code, a.Impo_napse_saup,
+		a.Impo_file_no1, a.Impo_file_no2, a.Impo_jangch_name, a.impo_jangch_jangso, a.impo_jangch_buho, a.UserNM, a.impo_singo_gubun, b.userDepart
+		FROM ncustoms.[kcba].[Impo1] a , soo.dbo.CPS_UserInfo b
+		where a.UserID = b.userId
+		union all
+		SELECT
+		a.Impo_key, a.Impo_receive_result, a.Impo_cs, a.Impo_napse_sangho, a.Impo_bl_no, a.Impo_mbl_no, a.Impo_singo_no, a.Impo_ok_date,
+		a.Impo_singo_date, a.Impo_jubsu_date, a.impo_damdang_no, a.impo_damdang_name, a.impo_segwan, '부산' as 'jisa', a.Impo_send_result,
+		CASE WHEN a.impo_segwan != '' and a.impo_gwa !='' then a.impo_segwan + '-' +a.impo_gwa
+		     ELSE a.impo_segwan end AS 'segwan', a.Impo_bl_no as 'orgBl', a.Impo_singo_no as 'orgSingo', a.Impo_napse_code, a.Impo_napse_saup,
+		a.Impo_file_no1, a.Impo_file_no2, a.Impo_jangch_name, a.impo_jangch_jangso, a.impo_jangch_buho, a.UserNM, a.impo_singo_gubun, b.userDepart
+		FROM ncustoms_bs.[kcba].[Impo1] a , soo.dbo.CPS_UserInfo b
+		where a.UserID = b.userId
+		union all
+		SELECT
+		a.Impo_key, a.Impo_receive_result, a.Impo_cs, a.Impo_napse_sangho, a.Impo_bl_no, a.Impo_mbl_no, a.Impo_singo_no, a.Impo_ok_date,
+		a.Impo_singo_date, a.Impo_jubsu_date, a.impo_damdang_no, a.impo_damdang_name, a.impo_segwan, '천안' as 'jisa', a.Impo_send_result,
+		CASE WHEN a.impo_segwan != '' and a.impo_gwa !='' then a.impo_segwan + '-' +a.impo_gwa
+		     ELSE a.impo_segwan end AS 'segwan', a.Impo_bl_no as 'orgBl', a.Impo_singo_no as 'orgSingo', a.Impo_napse_code, a.Impo_napse_saup,
+		a.Impo_file_no1, a.Impo_file_no2, a.Impo_jangch_name, a.impo_jangch_jangso, a.impo_jangch_buho, a.UserNM, a.impo_singo_gubun, b.userDepart
+		FROM ncustoms_ca.[kcba].[Impo1] a , soo.dbo.CPS_UserInfo b
+		where a.UserID = b.userId
+		union all
+		SELECT
+		a.Impo_key, a.Impo_receive_result, a.Impo_cs, a.Impo_napse_sangho, a.Impo_bl_no, a.Impo_mbl_no, a.Impo_singo_no, a.Impo_ok_date,
+		a.Impo_singo_date, a.Impo_jubsu_date, a.impo_damdang_no, a.impo_damdang_name, a.impo_segwan, '청주' as 'jisa', a.Impo_send_result,
+		CASE WHEN a.impo_segwan != '' and a.impo_gwa !='' then a.impo_segwan + '-' +a.impo_gwa
+		     ELSE a.impo_segwan end AS 'segwan', a.Impo_bl_no as 'orgBl', a.Impo_singo_no as 'orgSingo', a.Impo_napse_code, a.Impo_napse_saup,
+		a.Impo_file_no1, a.Impo_file_no2, a.Impo_jangch_name, a.impo_jangch_jangso, a.impo_jangch_buho, a.UserNM, a.impo_singo_gubun, b.userDepart
+		FROM ncustoms_cj.[kcba].[Impo1] a , soo.dbo.CPS_UserInfo b
+		where a.UserID = b.userId
+		union all
+		SELECT
+		a.Impo_key, a.Impo_receive_result, a.Impo_cs, a.Impo_napse_sangho, a.Impo_bl_no, a.Impo_mbl_no, a.Impo_singo_no, a.Impo_ok_date,
+		a.Impo_singo_date, a.Impo_jubsu_date, a.impo_damdang_no, a.impo_damdang_name, a.impo_segwan, '창원' as 'jisa', a.Impo_send_result,
+		CASE WHEN a.impo_segwan != '' and a.impo_gwa !='' then a.impo_segwan + '-' +a.impo_gwa
+		     ELSE a.impo_segwan end AS 'segwan', a.Impo_bl_no as 'orgBl', a.Impo_singo_no as 'orgSingo', a.Impo_napse_code, a.Impo_napse_saup,
+		a.Impo_file_no1, a.Impo_file_no2, a.Impo_jangch_name, a.impo_jangch_jangso, a.impo_jangch_buho, a.UserNM, a.impo_singo_gubun, b.userDepart
+		FROM ncustoms_cw.[kcba].[Impo1] a , soo.dbo.CPS_UserInfo b
+		where a.UserID = b.userId
+		union all
+		SELECT
+		a.Impo_key, a.Impo_receive_result, a.Impo_cs, a.Impo_napse_sangho, a.Impo_bl_no, a.Impo_mbl_no, a.Impo_singo_no, a.Impo_ok_date,
+		a.Impo_singo_date, a.Impo_jubsu_date, a.impo_damdang_no, a.impo_damdang_name, a.impo_segwan, '대전' as 'jisa', a.Impo_send_result,
+		CASE WHEN a.impo_segwan != '' and a.impo_gwa !='' then a.impo_segwan + '-' +a.impo_gwa
+		     ELSE a.impo_segwan end AS 'segwan', a.Impo_bl_no as 'orgBl', a.Impo_singo_no as 'orgSingo', a.Impo_napse_code, a.Impo_napse_saup,
+		a.Impo_file_no1, a.Impo_file_no2, a.Impo_jangch_name, a.impo_jangch_jangso, a.impo_jangch_buho, a.UserNM, a.impo_singo_gubun, b.userDepart
+		FROM ncustoms_dj.[kcba].[Impo1] a , soo.dbo.CPS_UserInfo b
+		where a.UserID = b.userId
+		union all
+		SELECT
+		a.Impo_key, a.Impo_receive_result, a.Impo_cs, a.Impo_napse_sangho, a.Impo_bl_no, a.Impo_mbl_no, a.Impo_singo_no, a.Impo_ok_date,
+		a.Impo_singo_date, a.Impo_jubsu_date, a.impo_damdang_no, a.impo_damdang_name, a.impo_segwan, '구미' as 'jisa', a.Impo_send_result,
+		CASE WHEN a.impo_segwan != '' and a.impo_gwa !='' then a.impo_segwan + '-' +a.impo_gwa
+		     ELSE a.impo_segwan end AS 'segwan', a.Impo_bl_no as 'orgBl', a.Impo_singo_no as 'orgSingo', a.Impo_napse_code, a.Impo_napse_saup,
+		a.Impo_file_no1, a.Impo_file_no2, a.Impo_jangch_name, a.impo_jangch_jangso, a.impo_jangch_buho, a.UserNM, a.impo_singo_gubun, b.userDepart
+		FROM ncustoms_gm.[kcba].[Impo1] a , soo.dbo.CPS_UserInfo b
+		where a.UserID = b.userId
+		union all
+		SELECT
+		a.Impo_key, a.Impo_receive_result, a.Impo_cs, a.Impo_napse_sangho, a.Impo_bl_no, a.Impo_mbl_no, a.Impo_singo_no, a.Impo_ok_date,
+		a.Impo_singo_date, a.Impo_jubsu_date, a.impo_damdang_no, a.impo_damdang_name, a.impo_segwan, '인천해상' as 'jisa', a.Impo_send_result,
+		CASE WHEN a.impo_segwan != '' and a.impo_gwa !='' then a.impo_segwan + '-' +a.impo_gwa
+		     ELSE a.impo_segwan end AS 'segwan', a.Impo_bl_no as 'orgBl', a.Impo_singo_no as 'orgSingo', a.Impo_napse_code, a.Impo_napse_saup,
+		a.Impo_file_no1, a.Impo_file_no2, a.Impo_jangch_name, a.impo_jangch_jangso, a.impo_jangch_buho, a.UserNM, a.impo_singo_gubun, b.userDepart
+		FROM ncustoms_ic.[kcba].[Impo1] a , soo.dbo.CPS_UserInfo b
+		where a.UserID = b.userId
+		union all
+		SELECT
+		a.Impo_key, a.Impo_receive_result, a.Impo_cs, a.Impo_napse_sangho, a.Impo_bl_no, a.Impo_mbl_no, a.Impo_singo_no, a.Impo_ok_date,
+		a.Impo_singo_date, a.Impo_jubsu_date, a.impo_damdang_no, a.impo_damdang_name, a.impo_segwan, '진주' as 'jisa', a.Impo_send_result,
+		CASE WHEN a.impo_segwan != '' and a.impo_gwa !='' then a.impo_segwan + '-' +a.impo_gwa
+		     ELSE a.impo_segwan end AS 'segwan', a.Impo_bl_no as 'orgBl', a.Impo_singo_no as 'orgSingo', a.Impo_napse_code, a.Impo_napse_saup,
+		a.Impo_file_no1, a.Impo_file_no2, a.Impo_jangch_name, a.impo_jangch_jangso, a.impo_jangch_buho, a.UserNM, a.impo_singo_gubun, b.userDepart
+		FROM ncustoms_jj.[kcba].[Impo1] a , soo.dbo.CPS_UserInfo b
+		where a.UserID = b.userId
+		union all
+		SELECT
+		a.Impo_key, a.Impo_receive_result, a.Impo_cs, a.Impo_napse_sangho, a.Impo_bl_no, a.Impo_mbl_no, a.Impo_singo_no, a.Impo_ok_date,
+		a.Impo_singo_date, a.Impo_jubsu_date, a.impo_damdang_no, a.impo_damdang_name, a.impo_segwan, '파주' as 'jisa', a.Impo_send_result,
+		CASE WHEN a.impo_segwan != '' and a.impo_gwa !='' then a.impo_segwan + '-' +a.impo_gwa
+		     ELSE a.impo_segwan end AS 'segwan', a.Impo_bl_no as 'orgBl', a.Impo_singo_no as 'orgSingo', a.Impo_napse_code, a.Impo_napse_saup,
+		a.Impo_file_no1, a.Impo_file_no2, a.Impo_jangch_name, a.impo_jangch_jangso, a.impo_jangch_buho, a.UserNM, a.impo_singo_gubun, b.userDepart
+		FROM ncustoms_pj.[kcba].[Impo1] a , soo.dbo.CPS_UserInfo b
+		where a.UserID = b.userId
+		union all
+		SELECT
+		a.Impo_key, a.Impo_receive_result, a.Impo_cs, a.Impo_napse_sangho, a.Impo_bl_no, a.Impo_mbl_no, a.Impo_singo_no, a.Impo_ok_date,
+		a.Impo_singo_date, a.Impo_jubsu_date, a.impo_damdang_no, a.impo_damdang_name, a.impo_segwan, '평택' as 'jisa', a.Impo_send_result,
+		CASE WHEN a.impo_segwan != '' and a.impo_gwa !='' then a.impo_segwan + '-' +a.impo_gwa
+		     ELSE a.impo_segwan end AS 'segwan', a.Impo_bl_no as 'orgBl', a.Impo_singo_no as 'orgSingo', a.Impo_napse_code, a.Impo_napse_saup,
+		a.Impo_file_no1, a.Impo_file_no2, a.Impo_jangch_name, a.impo_jangch_jangso, a.impo_jangch_buho, a.UserNM, a.impo_singo_gubun, b.userDepart
+		FROM ncustoms_pt.[kcba].[Impo1] a , soo.dbo.CPS_UserInfo b
+		where a.UserID = b.userId
+		union all
+		SELECT
+		a.Impo_key, a.Impo_receive_result, a.Impo_cs, a.Impo_napse_sangho, a.Impo_bl_no, a.Impo_mbl_no, a.Impo_singo_no, a.Impo_ok_date,
+		a.Impo_singo_date, a.Impo_jubsu_date, a.impo_damdang_no, a.impo_damdang_name, a.impo_segwan, '본사' as 'jisa', a.Impo_send_result,
+		CASE WHEN a.impo_segwan != '' and a.impo_gwa !='' then a.impo_segwan + '-' +a.impo_gwa
+		     ELSE a.impo_segwan end AS 'segwan', a.Impo_bl_no as 'orgBl', a.Impo_singo_no as 'orgSingo', a.Impo_napse_code, a.Impo_napse_saup,
+		a.Impo_file_no1, a.Impo_file_no2, a.Impo_jangch_name, a.impo_jangch_jangso, a.impo_jangch_buho, a.UserNM, a.impo_singo_gubun, b.userDepart
+		FROM ncustoms_sel4.[kcba].[Impo1] a , soo.dbo.CPS_UserInfo b
+		where a.UserID = b.userId
+		union all
+		SELECT
+		a.Impo_key, a.Impo_receive_result, a.Impo_cs, a.Impo_napse_sangho, a.Impo_bl_no, a.Impo_mbl_no, a.Impo_singo_no, a.Impo_ok_date,
+		a.Impo_singo_date, a.Impo_jubsu_date, a.impo_damdang_no, a.impo_damdang_name, a.impo_segwan, '경기' as 'jisa', a.Impo_send_result,
+		CASE WHEN a.impo_segwan != '' and a.impo_gwa !='' then a.impo_segwan + '-' +a.impo_gwa
+		     ELSE a.impo_segwan end AS 'segwan', a.Impo_bl_no as 'orgBl', a.Impo_singo_no as 'orgSingo', a.Impo_napse_code, a.Impo_napse_saup,
+		a.Impo_file_no1, a.Impo_file_no2, a.Impo_jangch_name, a.impo_jangch_jangso, a.impo_jangch_buho, a.UserNM, a.impo_singo_gubun, b.userDepart
+		FROM ncustoms_sn.[kcba].[Impo1] a , soo.dbo.CPS_UserInfo b
+		where a.UserID = b.userId
+		union all
+		SELECT
+		a.Impo_key, a.Impo_receive_result, a.Impo_cs, a.Impo_napse_sangho, a.Impo_bl_no, a.Impo_mbl_no, a.Impo_singo_no, a.Impo_ok_date,
+		a.Impo_singo_date, a.Impo_jubsu_date, a.impo_damdang_no, a.impo_damdang_name, a.impo_segwan, '울산' as 'jisa', a.Impo_send_result,
+		CASE WHEN a.impo_segwan != '' and a.impo_gwa !='' then a.impo_segwan + '-' +a.impo_gwa
+		     ELSE a.impo_segwan end AS 'segwan', a.Impo_bl_no as 'orgBl', a.Impo_singo_no as 'orgSingo', a.Impo_napse_code, a.Impo_napse_saup,
+		a.Impo_file_no1, a.Impo_file_no2, a.Impo_jangch_name, a.impo_jangch_jangso, a.impo_jangch_buho, a.UserNM, a.impo_singo_gubun, b.userDepart
+		FROM ncustoms_us.[kcba].[Impo1] a , soo.dbo.CPS_UserInfo b
+		where a.UserID = b.userId
+		union all
+		SELECT
+		a.Impo_key, a.Impo_receive_result, a.Impo_cs, a.Impo_napse_sangho, a.Impo_bl_no, a.Impo_mbl_no, a.Impo_singo_no, a.Impo_ok_date,
+		a.Impo_singo_date, a.Impo_jubsu_date, a.impo_damdang_no, a.impo_damdang_name, a.impo_segwan, '인천공항' as 'jisa', a.Impo_send_result,
+		CASE WHEN a.impo_segwan != '' and a.impo_gwa !='' then a.impo_segwan + '-' +a.impo_gwa
+		     ELSE a.impo_segwan end AS 'segwan', a.Impo_bl_no as 'orgBl', a.Impo_singo_no as 'orgSingo', a.Impo_napse_code, a.Impo_napse_saup,
+		a.Impo_file_no1, a.Impo_file_no2, a.Impo_jangch_name, a.impo_jangch_jangso, a.impo_jangch_buho, a.UserNM, a.impo_singo_gubun, b.userDepart
+		FROM ncustoms_yj.[kcba].[Impo1] a , soo.dbo.CPS_UserInfo b
+		where a.UserID = b.userId
+		union all
+		SELECT
+		a.Impo_key, a.Impo_receive_result, a.Impo_cs, a.Impo_napse_sangho, a.Impo_bl_no, a.Impo_mbl_no, a.Impo_singo_no, a.Impo_ok_date,
+		a.Impo_singo_date, a.Impo_jubsu_date, a.impo_damdang_no, a.impo_damdang_name, a.impo_segwan, '여수' as 'jisa', a.Impo_send_result,
+		CASE WHEN a.impo_segwan != '' and a.impo_gwa !='' then a.impo_segwan + '-' +a.impo_gwa
+		     ELSE a.impo_segwan end AS 'segwan', a.Impo_bl_no as 'orgBl', a.Impo_singo_no as 'orgSingo', a.Impo_napse_code, a.Impo_napse_saup,
+		a.Impo_file_no1, a.Impo_file_no2, a.Impo_jangch_name, a.impo_jangch_jangso, a.impo_jangch_buho, a.UserNM, a.impo_singo_gubun, b.userDepart
+		FROM ncustoms_ys.[kcba].[Impo1] a , soo.dbo.CPS_UserInfo b
+		where a.UserID = b.userId
+		) c
+        WHERE 1 = 1
+        <if test='strImpoNapseSangho != null and strImpoNapseSangho != ""'>AND c.Impo_napse_sangho LIKE '%' + #{strImpoNapseSangho} + '%'</if>
+        <if test='strImpoBlNo != null and strImpoBlNo != ""'>AND c.Impo_bl_no LIKE '%' + #{strImpoBlNo} + '%'</if>
+        <if test='strImpoSingoNo != null and strImpoSingoNo != ""'>AND c.Impo_singo_no LIKE '%' + #{strImpoSingoNo} + '%'</if>
+        <if test='strImpoFileNo1 != null and strImpoFileNo1 != ""'>AND c.Impo_file_no1 LIKE '%' + #{strImpoFileNo1} + '%'</if>
+        <if test='strTest != null and strTest != ""'>AND (c.Impo_receive_result = '제출' or c.impo_cs = 'Y')</if>
+        <if test='strDateType != null and strDateType != "ALL" and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+            <choose>
+                <when test='strDateType == "singoDtm"'>AND c.Impo_singo_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+                <when test='strDateType == "suriDtm"'>AND c.Impo_ok_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+            </choose>
+        </if>
+        <if test='strImpoGroupSegwan != null and strImpoGroupSegwan != ""'>
+            <choose>
+                <when test='strImpoGroupSegwan == "인천공항"'>AND c.impo_segwan in (040,240)</when>
+                <when test='strImpoGroupSegwan == "공항우편세관"'>AND c.impo_segwan in (013)</when>
+                <when test='strImpoGroupSegwan == "인천항"'>AND c.impo_segwan in (020)</when>
+                <when test='strImpoGroupSegwan == "부산항"'>AND c.impo_segwan in (030,033,037,039)</when>
+                <when test='strImpoGroupSegwan == "김해공항"'>AND c.impo_segwan in (140)</when>
+                <when test='strImpoGroupSegwan == "김포"'>AND c.impo_segwan in (041)</when>
+                <when test='strImpoGroupSegwan == "평택"'>AND c.impo_segwan in (016)</when>
+                <when test='strImpoGroupSegwan == "경기"'>AND c.impo_segwan in (012,014,131)</when>
+            </choose>
+        </if>
+    </select>
+
+    <select id="selectImportNewFieldStatusList" resultType="map">
+        /* 전체 CPS-NEW 수입통관현황 (현장) */
+        select
+		a.IMACKey,
+		a.ImRecvResult,
+		a.ImCsType,
+		a.ImNapSangho,
+		a.ImBlNo,
+		a.ImMblNo,
+		a.ImSingoNo,
+		a.ImOkDtm,
+		a.ImSingoDt,
+		a.ImJubsuDtm,
+		a.ImSegwanPartCode,
+		a.ImSegwanPartNm,
+		a.ImSegwan,
+		case when a.JisaCode = 'SI' then '본사'
+			when a.JisaCode = 'BS' then '부산'
+			when a.JisaCode = 'CA' then '천안'
+			when a.JisaCode = 'CJ' then '청주'
+			when a.JisaCode = 'CW' then '창원'
+			when a.JisaCode = 'DJ' then '대전'
+			when a.JisaCode = 'GM' then '구미'
+			when a.JisaCode = 'IC' then '인천해상'
+			when a.JisaCode = 'JJ' then '진주'
+			when a.JisaCode = 'PJ' then '파주'
+			when a.JisaCode = 'PT' then '평택'
+			when a.JisaCode = 'SE' then '본사'
+			when a.JisaCode = 'SN' then '경기'
+			when a.JisaCode = 'US' then '울산'
+			when a.JisaCode = 'YJ' then '인천공항'
+			else '' end 'jisa',
+		a.ImSendResult,
+		a.ImGwa,
+		CASE WHEN a.ImSegwan != '' and a.ImGwa !='' then a.ImSegwan + '-' +a.ImGwa else a.ImSegwan end AS 'segwan',
+		a.ImBlNo as 'orgBl',
+		a.ImSingoNo as 'orgSingo',
+		a.ImNapCode,
+		a.ImNapSaup,
+		a.ImFileNo1,
+		a.ImFileNo2,
+		a.ImJangchiNm,
+		a.ImJangchiPlace,
+		a.ImJangchiCode,
+		a.AddUserNm,
+		a.ImSingoGbn,
+		(select b.ComSNm from CPS.dbo.BSAA100D b where b.UseYn='Y' and b.ComCode = a.TeamKey ) as 'userDepart'
+		from CPS.dbo.IMAC100 a
+		where a.UseYn = 'Y'
+        <if test='strImpoNapseSangho != null and strImpoNapseSangho != ""'>AND a.ImNapSangho LIKE '%' + #{strImpoNapseSangho} + '%'</if>
+        <if test='strImpoBlNo != null and strImpoBlNo != ""'>AND a.ImBlNo LIKE '%' + #{strImpoBlNo} + '%'</if>
+        <if test='strImpoSingoNo != null and strImpoSingoNo != ""'>AND a.ImSingoNo LIKE '%' + #{strImpoSingoNo} + '%'</if>
+        <if test='strImpoFileNo1 != null and strImpoFileNo1 != ""'>AND a.ImFileNo1 LIKE '%' + #{strImpoFileNo1} + '%'</if>
+        <if test='strTest1 != null and strTest1 != ""'>AND (a.ImRecvResult = '제출' or a.ImCsType = 'Y')</if>
+        <if test='strDateType != null and strDateType != "ALL" and (strFromDate1 != null and strFromDate1 != "") and (strToDate1 != null and strToDate1 != "")'>
+            <choose>
+                <when test='strDateType == "singoDtm"'>AND a.ImSingoDt BETWEEN #{strFromDate1} AND #{strToDate1}</when>
+                <when test='strDateType == "suriDtm"'>AND left(a.ImOkDtm,8) BETWEEN #{strFromDate1} AND #{strToDate1}</when>
+            </choose>
+        </if>
+        <if test='strImpoGroupSegwan != null and strImpoGroupSegwan != ""'>
+            <choose>
+                <when test='strImpoGroupSegwan == "인천공항"'>AND a.ImSegwan in (040,240)</when>
+                <when test='strImpoGroupSegwan == "공항우편세관"'>AND a.ImSegwan in (013)</when>
+                <when test='strImpoGroupSegwan == "인천항"'>AND a.ImSegwan in (020)</when>
+                <when test='strImpoGroupSegwan == "부산항"'>AND a.ImSegwan in (030,033,037,039)</when>
+                <when test='strImpoGroupSegwan == "김해공항"'>AND a.ImSegwan in (140)</when>
+                <when test='strImpoGroupSegwan == "김포"'>AND a.ImSegwan in (041)</when>
+                <when test='strImpoGroupSegwan == "평택"'>AND a.ImSegwan in (016)</when>
+                <when test='strImpoGroupSegwan == "경기"'>AND a.ImSegwan in (012,014,131)</when>
+            </choose>
+        </if>
+    </select>
+
+    <select id="selectImportJungFieldAllStatusList" resultType="map">
+        /* 전체수입통관정정현황 (현장) */
+        select * from
+		(
+		select
+		a.Imjung_recv_result, a.Imjung_sinchung_gubun, a.Imjung_napse_sangho, a.Imjung_singo_no, a.Imjung_seqno, a.Imjung_singo_date,
+		a.Imjung_sinchung_date, a.Imjung_segwan, a.Imjung_damdang_name, a.Imjung_damdang_code, a.UserNM, a.Imjung_sayu_code, a.Imjung_sayu1, a.Imjung_gwichek_sayu_cd,
+		b.Impo_file_no1, b.Impo_file_no2, b.Impo_bl_no, b.Impo_mbl_no, '본사' as 'jisa', c.userDepart, b.Impo_napse_code, b.Impo_napse_saup,
+		b.Impo_bl_no as 'orgBl', a.Imjung_singo_no as 'orgSingo',
+		CASE WHEN a.Imjung_segwan != '' and a.Imjung_gwa !='' then a.Imjung_segwan + '-' +a.Imjung_gwa
+		     ELSE a.Imjung_segwan end AS 'segwan'
+		from ncustoms.kcba.Imjung1 a WITH (NOLOCK), ncustoms.kcba.Impo1 b WITH (NOLOCK), soo.dbo.CPS_UserInfo c
+		where a.Imjung_singo_no = b.Impo_singo_no
+		and b.Impo_singo_no != ''
+		and (a.Imjung_sinchung_gubun like 'C%' or a.Imjung_sinchung_gubun like 'O%' or a.Imjung_sinchung_gubun like 'X%')
+		and a.Imjung_seungin_date is null
+		and a.Imjung_recv_result='접수'
+		and a.Imjung_send_result='완료'
+		and a.Imjung_sayu_code !='27'
+		and a.UserID = c.userId
+		union all
+		select
+		a.Imjung_recv_result, a.Imjung_sinchung_gubun, a.Imjung_napse_sangho, a.Imjung_singo_no, a.Imjung_seqno, a.Imjung_singo_date,
+		a.Imjung_sinchung_date, a.Imjung_segwan, a.Imjung_damdang_name, a.Imjung_damdang_code, a.UserNM, a.Imjung_sayu_code, a.Imjung_sayu1, a.Imjung_gwichek_sayu_cd,
+		b.Impo_file_no1, b.Impo_file_no2, b.Impo_bl_no, b.Impo_mbl_no, '부산' as 'jisa', c.userDepart, b.Impo_napse_code, b.Impo_napse_saup,
+		b.Impo_bl_no as 'orgBl', a.Imjung_singo_no as 'orgSingo',
+		CASE WHEN a.Imjung_segwan != '' and a.Imjung_gwa !='' then a.Imjung_segwan + '-' +a.Imjung_gwa
+		     ELSE a.Imjung_segwan end AS 'segwan'
+		from ncustoms_bs.kcba.Imjung1 a WITH (NOLOCK), ncustoms_bs.kcba.Impo1 b WITH (NOLOCK), soo.dbo.CPS_UserInfo c
+		where a.Imjung_singo_no = b.Impo_singo_no
+		and b.Impo_singo_no != ''
+		and (a.Imjung_sinchung_gubun like 'C%' or a.Imjung_sinchung_gubun like 'O%' or a.Imjung_sinchung_gubun like 'X%')
+		and a.Imjung_seungin_date is null
+		and a.Imjung_recv_result='접수'
+		and a.Imjung_send_result='완료'
+		and a.Imjung_sayu_code !='27'
+		and a.UserID = c.userId
+		union all
+		select
+		a.Imjung_recv_result, a.Imjung_sinchung_gubun, a.Imjung_napse_sangho, a.Imjung_singo_no, a.Imjung_seqno, a.Imjung_singo_date,
+		a.Imjung_sinchung_date, a.Imjung_segwan, a.Imjung_damdang_name, a.Imjung_damdang_code, a.UserNM, a.Imjung_sayu_code, a.Imjung_sayu1, a.Imjung_gwichek_sayu_cd,
+		b.Impo_file_no1, b.Impo_file_no2, b.Impo_bl_no, b.Impo_mbl_no, '천안' as 'jisa', c.userDepart, b.Impo_napse_code, b.Impo_napse_saup,
+		b.Impo_bl_no as 'orgBl', a.Imjung_singo_no as 'orgSingo',
+		CASE WHEN a.Imjung_segwan != '' and a.Imjung_gwa !='' then a.Imjung_segwan + '-' +a.Imjung_gwa
+		     ELSE a.Imjung_segwan end AS 'segwan'
+		from ncustoms_ca.kcba.Imjung1 a WITH (NOLOCK), ncustoms_ca.kcba.Impo1 b WITH (NOLOCK), soo.dbo.CPS_UserInfo c
+		where a.Imjung_singo_no = b.Impo_singo_no
+		and b.Impo_singo_no != ''
+		and (a.Imjung_sinchung_gubun like 'C%' or a.Imjung_sinchung_gubun like 'O%' or a.Imjung_sinchung_gubun like 'X%')
+		and a.Imjung_seungin_date is null
+		and a.Imjung_recv_result='접수'
+		and a.Imjung_send_result='완료'
+		and a.Imjung_sayu_code !='27'
+		and a.UserID = c.userId
+		union all
+		select
+		a.Imjung_recv_result, a.Imjung_sinchung_gubun, a.Imjung_napse_sangho, a.Imjung_singo_no, a.Imjung_seqno, a.Imjung_singo_date,
+		a.Imjung_sinchung_date, a.Imjung_segwan, a.Imjung_damdang_name, a.Imjung_damdang_code, a.UserNM, a.Imjung_sayu_code, a.Imjung_sayu1, a.Imjung_gwichek_sayu_cd,
+		b.Impo_file_no1, b.Impo_file_no2, b.Impo_bl_no, b.Impo_mbl_no, '청주' as 'jisa', c.userDepart, b.Impo_napse_code, b.Impo_napse_saup,
+		b.Impo_bl_no as 'orgBl', a.Imjung_singo_no as 'orgSingo',
+		CASE WHEN a.Imjung_segwan != '' and a.Imjung_gwa !='' then a.Imjung_segwan + '-' +a.Imjung_gwa
+		     ELSE a.Imjung_segwan end AS 'segwan'
+		from ncustoms_cj.kcba.Imjung1 a WITH (NOLOCK), ncustoms_cj.kcba.Impo1 b WITH (NOLOCK), soo.dbo.CPS_UserInfo c
+		where a.Imjung_singo_no = b.Impo_singo_no
+		and b.Impo_singo_no != ''
+		and (a.Imjung_sinchung_gubun like 'C%' or a.Imjung_sinchung_gubun like 'O%' or a.Imjung_sinchung_gubun like 'X%')
+		and a.Imjung_seungin_date is null
+		and a.Imjung_recv_result='접수'
+		and a.Imjung_send_result='완료'
+		and a.Imjung_sayu_code !='27'
+		and a.UserID = c.userId
+		union all
+		select
+		a.Imjung_recv_result, a.Imjung_sinchung_gubun, a.Imjung_napse_sangho, a.Imjung_singo_no, a.Imjung_seqno, a.Imjung_singo_date,
+		a.Imjung_sinchung_date, a.Imjung_segwan, a.Imjung_damdang_name, a.Imjung_damdang_code, a.UserNM, a.Imjung_sayu_code, a.Imjung_sayu1, a.Imjung_gwichek_sayu_cd,
+		b.Impo_file_no1, b.Impo_file_no2, b.Impo_bl_no, b.Impo_mbl_no, '창원' as 'jisa', c.userDepart, b.Impo_napse_code, b.Impo_napse_saup,
+		b.Impo_bl_no as 'orgBl', a.Imjung_singo_no as 'orgSingo',
+		CASE WHEN a.Imjung_segwan != '' and a.Imjung_gwa !='' then a.Imjung_segwan + '-' +a.Imjung_gwa
+		     ELSE a.Imjung_segwan end AS 'segwan'
+		from ncustoms_cw.kcba.Imjung1 a WITH (NOLOCK), ncustoms_cw.kcba.Impo1 b WITH (NOLOCK), soo.dbo.CPS_UserInfo c
+		where a.Imjung_singo_no = b.Impo_singo_no
+		and b.Impo_singo_no != ''
+		and (a.Imjung_sinchung_gubun like 'C%' or a.Imjung_sinchung_gubun like 'O%' or a.Imjung_sinchung_gubun like 'X%')
+		and a.Imjung_seungin_date is null
+		and a.Imjung_recv_result='접수'
+		and a.Imjung_send_result='완료'
+		and a.Imjung_sayu_code !='27'
+		and a.UserID = c.userId
+		union all
+		select
+		a.Imjung_recv_result, a.Imjung_sinchung_gubun, a.Imjung_napse_sangho, a.Imjung_singo_no, a.Imjung_seqno, a.Imjung_singo_date,
+		a.Imjung_sinchung_date, a.Imjung_segwan, a.Imjung_damdang_name, a.Imjung_damdang_code, a.UserNM, a.Imjung_sayu_code, a.Imjung_sayu1, a.Imjung_gwichek_sayu_cd,
+		b.Impo_file_no1, b.Impo_file_no2, b.Impo_bl_no, b.Impo_mbl_no, '대전' as 'jisa', c.userDepart, b.Impo_napse_code, b.Impo_napse_saup,
+		b.Impo_bl_no as 'orgBl', a.Imjung_singo_no as 'orgSingo',
+		CASE WHEN a.Imjung_segwan != '' and a.Imjung_gwa !='' then a.Imjung_segwan + '-' +a.Imjung_gwa
+		     ELSE a.Imjung_segwan end AS 'segwan'
+		from ncustoms_dj.kcba.Imjung1 a WITH (NOLOCK), ncustoms_dj.kcba.Impo1 b WITH (NOLOCK), soo.dbo.CPS_UserInfo c
+		where a.Imjung_singo_no = b.Impo_singo_no
+		and b.Impo_singo_no != ''
+		and (a.Imjung_sinchung_gubun like 'C%' or a.Imjung_sinchung_gubun like 'O%' or a.Imjung_sinchung_gubun like 'X%')
+		and a.Imjung_seungin_date is null
+		and a.Imjung_recv_result='접수'
+		and a.Imjung_send_result='완료'
+		and a.Imjung_sayu_code !='27'
+		and a.UserID = c.userId
+		union all
+		select
+		a.Imjung_recv_result, a.Imjung_sinchung_gubun, a.Imjung_napse_sangho, a.Imjung_singo_no, a.Imjung_seqno, a.Imjung_singo_date,
+		a.Imjung_sinchung_date, a.Imjung_segwan, a.Imjung_damdang_name, a.Imjung_damdang_code, a.UserNM, a.Imjung_sayu_code, a.Imjung_sayu1, a.Imjung_gwichek_sayu_cd,
+		b.Impo_file_no1, b.Impo_file_no2, b.Impo_bl_no, b.Impo_mbl_no, '구미' as 'jisa', c.userDepart, b.Impo_napse_code, b.Impo_napse_saup,
+		b.Impo_bl_no as 'orgBl', a.Imjung_singo_no as 'orgSingo',
+		CASE WHEN a.Imjung_segwan != '' and a.Imjung_gwa !='' then a.Imjung_segwan + '-' +a.Imjung_gwa
+		     ELSE a.Imjung_segwan end AS 'segwan'
+		from ncustoms_gm.kcba.Imjung1 a WITH (NOLOCK), ncustoms_gm.kcba.Impo1 b WITH (NOLOCK), soo.dbo.CPS_UserInfo c
+		where a.Imjung_singo_no = b.Impo_singo_no
+		and b.Impo_singo_no != ''
+		and (a.Imjung_sinchung_gubun like 'C%' or a.Imjung_sinchung_gubun like 'O%' or a.Imjung_sinchung_gubun like 'X%')
+		and a.Imjung_seungin_date is null
+		and a.Imjung_recv_result='접수'
+		and a.Imjung_send_result='완료'
+		and a.Imjung_sayu_code !='27'
+		and a.UserID = c.userId
+		union all
+		select
+		a.Imjung_recv_result, a.Imjung_sinchung_gubun, a.Imjung_napse_sangho, a.Imjung_singo_no, a.Imjung_seqno, a.Imjung_singo_date,
+		a.Imjung_sinchung_date, a.Imjung_segwan, a.Imjung_damdang_name, a.Imjung_damdang_code, a.UserNM, a.Imjung_sayu_code, a.Imjung_sayu1, a.Imjung_gwichek_sayu_cd,
+		b.Impo_file_no1, b.Impo_file_no2, b.Impo_bl_no, b.Impo_mbl_no, '인천해상' as 'jisa', c.userDepart, b.Impo_napse_code, b.Impo_napse_saup,
+		b.Impo_bl_no as 'orgBl', a.Imjung_singo_no as 'orgSingo',
+		CASE WHEN a.Imjung_segwan != '' and a.Imjung_gwa !='' then a.Imjung_segwan + '-' +a.Imjung_gwa
+		     ELSE a.Imjung_segwan end AS 'segwan'
+		from ncustoms_ic.kcba.Imjung1 a WITH (NOLOCK), ncustoms_ic.kcba.Impo1 b WITH (NOLOCK), soo.dbo.CPS_UserInfo c
+		where a.Imjung_singo_no = b.Impo_singo_no
+		and b.Impo_singo_no != ''
+		and (a.Imjung_sinchung_gubun like 'C%' or a.Imjung_sinchung_gubun like 'O%' or a.Imjung_sinchung_gubun like 'X%')
+		and a.Imjung_seungin_date is null
+		and a.Imjung_recv_result='접수'
+		and a.Imjung_send_result='완료'
+		and a.Imjung_sayu_code !='27'
+		and a.UserID = c.userId
+		union all
+		select
+		a.Imjung_recv_result, a.Imjung_sinchung_gubun, a.Imjung_napse_sangho, a.Imjung_singo_no, a.Imjung_seqno, a.Imjung_singo_date,
+		a.Imjung_sinchung_date, a.Imjung_segwan, a.Imjung_damdang_name, a.Imjung_damdang_code, a.UserNM, a.Imjung_sayu_code, a.Imjung_sayu1, a.Imjung_gwichek_sayu_cd,
+		b.Impo_file_no1, b.Impo_file_no2, b.Impo_bl_no, b.Impo_mbl_no, '진주' as 'jisa', c.userDepart, b.Impo_napse_code, b.Impo_napse_saup,
+		b.Impo_bl_no as 'orgBl', a.Imjung_singo_no as 'orgSingo',
+		CASE WHEN a.Imjung_segwan != '' and a.Imjung_gwa !='' then a.Imjung_segwan + '-' +a.Imjung_gwa
+		     ELSE a.Imjung_segwan end AS 'segwan'
+		from ncustoms_jj.kcba.Imjung1 a WITH (NOLOCK), ncustoms_jj.kcba.Impo1 b WITH (NOLOCK), soo.dbo.CPS_UserInfo c
+		where a.Imjung_singo_no = b.Impo_singo_no
+		and b.Impo_singo_no != ''
+		and (a.Imjung_sinchung_gubun like 'C%' or a.Imjung_sinchung_gubun like 'O%' or a.Imjung_sinchung_gubun like 'X%')
+		and a.Imjung_seungin_date is null
+		and a.Imjung_recv_result='접수'
+		and a.Imjung_send_result='완료'
+		and a.Imjung_sayu_code !='27'
+		and a.UserID = c.userId
+		union all
+		select
+		a.Imjung_recv_result, a.Imjung_sinchung_gubun, a.Imjung_napse_sangho, a.Imjung_singo_no, a.Imjung_seqno, a.Imjung_singo_date,
+		a.Imjung_sinchung_date, a.Imjung_segwan, a.Imjung_damdang_name, a.Imjung_damdang_code, a.UserNM, a.Imjung_sayu_code, a.Imjung_sayu1, a.Imjung_gwichek_sayu_cd,
+		b.Impo_file_no1, b.Impo_file_no2, b.Impo_bl_no, b.Impo_mbl_no, '파주' as 'jisa', c.userDepart, b.Impo_napse_code, b.Impo_napse_saup,
+		b.Impo_bl_no as 'orgBl', a.Imjung_singo_no as 'orgSingo',
+		CASE WHEN a.Imjung_segwan != '' and a.Imjung_gwa !='' then a.Imjung_segwan + '-' +a.Imjung_gwa
+		     ELSE a.Imjung_segwan end AS 'segwan'
+		from ncustoms_pj.kcba.Imjung1 a WITH (NOLOCK), ncustoms_pj.kcba.Impo1 b WITH (NOLOCK), soo.dbo.CPS_UserInfo c
+		where a.Imjung_singo_no = b.Impo_singo_no
+		and b.Impo_singo_no != ''
+		and (a.Imjung_sinchung_gubun like 'C%' or a.Imjung_sinchung_gubun like 'O%' or a.Imjung_sinchung_gubun like 'X%')
+		and a.Imjung_seungin_date is null
+		and a.Imjung_recv_result='접수'
+		and a.Imjung_send_result='완료'
+		and a.Imjung_sayu_code !='27'
+		and a.UserID = c.userId
+		union all
+		select
+		a.Imjung_recv_result, a.Imjung_sinchung_gubun, a.Imjung_napse_sangho, a.Imjung_singo_no, a.Imjung_seqno, a.Imjung_singo_date,
+		a.Imjung_sinchung_date, a.Imjung_segwan, a.Imjung_damdang_name, a.Imjung_damdang_code, a.UserNM, a.Imjung_sayu_code, a.Imjung_sayu1, a.Imjung_gwichek_sayu_cd,
+		b.Impo_file_no1, b.Impo_file_no2, b.Impo_bl_no, b.Impo_mbl_no, '평택' as 'jisa', c.userDepart, b.Impo_napse_code, b.Impo_napse_saup,
+		b.Impo_bl_no as 'orgBl', a.Imjung_singo_no as 'orgSingo',
+		CASE WHEN a.Imjung_segwan != '' and a.Imjung_gwa !='' then a.Imjung_segwan + '-' +a.Imjung_gwa
+		     ELSE a.Imjung_segwan end AS 'segwan'
+		from ncustoms_pt.kcba.Imjung1 a WITH (NOLOCK), ncustoms_pt.kcba.Impo1 b WITH (NOLOCK), soo.dbo.CPS_UserInfo c
+		where a.Imjung_singo_no = b.Impo_singo_no
+		and b.Impo_singo_no != ''
+		and (a.Imjung_sinchung_gubun like 'C%' or a.Imjung_sinchung_gubun like 'O%' or a.Imjung_sinchung_gubun like 'X%')
+		and a.Imjung_seungin_date is null
+		and a.Imjung_recv_result='접수'
+		and a.Imjung_send_result='완료'
+		and a.Imjung_sayu_code !='27'
+		and a.UserID = c.userId
+		union all
+		select
+		a.Imjung_recv_result, a.Imjung_sinchung_gubun, a.Imjung_napse_sangho, a.Imjung_singo_no, a.Imjung_seqno, a.Imjung_singo_date,
+		a.Imjung_sinchung_date, a.Imjung_segwan, a.Imjung_damdang_name, a.Imjung_damdang_code, a.UserNM, a.Imjung_sayu_code, a.Imjung_sayu1, a.Imjung_gwichek_sayu_cd,
+		b.Impo_file_no1, b.Impo_file_no2, b.Impo_bl_no, b.Impo_mbl_no, '본사' as 'jisa', c.userDepart, b.Impo_napse_code, b.Impo_napse_saup,
+		b.Impo_bl_no as 'orgBl', a.Imjung_singo_no as 'orgSingo',
+		CASE WHEN a.Imjung_segwan != '' and a.Imjung_gwa !='' then a.Imjung_segwan + '-' +a.Imjung_gwa
+		     ELSE a.Imjung_segwan end AS 'segwan'
+		from ncustoms_sel4.kcba.Imjung1 a WITH (NOLOCK), ncustoms_sel4.kcba.Impo1 b WITH (NOLOCK), soo.dbo.CPS_UserInfo c
+		where a.Imjung_singo_no = b.Impo_singo_no
+		and b.Impo_singo_no != ''
+		and (a.Imjung_sinchung_gubun like 'C%' or a.Imjung_sinchung_gubun like 'O%' or a.Imjung_sinchung_gubun like 'X%')
+		and a.Imjung_seungin_date is null
+		and a.Imjung_recv_result='접수'
+		and a.Imjung_send_result='완료'
+		and a.Imjung_sayu_code !='27'
+		and a.UserID = c.userId
+		union all
+		select
+		a.Imjung_recv_result, a.Imjung_sinchung_gubun, a.Imjung_napse_sangho, a.Imjung_singo_no, a.Imjung_seqno, a.Imjung_singo_date,
+		a.Imjung_sinchung_date, a.Imjung_segwan, a.Imjung_damdang_name, a.Imjung_damdang_code, a.UserNM, a.Imjung_sayu_code, a.Imjung_sayu1, a.Imjung_gwichek_sayu_cd,
+		b.Impo_file_no1, b.Impo_file_no2, b.Impo_bl_no, b.Impo_mbl_no, '경기' as 'jisa', c.userDepart, b.Impo_napse_code, b.Impo_napse_saup,
+		b.Impo_bl_no as 'orgBl', a.Imjung_singo_no as 'orgSingo',
+		CASE WHEN a.Imjung_segwan != '' and a.Imjung_gwa !='' then a.Imjung_segwan + '-' +a.Imjung_gwa
+		     ELSE a.Imjung_segwan end AS 'segwan'
+		from ncustoms_sn.kcba.Imjung1 a WITH (NOLOCK), ncustoms_sn.kcba.Impo1 b WITH (NOLOCK), soo.dbo.CPS_UserInfo c
+		where a.Imjung_singo_no = b.Impo_singo_no
+		and b.Impo_singo_no != ''
+		and (a.Imjung_sinchung_gubun like 'C%' or a.Imjung_sinchung_gubun like 'O%' or a.Imjung_sinchung_gubun like 'X%')
+		and a.Imjung_seungin_date is null
+		and a.Imjung_recv_result='접수'
+		and a.Imjung_send_result='완료'
+		and a.Imjung_sayu_code !='27'
+		and a.UserID = c.userId
+		union all
+		select
+		a.Imjung_recv_result, a.Imjung_sinchung_gubun, a.Imjung_napse_sangho, a.Imjung_singo_no, a.Imjung_seqno, a.Imjung_singo_date,
+		a.Imjung_sinchung_date, a.Imjung_segwan, a.Imjung_damdang_name, a.Imjung_damdang_code, a.UserNM, a.Imjung_sayu_code, a.Imjung_sayu1, a.Imjung_gwichek_sayu_cd,
+		b.Impo_file_no1, b.Impo_file_no2, b.Impo_bl_no, b.Impo_mbl_no, '울산' as 'jisa', c.userDepart, b.Impo_napse_code, b.Impo_napse_saup,
+		b.Impo_bl_no as 'orgBl', a.Imjung_singo_no as 'orgSingo',
+		CASE WHEN a.Imjung_segwan != '' and a.Imjung_gwa !='' then a.Imjung_segwan + '-' +a.Imjung_gwa
+		     ELSE a.Imjung_segwan end AS 'segwan'
+		from ncustoms_us.kcba.Imjung1 a WITH (NOLOCK), ncustoms_us.kcba.Impo1 b WITH (NOLOCK), soo.dbo.CPS_UserInfo c
+		where a.Imjung_singo_no = b.Impo_singo_no
+		and b.Impo_singo_no != ''
+		and (a.Imjung_sinchung_gubun like 'C%' or a.Imjung_sinchung_gubun like 'O%' or a.Imjung_sinchung_gubun like 'X%')
+		and a.Imjung_seungin_date is null
+		and a.Imjung_recv_result='접수'
+		and a.Imjung_send_result='완료'
+		and a.Imjung_sayu_code !='27'
+		and a.UserID = c.userId
+		union all
+		select
+		a.Imjung_recv_result, a.Imjung_sinchung_gubun, a.Imjung_napse_sangho, a.Imjung_singo_no, a.Imjung_seqno, a.Imjung_singo_date,
+		a.Imjung_sinchung_date, a.Imjung_segwan, a.Imjung_damdang_name, a.Imjung_damdang_code, a.UserNM, a.Imjung_sayu_code, a.Imjung_sayu1, a.Imjung_gwichek_sayu_cd,
+		b.Impo_file_no1, b.Impo_file_no2, b.Impo_bl_no, b.Impo_mbl_no, '인천공항' as 'jisa', c.userDepart, b.Impo_napse_code, b.Impo_napse_saup,
+		b.Impo_bl_no as 'orgBl', a.Imjung_singo_no as 'orgSingo',
+		CASE WHEN a.Imjung_segwan != '' and a.Imjung_gwa !='' then a.Imjung_segwan + '-' +a.Imjung_gwa
+		     ELSE a.Imjung_segwan end AS 'segwan'
+		from ncustoms_yj.kcba.Imjung1 a WITH (NOLOCK), ncustoms_yj.kcba.Impo1 b WITH (NOLOCK), soo.dbo.CPS_UserInfo c
+		where a.Imjung_singo_no = b.Impo_singo_no
+		and b.Impo_singo_no != ''
+		and (a.Imjung_sinchung_gubun like 'C%' or a.Imjung_sinchung_gubun like 'O%' or a.Imjung_sinchung_gubun like 'X%')
+		and a.Imjung_seungin_date is null
+		and a.Imjung_recv_result='접수'
+		and a.Imjung_send_result='완료'
+		and a.Imjung_sayu_code !='27'
+		and a.UserID = c.userId
+		union all
+		select
+		a.Imjung_recv_result, a.Imjung_sinchung_gubun, a.Imjung_napse_sangho, a.Imjung_singo_no, a.Imjung_seqno, a.Imjung_singo_date,
+		a.Imjung_sinchung_date, a.Imjung_segwan, a.Imjung_damdang_name, a.Imjung_damdang_code, a.UserNM, a.Imjung_sayu_code, a.Imjung_sayu1, a.Imjung_gwichek_sayu_cd,
+		b.Impo_file_no1, b.Impo_file_no2, b.Impo_bl_no, b.Impo_mbl_no, '여수' as 'jisa', c.userDepart, b.Impo_napse_code, b.Impo_napse_saup,
+		b.Impo_bl_no as 'orgBl', a.Imjung_singo_no as 'orgSingo',
+		CASE WHEN a.Imjung_segwan != '' and a.Imjung_gwa !='' then a.Imjung_segwan + '-' +a.Imjung_gwa
+		     ELSE a.Imjung_segwan end AS 'segwan'
+		from ncustoms_ys.kcba.Imjung1 a WITH (NOLOCK), ncustoms_ys.kcba.Impo1 b WITH (NOLOCK), soo.dbo.CPS_UserInfo c
+		where a.Imjung_singo_no = b.Impo_singo_no
+		and b.Impo_singo_no != ''
+		and (a.Imjung_sinchung_gubun like 'C%' or a.Imjung_sinchung_gubun like 'O%' or a.Imjung_sinchung_gubun like 'X%')
+		and a.Imjung_seungin_date is null
+		and a.Imjung_recv_result='접수'
+		and a.Imjung_send_result='완료'
+		and a.Imjung_sayu_code !='27'
+		and a.UserID = c.userId
+		) k
+        where 1 = 1
+        <if test='strImpoNapseSangho != null and strImpoNapseSangho != ""'>AND k.Imjung_napse_sangho LIKE '%' + #{strImpoNapseSangho} + '%'</if>
+        <if test='strImpoBlNo != null and strImpoBlNo != ""'>AND k.Impo_bl_no LIKE '%' + #{strImpoBlNo} + '%'</if>
+        <if test='strImpoSingoNo != null and strImpoSingoNo != ""'>AND k.Imjung_singo_no LIKE '%' + #{strImpoSingoNo} + '%'</if>
+        <if test='strDateType != null and strDateType != "ALL" and (strFromDate2 != null and strFromDate2 != "") and (strToDate2 != null and strToDate2 != "")'>
+            <choose>
+                <when test='strDateType == "singoDtm"'>AND k.Imjung_singo_date BETWEEN #{strFromDate2} AND #{strToDate2}</when>
+                <when test='strDateType == "sinchungDtm"'>AND k.Imjung_sinchung_date BETWEEN #{strFromDate2} AND #{strToDate2}</when>
+            </choose>
+        </if>
+        <if test='strImpoGroupSegwan != null and strImpoGroupSegwan != ""'>
+            <choose>
+                <when test='strImpoGroupSegwan == "인천공항"'>AND k.Imjung_segwan in (040,240)</when>
+                <when test='strImpoGroupSegwan == "공항우편세관"'>AND k.Imjung_segwan in (013)</when>
+                <when test='strImpoGroupSegwan == "인천항"'>AND k.Imjung_segwan in (020)</when>
+                <when test='strImpoGroupSegwan == "부산항"'>AND k.Imjung_segwan in (030,033,037,039)</when>
+                <when test='strImpoGroupSegwan == "김해공항"'>AND k.Imjung_segwan in (140)</when>
+                <when test='strImpoGroupSegwan == "김포"'>AND k.Imjung_segwan in (041)</when>
+                <when test='strImpoGroupSegwan == "평택"'>AND k.Imjung_segwan in (016)</when>
+                <when test='strImpoGroupSegwan == "경기"'>AND k.Imjung_segwan in (012,014,131)</when>
+            </choose>
+        </if>
+    </select>
+
+    <select id="selectImportNewJungFieldStatusList" resultType="map">
+        /* 전체 CPS-NEW 수입정정 통관현황 (현장) */
+        select
+		a.RecvResult,
+		a.SinChungGuBun,
+		a.ImNapSangho,
+		a.ImSingoNo,
+		a.SinChungChsu,
+		a.ImSingoDate,
+		a.SinChungDate,
+		a.ImSegwan,
+		a.RecvCusNm,
+		a.RecvCusCd,
+		a.AddUserNm,
+		a.AmdResonCd,
+		a.AmdSayuCd,
+		a.AmdSayu,
+		case when a.JisaCode = 'SI' then '본사'
+			when a.JisaCode = 'BS' then '부산'
+			when a.JisaCode = 'CA' then '천안'
+			when a.JisaCode = 'CJ' then '청주'
+			when a.JisaCode = 'CW' then '창원'
+			when a.JisaCode = 'DJ' then '대전'
+			when a.JisaCode = 'GM' then '구미'
+			when a.JisaCode = 'IC' then '인천해상'
+			when a.JisaCode = 'JJ' then '진주'
+			when a.JisaCode = 'PJ' then '파주'
+			when a.JisaCode = 'PT' then '평택'
+			when a.JisaCode = 'SE' then '본사'
+			when a.JisaCode = 'SN' then '경기'
+			when a.JisaCode = 'US' then '울산'
+			when a.JisaCode = 'YJ' then '인천공항'
+			else '' end 'jisa',
+		a.ImBlNo,
+		a.ImGwa,
+		CASE WHEN a.ImSegwan != '' and a.ImGwa !='' then a.ImSegwan + '-' +a.ImGwa else a.ImSegwan end AS 'segwan',
+		a.ImBlNo as 'orgBl',
+		a.ImSingoNo as 'orgSingo',
+		a.ImNapCode,
+		a.ImNapSaup,
+		b.ImFileNo1,
+		b.ImFileNo2,
+		b.ImMblNo,
+		a.AddUserNm,
+		(select b.ComSNm from CPS.dbo.BSAA100D b where b.UseYn='Y' and b.ComCode = a.TeamKey ) as 'userDepart'
+		from CPS.dbo.IMAL100 a, CPS.dbo.IMAC100 b
+		where a.UseYn = 'Y'
+		and b.UseYn = 'Y'
+		and a.ImSingoNo = b.ImSingoNo
+        <if test='strImpoNapseSangho != null and strImpoNapseSangho != ""'>AND a.ImNapSangho LIKE '%' + #{strImpoNapseSangho} + '%'</if>
+        <if test='strImpoBlNo != null and strImpoBlNo != ""'>AND a.ImBlNo LIKE '%' + #{strImpoBlNo} + '%'</if>
+        <if test='strImpoSingoNo != null and strImpoSingoNo != ""'>AND a.ImSingoNo LIKE '%' + #{strImpoSingoNo} + '%'</if>
+        <if test='strDateType != null and strDateType != "ALL" and (strFromDate3 != null and strFromDate3 != "") and (strToDate3 != null and strToDate3 != "")'>
+            <choose>
+                <when test='strDateType == "singoDtm"'>AND a.ImSingoDate BETWEEN #{strFromDate3} AND #{strToDate3}</when>
+                <when test='strDateType == "sinchungDtm"'>AND a.SinChungDate BETWEEN #{strFromDate3} AND #{strToDate3}</when>
+            </choose>
+        </if>
+        <if test='strImpoGroupSegwan != null and strImpoGroupSegwan != ""'>
+            <choose>
+                <when test='strImpoGroupSegwan == "인천공항"'>AND a.ImSegwan in (040,240)</when>
+                <when test='strImpoGroupSegwan == "공항우편세관"'>AND a.ImSegwan in (013)</when>
+                <when test='strImpoGroupSegwan == "인천항"'>AND a.ImSegwan in (020)</when>
+                <when test='strImpoGroupSegwan == "부산항"'>AND a.ImSegwan in (030,033,037,039)</when>
+                <when test='strImpoGroupSegwan == "김해공항"'>AND a.ImSegwan in (140)</when>
+                <when test='strImpoGroupSegwan == "김포"'>AND a.ImSegwan in (041)</when>
+                <when test='strImpoGroupSegwan == "평택"'>AND a.ImSegwan in (016)</when>
+                <when test='strImpoGroupSegwan == "경기"'>AND a.ImSegwan in (012,014,131)</when>
+            </choose>
+        </if>
+    </select>
+
+    <select id="selectFieldManage" resultType="map">
+        /* 현장관리 조회 */
+        SELECT *
+        FROM CPS.dbo.SDAC110 WITH (NOLOCK)
+        WHERE UseYn='Y'
+        <if test='strSingoNo != null and strSingoNo != ""'>AND SingoNo LIKE '%' + #{strSingoNo} + '%'</if>
+        <if test='strGbn != null and strGbn != ""'>AND Gbn = #{strGbn}</if>
+        <if test='strSangho != null and strSangho != ""'>AND ComNm LIKE '%' + #{strSangho} + '%'</if>
+        <if test='(strFromDate8 != null and strFromDate8 != "") and (strToDate8 != null and strToDate8 != "")'>
+            AND RegDt BETWEEN #{strFromDate8} AND #{strToDate8}
+        </if>
+        <if test='strGroupSegwan != null and strGroupSegwan != ""'>
+            <choose>
+                <when test='strGroupSegwan == "인천공항"'>AND Segwan in (040,240)</when>
+                <when test='strGroupSegwan == "공항우편세관"'>AND Segwan in (013)</when>
+                <when test='strGroupSegwan == "인천항"'>AND Segwan in (020)</when>
+                <when test='strGroupSegwan == "부산항"'>AND Segwan in (030,033,037,039)</when>
+                <when test='strGroupSegwan == "김해공항"'>AND Segwan in (140)</when>
+                <when test='strGroupSegwan == "김포"'>AND Segwan in (041)</when>
+                <when test='strGroupSegwan == "평택"'>AND Segwan in (016)</when>
+                <when test='strGroupSegwan == "경기"'>AND Segwan in (012,014,131)</when>
+                <when test='strGroupSegwan == "인천김포"'>AND Segwan in (020,041)</when>
+            </choose>
+        </if>
+        <if test='strSDACMKey != null and strSDACMKey != ""'>AND SDACMKey = #{strSDACMKey}</if>
+        order by SDACMKey desc
+    </select>
+
+    <insert id="saveFieldManage">
+		/* 현장 관리실적 입력 */
+		INSERT INTO CPS.dbo.SDAC110
+		       (SDABMngNo
+				,RegDt
+				,Segwan
+				,Jisa
+				,Team
+				,UserNm
+				,Gbn
+				,SingoCode
+				,SingoNo
+				,ComNm
+				,ComCd
+				,ComNo
+				,GumGbn
+				,JangchiNm
+				,GwanNm
+				,Jubsu
+				,Approve
+				,Issue
+				,Remark
+				,Price
+				,UseYn
+				,AddUserId
+				,AddUserNm
+				,AddDtm)
+		VALUES
+		       (#{SDABMngNo}
+		       ,#{RegDt}
+		       ,#{Segwan}
+		       ,#{Jisa}
+		       ,#{Team}
+		       ,#{UserNm}
+		       ,#{Gbn}
+		       ,#{SingoCode}
+		       ,#{SingoNo}
+		       ,#{ComNm}
+		       ,#{ComCd}
+		       ,#{ComNo}
+		       ,#{GumGbn}
+		       ,#{JangchiNm}
+		       ,#{GwanNm}
+		       ,#{Jubsu}
+			   ,#{Approve}
+			   ,#{Issue}
+			   ,#{Remark}
+		       ,#{Price}
+		       ,#{UseYn}
+		       ,#{AddUserId}
+		       ,#{AddUserNm}
+		       ,#{AddDtm})
+	</insert>
+
+    <update id="updateFieldManage">
+		/* 현장관리 수정*/
+		UPDATE	CPS.dbo.SDAC110
+		<trim prefix="SET" suffixOverrides=",">
+			<if test='RegDt != null'>RegDt = #{RegDt} ,</if>
+			<if test='Segwan != null'>Segwan = #{Segwan} ,</if>
+			<if test='Jisa != null'>Jisa = #{Jisa} ,</if>
+			<if test='Team != null'>Team = #{Team} ,</if>
+			<if test='UserNm != null'>UserNm = #{UserNm} ,</if>
+			<if test='Gbn != null'>Gbn = #{Gbn} ,</if>
+			<if test='SingoCode != null'>SingoCode = #{SingoCode} ,</if>
+			<if test='SingoNo != null'>SingoNo = #{SingoNo} ,</if>
+			<if test='ComNm != null'>ComNm = #{ComNm} ,</if>
+			<if test='GumGbn != null'>GumGbn = #{GumGbn} ,</if>
+			<if test='JangchiNm != null'>JangchiNm = #{JangchiNm} ,</if>
+			<if test='GwanNm != null'>GwanNm = #{GwanNm} ,</if>
+			<if test='Jubsu != null'>Jubsu = #{Jubsu} ,</if>
+			<if test='Approve != null'>Approve = #{Approve} ,</if>
+			<if test='Issue != null'>Issue = #{Issue} ,</if>
+			<if test='Remark != null'>Remark = #{Remark} ,</if>
+			<if test='Price != null'>Price = #{Price} ,</if>
+			<if test='UseYn != null'>UseYn = #{UseYn} ,</if>
+			<if test='EditUserId != null'>EditUserId = #{EditUserId} ,</if>
+			<if test='EditUserNm != null'>EditUserNm = #{EditUserNm} ,</if>
+			<if test='EditDtm != null'>EditDtm = #{EditDtm} ,</if>
+		</trim>
+		WHERE SDACMKey = #{SDACMKey}
+	</update>
+</mapper>

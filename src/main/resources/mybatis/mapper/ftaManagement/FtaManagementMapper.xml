@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.edwards.biz.ftaManagement.FtaMapper">
+    <select id="selectFtaManagementVendorList" resultType="map">
+		/* 마이클코어스 FTA 종합관리 조회 */
+		SELECT	a.RELATEDFTA, a.IMPO_GONGGUB_SANGHO, a.IMLAN_WONSANJI_CODE, SUM(a.IMPUM_AMT * a.IMPO_EXCH_YUL) AS 'ImportValue',
+				SUM(a.CIFWON) AS 'cifWonSum', SUM(a.PAIDDUTY) AS 'PAIDDUTY', SUM(a.DUTYSAVINGS) AS 'DUTYSAVINGS',
+				SUM(a.PAIDDUTY) + SUM(a.DUTYSAVINGS) AS 'TOTAL'
+		FROM	[rms].[dbo].[FTA_Master] a WITH (NOLOCK)
+		where a.impo_napse_saup = '1208818888'
+		<if test='_DateType != "ALL" and _DateType != null and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+             <choose>
+                <when test='_DateType == "Impo_ok_date_Day"'>AND a.IMPO_OK_DATE BETWEEN #{strFromDate} AND #{strToDate}</when>
+              </choose>
+        </if>
+		<if test='FTAAPPLICATION != null and FTAAPPLICATION != ""'>AND a.FTAAPPLICATION LIKE #{FTAAPPLICATION} + '%'	/* FTA적용유무 */</if>
+		<if test='RELATEDFTA != null and RELATEDFTA != ""'>AND a.RELATEDFTA LIKE #{RELATEDFTA} + '%'	/* FTA 대상명칭 */</if>
+		<if test='IMLAN_WONSANJI_CODE != null and IMLAN_WONSANJI_CODE != ""'>AND a.IMLAN_WONSANJI_CODE LIKE #{IMLAN_WONSANJI_CODE} + '%'	/* 원산지국가부호 */</if>
+		GROUP BY a.RELATEDFTA, a.IMPO_GONGGUB_SANGHO, a.IMLAN_WONSANJI_CODE
+	</select>
+
+    <select id="selectFtaManagementAlconList" resultType="map">
+		/* 알콘 FTA 종합관리 조회 */
+		SELECT a.IMPUM_JAJAE_CODE,
+				SUM(a.IMPO_PLUS_TOTAL) AS 'IMPO_PLUS_TOTAL', SUM(a.IMPO_FRE_WON) AS 'IMPO_FRE_WON', SUM(a.IMPO_CIF_TOTAL_WON) AS 'IMPO_CIF_TOTAL_WON',
+				SUM(a.IMPO_CIF_TOTAL_USD) AS 'IMPO_CIF_TOTAL_USD', SUM(a.IMPO_GWAN_TAX) AS 'IMPO_GWAN_TAX', SUM(a.IMPO_TEUK_TAX) AS 'IMPO_TEUK_TAX',
+				SUM(a.IMPO_OIL_TAX) AS 'IMPO_OIL_TAX', SUM(a.IMPO_JU_TAX) AS 'IMPO_JU_TAX', SUM(a.IMPO_NEGUK_TAX) AS 'IMPO_NEGUK_TAX',
+				SUM(a.IMPO_EDU_TAX) AS 'IMPO_EDU_TAX', SUM(a.IMPO_VAT_TAX) AS 'IMPO_VAT_TAX', SUM(a.IMPO_GASAN_TAX) AS 'IMPO_GASAN_TAX',
+				SUM(a.IMPO_GITA_TAX) AS 'IMPO_GITA_TAX', SUM(a.IMPO_TOTAL_TAX) AS 'IMPO_TOTAL_TAX', SUM(a.IMPO_TOTAL_TAX)-SUM(a.IMPO_VAT_TAX) AS 'IMPO_PAYMENT_TERM',
+				SUM(a.PAIDDUTY) AS 'PAIDDUTY', SUM(a.DUTYSAVINGS) AS 'DUTYSAVINGS', SUM(a.ftaDuty) AS 'FTADUTY'
+		FROM [rms].[dbo].[FTA_Master] a WITH (NOLOCK)
+		left outer join CPS.[dbo].[MAAA100] b WITH (NOLOCK)
+		on a.IMPUM_JAJAE_CODE = b.Mmodel_code
+		and a.IMPUM_JAJAE_CODE != ''
+		<where>
+		    <if test='IMPUM_JAJAE_CODE != null and IMPUM_JAJAE_CODE != ""'>AND a.IMPUM_JAJAE_CODE LIKE #{IMPUM_JAJAE_CODE} + '%'</if>
+			<if test='taxNum != null and taxNum != ""'>AND a.impo_napse_saup = #{taxNum}</if>
+			<if test='BU != null and BU != ""'>
+			    <choose>
+                	<when test='BU == "VC"'>AND b.Mdivision_code not in ('PL01','PL02','PL04','PL05','PL06','PL07','PL12','PL55')</when>
+                	<otherwise>AND b.Mdivision_code = #{BU}</otherwise>
+            	</choose>
+			</if>
+			<if test='_DateType != "ALL" and _DateType != null and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+	             <choose>
+	                <when test='_DateType == "IMPO_OK_DATE"'>AND a.IMPO_OK_DATE BETWEEN #{strFromDate} AND #{strToDate}</when>
+	             </choose>
+	        </if>
+			<if test='FTAAPPLICATION != null and FTAAPPLICATION != ""'>AND a.FTAAPPLICATION LIKE #{FTAAPPLICATION} + '%'</if>
+		</where>
+		GROUP BY a.IMPUM_JAJAE_CODE
+	</select>
+
+    <select id="selectFtaManagementAlconDetailList" resultType="map">
+		/* 알콘 FTA 종합관리 상세 조회 */
+		SELECT	ROW_NUMBER() OVER (ORDER BY a.IMPO_OK_DATE) AS 'rownum',
+				a.*,
+				b.Mdivision_code as 'PLCODE'
+		FROM	[rms].[dbo].[FTA_Master] a WITH (NOLOCK)
+		left outer join CPS.[dbo].[MAAA100] b WITH (NOLOCK)
+		on a.IMPUM_JAJAE_CODE = b.Mmodel_code
+		<where>
+		    <if test='IMPUM_JAJAE_CODE != null and IMPUM_JAJAE_CODE != ""'>AND a.IMPUM_JAJAE_CODE LIKE #{IMPUM_JAJAE_CODE} + '%'</if>
+			<if test='taxNum != null and taxNum != ""'>AND a.impo_napse_saup = #{taxNum}</if>
+			<if test='_DateType != "ALL" and _DateType != null and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+	             <choose>
+	                <when test='_DateType == "IMPO_OK_DATE"'>AND a.IMPO_OK_DATE BETWEEN #{strFromDate} AND #{strToDate}</when>
+	             </choose>
+	        </if>
+		</where>
+	</select>
+</mapper>

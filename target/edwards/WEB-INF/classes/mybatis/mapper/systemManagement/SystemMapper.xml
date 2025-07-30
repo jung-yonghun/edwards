@@ -1,0 +1,367 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) SEIN
+  ~ All rights reserved.
+  ~ This software is the confidential and proprietary information of SEIN. ("Confidential Information").
+  -->
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.edwards.biz.systemManagement.UserMenuAuthMapper">
+    <select id="selectUserMenuList" resultType="map">
+        SELECT datas.*
+        FROM (
+        select a.userKey, b.parentID, b.menuName, b.menuEngName, b.menuPath, b.menuEngPath, a.sortOrder, a.userMenuKey, b.note
+		  from soo.dbo.CPS_User_Menu a, soo.dbo.CPS_SYS_Menu b
+		where a.sortOrder= b.sortOrder
+		  and a.useYn='Y'
+		  and b.useYn='Y'
+		  and a.userKey=#{userKey}
+        ) datas
+        <if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+            WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+        </if>
+        order by datas.sortOrder
+    </select>
+
+    <select id="addSysMenuList" resultType="map">
+        select menuEngName, parentID, sortOrder, note
+        from soo.dbo.CPS_SYS_Menu
+		where sortOrder not in (
+		select sortOrder from soo.dbo.CPS_User_Menu
+		where userKey = #{userKey}
+		and useYn = 'Y'
+		)
+		and useYN = 'Y'
+		order by sortOrder
+    </select>
+
+    <select id="addBasicSysMenuList" resultType="map">
+        select sortOrder
+        from soo.dbo.CPS_SYS_Menu
+		where menuBasic = 'Y'
+		order by sortOrder
+    </select>
+
+    <select id="addTestSysMenuList" resultType="map">
+        select sortOrder
+        from soo.dbo.CPS_SYS_Menu
+		where menuTestAll = 'Y'
+		order by sortOrder
+    </select>
+
+    <select id="selectCustomerList" resultType="map">
+        select Deal_sangho, Deal_saup, Deal_tel, Deal_code,
+               Deal_tong, Deal_name, Deal_post, Deal_juso, Deal_damdangja, Deal_daecode, Deal_daesangho
+        from ${_defaultDB}.kcba.dDeal
+		where 1=1
+		<if test='sangho != null and sangho != ""'>AND Deal_sangho LIKE '%' + #{sangho} + '%'</if>
+		<if test='saup != null and saup != ""'>AND Deal_saup LIKE '%' + #{saup} + '%'</if>
+		<if test='code != null and code != ""'>AND Deal_code LIKE '%' + #{code} + '%'</if>
+    </select>
+
+    <select id="selectCustomer" resultType="map">
+        select sangho, saup
+        from soo.dbo.CPS_Customer
+		where 1=1
+		<if test='sangho != null and sangho != ""'>AND sangho LIKE '%' + #{sangho} + '%'</if>
+		<if test='jisa != null and jisa != ""'>AND jisa = #{jisa}</if>
+    </select>
+
+    <select id="selectCustomerAllList" resultType="map">
+        select '본사수입' as jisa, 'ncustoms' as defaultDB, Deal_saup, Deal_sangho, Deal_name, Deal_damdangja, Deal_tel
+		from ncustoms.kcba.dDeal
+		where Deal_sangho like '%' + #{dealSangho} + '%'
+		union all
+		select '안양지사' as jisa, 'ncustoms_ay' as defaultDB, Deal_saup, Deal_sangho, Deal_name, Deal_damdangja, Deal_tel
+		from ncustoms_ay.kcba.dDeal
+		where Deal_sangho like '%' + #{dealSangho} + '%'
+		union all
+		select '부산지사' as jisa, 'ncustoms_bs' as defaultDB, Deal_saup, Deal_sangho, Deal_name, Deal_damdangja, Deal_tel
+		from ncustoms_bs.kcba.dDeal
+		where Deal_sangho like '%' + #{dealSangho} + '%'
+		union all
+		select '천안지사' as jisa, 'ncustoms_ca' as defaultDB, Deal_saup, Deal_sangho, Deal_name, Deal_damdangja, Deal_tel
+		from ncustoms_ca.kcba.dDeal
+		where Deal_sangho like '%' + #{dealSangho} + '%'
+		union all
+		select '청주지사' as jisa, 'ncustoms_cj' as defaultDB, Deal_saup, Deal_sangho, Deal_name, Deal_damdangja, Deal_tel
+		from ncustoms_cj.kcba.dDeal
+		where Deal_sangho like '%' + #{dealSangho} + '%'
+		union all
+		select '창원지사' as jisa, 'ncustoms_cw' as defaultDB, Deal_saup, Deal_sangho, Deal_name, Deal_damdangja, Deal_tel
+		from ncustoms_cw.kcba.dDeal
+		where Deal_sangho like '%' + #{dealSangho} + '%'
+		union all
+		select '대전지사' as jisa, 'ncustoms_dj' as defaultDB, Deal_saup, Deal_sangho, Deal_name, Deal_damdangja, Deal_tel
+		from ncustoms_dj.kcba.dDeal
+		where Deal_sangho like '%' + #{dealSangho} + '%'
+		union all
+		select '구미지사' as jisa, 'ncustoms_gm' as defaultDB, Deal_saup, Deal_sangho, Deal_name, Deal_damdangja, Deal_tel
+		from ncustoms_gm.kcba.dDeal
+		where Deal_sangho like '%' + #{dealSangho} + '%'
+		union all
+		select '인천해상' as jisa, 'ncustoms_ic' as defaultDB, Deal_saup, Deal_sangho, Deal_name, Deal_damdangja, Deal_tel
+		from ncustoms_ic.kcba.dDeal
+		where Deal_sangho like '%' + #{dealSangho} + '%'
+		union all
+		select '진주지사' as jisa, 'ncustoms_jj' as defaultDB, Deal_saup, Deal_sangho, Deal_name, Deal_damdangja, Deal_tel
+		from ncustoms_jj.kcba.dDeal
+		where Deal_sangho like '%' + #{dealSangho} + '%'
+		union all
+		select '파주지사' as jisa, 'ncustoms_pj' as defaultDB, Deal_saup, Deal_sangho, Deal_name, Deal_damdangja, Deal_tel
+		from ncustoms_pj.kcba.dDeal
+		where Deal_sangho like '%' + #{dealSangho} + '%'
+		union all
+		select '평택지사' as jisa, 'ncustoms_pt' as defaultDB, Deal_saup, Deal_sangho, Deal_name, Deal_damdangja, Deal_tel
+		from ncustoms_pt.kcba.dDeal
+		where Deal_sangho like '%' + #{dealSangho} + '%'
+		union all
+		select '본사수출' as jisa, 'ncustoms_sel_040' as defaultDB, Deal_saup, Deal_sangho, Deal_name, Deal_damdangja, Deal_tel
+		from ncustoms_sel_040.kcba.dDeal
+		where Deal_sangho like '%' + #{dealSangho} + '%'
+		union all
+		select '43494' as jisa, 'ncustoms_sel4' as defaultDB, Deal_saup, Deal_sangho, Deal_name, Deal_damdangja, Deal_tel
+		from ncustoms_sel4.kcba.dDeal
+		where Deal_sangho like '%' + #{dealSangho} + '%'
+		union all
+		select '경기지사' as jisa, 'ncustoms_sn' as defaultDB, Deal_saup, Deal_sangho, Deal_name, Deal_damdangja, Deal_tel
+		from ncustoms_sn.kcba.dDeal
+		where Deal_sangho like '%' + #{dealSangho} + '%'
+		union all
+		select '울산지사' as jisa, 'ncustoms_us' as defaultDB, Deal_saup, Deal_sangho, Deal_name, Deal_damdangja, Deal_tel
+		from ncustoms_us.kcba.dDeal
+		where Deal_sangho like '%' + #{dealSangho} + '%'
+		union all
+		select '인천항공' as jisa, 'ncustoms_yj' as defaultDB, Deal_saup, Deal_sangho, Deal_name, Deal_damdangja, Deal_tel
+		from ncustoms_yj.kcba.dDeal
+		where Deal_sangho like '%' + #{dealSangho} + '%'
+		union all
+		select '여수지사' as jisa, 'ncustoms_ys' as defaultDB, Deal_saup, Deal_sangho, Deal_name, Deal_damdangja, Deal_tel
+		from ncustoms_ys.kcba.dDeal
+		where Deal_sangho like '%' + #{dealSangho} + '%'
+    </select>
+
+    <select id="selectDefaultDBList" resultType="map">
+        /* defaultDB 선택 */
+        select defaultDB from soo.dbo.CPS_Team
+		where teamCode in (
+		select teamCode from soo.dbo.CPS_SaveTeam
+		where useYn='Y'
+		and userId = #{userId})
+    </select>
+
+    <select id="selectNtaaList" resultType="map">
+        select *
+        from CPS.[dbo].[NTAA100]
+		<where>
+            and 1 = 1
+            <if test='category != null and category != ""'>AND Category = #{category}</if>
+            <if test='useYn != null and useYn != ""'>AND UseYn = #{useYn}</if>
+            <if test='(strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>AND FinishedDay BETWEEN #{strFromDate} AND #{strToDate}</if>
+            <if test='NTAAKey != null and NTAAKey != ""'>AND NTAAKey = #{NTAAKey}</if>
+        </where>
+        order by AddDtm desc
+    </select>
+
+    <select id="selectNtaaListSimple" resultType="map">
+        select NTAAKey, Subject, FinishedDay
+        from CPS.[dbo].[NTAA100]
+		<where>
+            and 1 = 1
+            <if test='category != null and category != ""'>AND Category = #{category}</if>
+            <if test='useYn != null and useYn != ""'>AND UseYn = #{useYn}</if>
+            <if test='(strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>AND FinishedDay BETWEEN #{strFromDate} AND #{strToDate}</if>
+            <if test='NTAAKey != null and NTAAKey != ""'>AND NTAAKey = #{NTAAKey}</if>
+            <if test='contents != null and contents != ""'>AND Contents like '%' + #{contents} + '%'</if>
+        </where>
+        order by AddDtm desc
+    </select>
+
+    <update id="updateENAC100">
+		UPDATE	CPS.dbo.ENAC100
+		<trim prefix="SET" suffixOverrides=",">
+			<if test='UseYn != null'>UseYn = #{UseYn} ,</if>
+			<if test='ID != null'>EditUserKey = #{ID} ,</if>
+			<if test='userNm != null'>EditUserNm = #{userNm} ,</if>
+			<if test='currentDatetime != null'>EditDtm = #{currentDatetime} ,</if>
+		</trim>
+		WHERE FKey = #{FKey}
+		and Gbn = #{Gbn}
+	</update>
+
+    <insert id="insertNTAA100">
+		INSERT INTO CPS.[dbo].[NTAA100]
+		       ([Category]
+				,[Subject]
+				,[Keyword]
+				,[Contents]
+				,[NoticesYn]
+				,[FinishedDay]
+				,[InquiryCount]
+				,[FileAttachedYn]
+				,[UseYn]
+				,[AddUserKey]
+				,[AddUserNm]
+				,[AddDtm])
+		VALUES
+		       (#{category}
+		       ,#{subject}
+		       ,#{keyword}
+		       ,#{contents}
+		       ,#{noticesYn}
+		       ,#{finishedDay}
+		       ,#{inquiryCount}
+		       ,#{fileAttachedYn}
+		       ,#{useYn}
+			   ,#{ID}
+			   ,#{userNm}
+			   ,#{currentDatetime})
+	</insert>
+
+    <update id="updateNTAA100">
+		UPDATE	CPS.[dbo].[NTAA100]
+		<trim prefix="SET" suffixOverrides=",">
+			<if test='subject != null'>Subject = #{subject} ,</if>
+			<if test='keyword != null'>Keyword = #{keyword} ,</if>
+			<if test='contents != null'>Contents = #{contents} ,</if>
+			<if test='useYn != null'>UseYn = #{useYn} ,</if>
+			<if test='ID != null'>EditUserKey = #{ID} ,</if>
+			<if test='userNm != null'>EditUserNm = #{userNm} ,</if>
+			<if test='currentDatetime != null'>EditDtm = #{currentDatetime} ,</if>
+		</trim>
+		WHERE NTAAKey = #{ntaaKey}
+	</update>
+
+    <select id="selectMonthlyList" resultType="map">
+        select top 1 *
+        from [122.99.247.5].[seinAnalysis].[dbo].[TBR_Report_Statistics_Report]
+		<where>
+            and UseYn = 'Y'
+            and ReportYn = 'Y'
+            <if test='RptImpoNapseSaup != null and RptImpoNapseSaup != ""'>AND RptImpoNapseSaup = #{RptImpoNapseSaup}</if>
+        </where>
+        order by ReportSEQ desc
+    </select>
+
+    <update id="updatePercent">
+		UPDATE CPS.[dbo].[NTAA100]
+		set Contents =  REPLACE(convert(varchar(max),Contents),'^','%')
+		where UseYn='Y'
+		and Category='CUSTOMS'
+	</update>
+
+    <select id="selectContactList" resultType="map">
+        select
+        (select a.CdPrtNm from CPS.[dbo].[CDAF100D] a where a.UseYn='Y' and a.Mcd='BSAA111_SEIN' and a.Cd=b.Gbn) as 'Gbn',
+		(select a.ComUserHnm from CPS_STD.[dbo].[BSAA110] a where a.UseYn='Y' and a.BSAAUMngNo=b.BSAAUMngNo) as 'ComUserHnm',
+		case when b.Gbn = '1' or b.Gbn = '2' then (select c.CdPrtNm from CPS_STD.[dbo].[BSAA110] a, CPS.[dbo].[CDAF100D] c where a.UseYn='Y' and c.UseYn='Y' and a.ComUserPositionCD = c.Cd and c.Mcd = 'ENAA_USERPOSITION' and a.BSAAUMngNo=b.BSAAUMngNo)
+		else (select c.CdPrtNm from CPS_STD.[dbo].[BSAA110] a, CPS.[dbo].[CDAF100D] c where a.UseYn='Y' and c.UseYn='Y' and a.ComUserPositionCD = c.Cd and c.Mcd = 'ENAA_USERPOSITION' and a.BSAAUMngNo=b.BSAAUMngNo) end as 'ComUserRank',
+		(select a.ComUserTelNo from CPS_STD.[dbo].[BSAA110] a where a.UseYn='Y' and a.BSAAUMngNo=b.BSAAUMngNo) as 'ComUserTelNo',
+		(select a.ComUserCmail from CPS_STD.[dbo].[BSAA110] a where a.UseYn='Y' and a.BSAAUMngNo=b.BSAAUMngNo) as 'ComUserCmail'
+		from CPS_STD.[dbo].[BSAA111] b
+		<where>
+            and UseYn = 'Y'
+            <if test='taxNum != null and taxNum != ""'>and b.BSAAMngNo= (
+				select c.BSAAMngNo from CPS_STD.[dbo].[BSAA100M] c
+				 where c.ComSaupNo = #{taxNum})</if>
+			<if test='taxNum = null and taxNum = ""'>and b.BSAAMngNo= 'BSAA100M201900001'</if>
+        </where>
+        order by b.Sort
+    </select>
+
+    <select id="selectContactMail" resultType="map">
+        select ISNULL(b.ComMngEmail,'') as 'ComMngEmail'
+        from CPS_STD.[dbo].[BSAA100M] b
+        where b.UseYn='Y'
+        <if test='taxNum != null and taxNum != ""'>and b.BSAAMngNo= (
+			select c.BSAAMngNo from CPS_STD.[dbo].[BSAA100M] c
+			 where c.ComSaupNo = #{taxNum})</if>
+		<if test='taxNum = null and taxNum = ""'>and b.BSAAMngNo= 'BSAA100M201900001'</if>
+    </select>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <select id="findUserXAuthXMenuList" resultType="map">
+        WITH AUTH_MENUINFO(menuKey, parentKey, menuKorName, menuEngName, menuPath, menuImageClass, sortKey, sortKorMenu, sortEngMenu, sortPath, sortOrder, subSortOrder, useYn) AS (
+            SELECT
+                menuKey
+                , parentKey
+                , menuKorName
+                , menuEngName
+                , menuPath
+                , menuImageClass
+                , CONVERT(VARCHAR(4000), menuKey) sortKey
+                , CONVERT(VARCHAR(4000), menuKorName) sortKorMenu
+                , CONVERT(VARCHAR(4000), menuEngName) sortEngMenu
+                , CONVERT(VARCHAR(4000), ISNULL(menuPath, '') ) sortPath
+                , sortOrder
+                , subSortOrder
+                , useYn
+            FROM [GEOWS].[dbo].[TBR_SYS_Menu] WITH (NOLOCK)
+            WHERE parentKey = 0
+            AND useYn = 'Y'
+
+            UNION ALL
+
+            SELECT
+                    b.menuKey
+                    , b.parentKey
+                    , b.menuKorName
+                    , b.menuEngName
+                    , b.menuPath
+                    , b.menuImageClass
+                    , CONVERT(VARCHAR(4000), CONVERT(NVARCHAR,c.sortKey) + ' > ' + CONVERT(VARCHAR(4000), b.menuKey)) sortKey
+                    , CONVERT(VARCHAR(4000), CONVERT(NVARCHAR,c.sortKorMenu) + ' > ' + CONVERT(VARCHAR(4000), b.menuKorName)) sortKorMenu
+                    , CONVERT(VARCHAR(4000), CONVERT(NVARCHAR,c.sortEngMenu) + ' > ' + CONVERT(VARCHAR(4000), b.menuEngName)) sortEngMenu
+                    , CONVERT(VARCHAR(4000), CONVERT(NVARCHAR,ISNULL(c.sortPath,'')) + ' > ' + CONVERT(VARCHAR(4000), ISNULL(b.menuPath, '') )) sortPath
+                    , b.sortOrder
+                    , b.subSortOrder
+                    , b.useYn
+            FROM [GEOWS].[dbo].[TBR_SYS_Menu] b WITH (NOLOCK), AUTH_MENUINFO c
+            WHERE b.parentKey = c.menuKey
+            AND b.useYn = 'Y'
+        )
+        SELECT	a.menuKey,
+                a.parentKey, a.menuKorName, a.menuEngName, a.menuPath, a.menuImageClass,
+                a.sortKey, a.sortKorMenu, a.sortEngMenu, a.sortPath, a.sortOrder, a.subSortOrder,
+                LEN(a.sortKey)-LEN(REPLACE(a.sortKey,'>','')) AS 'lvl',
+                STUFF((SELECT ',' + eventCode FROM [GEOWS].[dbo].[TBR_User_MenuAuth] WITH (NOLOCK) WHERE useYn = 'Y' AND (menuKey=b.menuKey) FOR XML PATH ('')),1,1,'') AS 'menuAuth'
+        FROM	AUTH_MENUINFO a WITH (NOLOCK)
+                    INNER JOIN [GEOWS].[dbo].[TBR_User_MenuAuth] b WITH (NOLOCK)
+                    ON a.menuKey = b.menuKey
+                    AND a.useYn = 'Y'
+                    AND b.useYn = 'Y'
+        WHERE b.userKey = #{userKey}
+        GROUP BY a.menuKey, a.parentKey, a.menuKorName, a.menuEngName, a.menuPath, a.menuImageClass,
+                a.sortKey, a.sortKorMenu, a.sortEngMenu, a.sortPath, a.sortOrder, a.subSortOrder,
+                LEN(a.sortKey)-LEN(REPLACE(a.sortKey,'>','')), b.menuKey
+        ORDER BY a.sortOrder, a.subSortOrder
+    </select>
+
+    <update id="syncUserXAuthXMenuList">
+        /* 회원X메뉴권한 메뉴정보 동기화 */
+        UPDATE [GEOWS].[dbo].[TBR_User_MenuAuth]
+        SET menuCode = #{menuCode},
+        menuKorName = #{menuKorName},
+        menuEngName = #{menuEngName}
+        WHERE menuKey = #{menuKey}
+    </update>
+
+    <select id="callProcDeleteUser" statementType="CALLABLE" resultType="map">
+        { call [GEOWS].[dbo].[USP_사용자_사용자정보삭제] ( @argUserId = #{userId} ) }
+    </select>
+</mapper>

@@ -1,0 +1,5007 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.edwards.biz.itemMng.ItemMapper">
+    <select id="selectItemHsMasterList" resultType="map">
+		/* HS관리 */
+		select
+		*
+		from CPS.[dbo].[MAAD100M]
+		<where>
+			and UseYN = 'Y'
+            <if test='_DateType != null and _DateType != "ALL" and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+				<choose>
+					<when test='_DateType == "hsRegDt"'>AND hsRegDt BETWEEN #{strFromDate} AND #{strToDate}</when>
+					<when test='_DateType == "hsReviewDt"'>AND hsReviewDt BETWEEN #{strFromDate} AND #{strToDate}</when>
+					<when test='_DateType == "itemOkDtm"'>AND itemOkDtm BETWEEN #{strFromDate} AND #{strToDate}</when>
+				</choose>
+			</if>
+			<if test='hsStatus != null and hsStatus != ""'>AND hsStatus = #{hsStatus}</if>
+			<if test='hsImportance != null and hsImportance != ""'>AND hsImportance = #{hsImportance}</if>
+			<if test='hsRegUserComName != null and hsRegUserComName != ""'>AND hsRegUserComName LIKE '%' + #{hsRegUserComName} + '%'</if>
+			<if test='itemMmodelCode != null and itemMmodelCode != ""'>AND itemMmodelCode LIKE '%' + #{itemMmodelCode} + '%'</if>
+			<if test='itemHs != null and itemHs != ""'>AND itemHs LIKE #{itemHs} + '%'</if>
+			<if test='hsRegUserNm != null and hsRegUserNm != ""'>AND hsRegUserNm LIKE #{hsRegUserNm} + '%'</if>
+			<if test='MAAD100MKey != null and MAAD100MKey != ""'>AND MAAD100MKey = #{MAAD100MKey}</if>
+        </where>
+        order by MAAD100MKey desc
+	</select>
+
+	<select id="selectItemList" resultType="map" fetchSize="1000">
+		/* 자재 마스터 조회 */
+		SELECT datas.*
+		FROM (
+		SELECT ROW_NUMBER() OVER (ORDER BY a.Mreg_date DESC) AS 'rownum',
+		a.Mcount_no, a.Mmodel_code, a.Mbom_code, a.Mdivision_code, a.Mtcano
+		, a.Mco_code, a.Mco_name, a.Mco_com, a.Mshipper, a.Mshipper_code
+		, a.Mmaker, a.Mreg_date, a.Mend_date, a.Mindo_code, a.Mhs_code AS 'hdnMhsCode'
+		, SUBSTRING(a.Mhs_code,1, 4) + '.' + SUBSTRING(a.Mhs_code,5,2) + '-' + SUBSTRING(a.Mhs_code,7,4) AS 'Mhs_code'
+		, a.Mhs_code_new, a.Mhs_kind, a.Mhs_rate, a.Mstd_goods, a.Mger_goods
+		, a.Msp_code, a.Msangpyo
+		, a.Mmodel_1, a.Mmodel_2, a.Mmodel_3 , REPLACE(REPLACE(a.Mmodel_2+a.Mmodel_3, CHAR(13), ''), CHAR(10), '') AS 'Mmodel'
+		, a.Mingredient_1, a.Mingredient_2, a.Mingredient_3, REPLACE(REPLACE(a.Mingredient_1+a.Mingredient_2+a.Mingredient_3, CHAR(13), ''), CHAR(10), '') AS 'Mingredient'
+		, a.Morigin1, a.Morigin2, a.Morigin3, a.Morigin4, a.Morigin5
+		, a.Morigin_remark, a.Mprovisional, a.Mprovisional_rate
+		, a.Mprovisional_remark, a.Mqty_ut, a.Munitprice_current, a.Munitprice, a.Mdraw_unit
+		, a.Mcus_entry1, a.Mcus_entry2, a.Mcus_entry3, a.Mconfirm_flag, a.Mconfirm_date
+		, a.Mconfirm_user, a.Mreview_flag, a.Mreview_cause
+		, a.Mremark1, a.Mremark2
+		, a.Mspecial_remark1+a.Mspecial_remark2 AS 'Mspecial_remark'
+		, a.Mspecial_remark1, a.Mspecial_remark2, a.Mspecial_remark3, a.Mattached1, a.Mattached2
+		, a.Mattached3, a.Mattached4, a.Mattached5, a.Mcus_flag, a.Mtek_flag
+		, a.Myog_flag, a.Myog_ok_no, a.AddDtm, a.AddUserNm, a.EditDtm
+		, a.EditUserNm, a.M_neguk_gubun, a.M_neguk_code, a.M_neguk_myun
+		, a.M_edu_yn, a.M_nong_yn, a.MWei_Pri, a.Main_key, a.fta_yn
+		, a.fta_text, a.sample_yn, a.TeamKey, a.madd_spec_count, a.madd_spec_content
+		, a.minus_yn, a.MVat_Flag, a.MVat_Reduction_Code, a.Mpurpose_Flag, a.Mpurpose_No
+		, a.mGoodscode, a.mSpeccode, a.mreq_userid, a.mreq_username, a.mreq_datetime
+		, a.mestmate_completiondate, a.mact_userid, a.mact_username, a.mprocess_datetime, a.mprocess_flag
+		, a.HsStatus, a.TpStatus, a.useYn, a.Munitprice_Rate
+		, a.MmakerCD, a.RefundYN, a.OrigExpYN, a.HsGrpCD, a.ItemNmHAN
+		/*
+		TODO : 20160830
+		자재마스터에 필드추가(HS상태, 단가상태)
+		해외거래처정보(b)에서 데이터 가져오기
+		완료되면 검색조건 추가
+		, a.HS상태코드, a.단가상태코드,
+		, b.인증구분, b.인증번호, b.해외거래처
+		*/
+		FROM ${_defaultRmsDb}.[dbo].[MAAA100] a WITH (NOLOCK)
+		WHERE 1 = 1
+		<if test='mcountNo != null and mcountNo != ""'>AND a.Mcount_no = #{mcountNo} /* 관리번호(PK) */</if>
+		<if test='mmodelCode != null and mmodelCode != ""'>AND a.Mmodel_code LIKE '%' + #{mmodelCode} + '%' /* 자재코드 */</if>
+		<if test='mmodelCodeList != null and mmodelCodeList != ""'>AND a.Mmodel_code in ${mmodelCodeList}</if>
+		<if test='mgerGoods != null and mgerGoods != ""'>AND a.Mger_goods LIKE '%' + #{mgerGoods} + '%' /* 거래품명 */</if>
+		<if test='mhsCode != null and mhsCode != ""'>AND a.Mhs_code LIKE '%' + #{mhsCode} + '%' /* 세번부호 */</if>
+		<if test='mshipper != null and mshipper != ""'>AND a.Mshipper LIKE '%' + #{mshipper} + '%' /* 해외거래처 */</if>
+		<if test='mcoCode != null and mcoCode != ""'>AND a.Mco_code LIKE '%' + #{mcoCode} + '%' /* 납세자코드 */</if>
+		<if test='mcoName != null and mcoName != ""'>AND a.Mco_name LIKE '%' + #{mcoName} + '%' /* 납세자상호 */</if>
+		<if test='mcoCom != null and mcoCom != ""'>AND a.Mco_com = #{mcoCom} /* 납세자사업자번호 */</if>
+		<if test='mcoComAll != null and mcoComAll != ""'>AND a.Mco_com in (
+		    select userSaup from soo.dbo.CPS_SaveCustomer where userKey = #{ID}
+		)</if>
+		<if test='mtcano != null and mtcano != ""'>AND a.Mtcano LIKE '%' + #{mtcano} + '%' /* 신고자부호 */</if>
+		<if test='mprovisional != null and mprovisional != ""'>AND a.Mprovisional LIKE '%' + #{mprovisional} + '%' /* 잠정 */</if>
+		<if test='mtekFlag != null and mtekFlag != ""'>AND a.Mtek_flag LIKE '%' + #{mtekFlag} + '%' /* 내국세여부 */</if>
+		<if test='mNegukGubun != null and mNegukGubun != ""'>AND a.M_neguk_gubun LIKE '%' + #{mNegukGubun} + '%' /* 내국세구분 */</if>
+		<if test='mNegukCode != null and mNegukCode != ""'>AND a.M_neguk_code LIKE '%' + #{mNegukCode} + '%' /* 내국세코드 */</if>
+		<if test='_mNegukCode != null and _mNegukCode != ""'>AND ISNULL(a.M_neguk_code, '') != '' /* 내국세대상건(속도) */</if>
+		<if test='myogFlag != null and myogFlag != ""'>AND a.Myog_flag LIKE '%' + #{myogFlag} + '%' /* 요건여부 */</if>
+		<if test='ftaYn != null and ftaYn != ""'>AND a.fta_yn LIKE '%' + #{ftaYn} + '%' /* FTA적용여부 */</if>
+		<if test='mingredient1 != null and mingredient1 != ""'>AND a.Mingredient_1 LIKE '%' + #{mingredient1} + '%' /* 성분1 */</if>
+		<if test='munitpriceCurrent != null and munitpriceCurrent != ""'>AND a.Munitprice_current LIKE '%' + #{munitpriceCurrent} + '%' /* 통화단위 */</if>
+		<if test='mindoCode != null and mindoCode != ""'>AND a.Mindo_code LIKE '%' + #{mindoCode} + '%' /* 인도조건 */</if>
+		<if test='partType != null and partType != "ALL" and (part != null and part != "")'>
+			<choose>
+				<when test='partType == "team"'>AND a.TeamKey LIKE '%' + #{part} + '%' /* 부서코드 */</when>
+				<when test='partType == "person"'>AND a.EditUserNm LIKE '%' + #{part} + '%' /* 수정자명 */</when>
+			</choose>
+		</if>
+		/*20160830시작*/
+		<if test='mshipperCode != null and mshipperCode != ""'>AND a.Mshipper_code LIKE '%' + #{mshipperCode} + '%' /* 해외거래처 부호 */</if>
+		<if test='mmaker != null and mmaker != ""'>AND a.Mmaker LIKE '%' + #{mmaker} + '%' /* 제조자 상호명 */</if>
+		<if test='mhsKind != null and mhsKind != ""'>AND a.Mhs_kind LIKE '%' + #{mhsKind} + '%' /* 세종구분 */</if>
+		<if test='mhsRate != null and mhsRate != ""'>AND a.Mhs_rate LIKE '%' + #{mhsRate} + '%' /* 관세율 */</if>
+		<if test='mstdGood != null and mstdGood != ""'>AND a.Mstd_good LIKE '%' + #{mstdGood} + '%' /* 표준품명 */</if>
+		<if test='mspCode != null and mspCode != ""'>AND a.Msp_code LIKE '%' + #{mspCode} + '%' /* 상표코드 */</if>
+		<if test='mqtyUt != null and mqtyUt != ""'>AND a.Mqty_ut LIKE '%' + #{mqtyUt} + '%' /* 수량단위 */</if>
+		<if test='munitprice != null and munitprice != ""'>AND a.Munitprice LIKE '%' + #{munitprice} + '%' /* 단가 */</if>
+		<if test='mdrawUnit != null and mdrawUnit != ""'>AND a.Mdraw_unit LIKE '%' + #{mdrawUnit} + '%' /* 환급물량단위 */</if>
+		<if test='mcusEntry1 != null and mcusEntry1 != ""'>AND a.Mcus_entry1 LIKE '%' + #{mcusEntry1} + '%' /* 관세사기재란-거래관계 */</if>
+		<if test='mcusEntry2 != null and mcusEntry2 != ""'>AND a.Mcus_entry2 LIKE '%' + #{mcusEntry2} + '%' /* 관세사기재란-품명규격세번 */</if>
+		<if test='mcusEntry3 != null and mcusEntry3 != ""'>AND a.Mcus_entry3 LIKE '%' + #{mcusEntry3} + '%' /* 관세사기재란-검사의견 */</if>
+		<if test='mconfirmUser != null and mconfirmUser != ""'>AND a.Mconfirm_user LIKE '%' + #{mconfirmUser} + '%' /* 확정자 */</if>
+		<if test='mreviewFlag != null and mreviewFlag != ""'>AND a.Mreview_flag LIKE '%' + #{mreviewFlag} + '%' /* 재검토여부 */</if>
+		<if test='mreviewCause != null and mreviewCause != ""'>AND a.Mreview_cause LIKE '%' + #{mreviewCause} + '%' /* 재검토사유 */</if>
+		<if test='mremark1 != null and mremark1 != ""'>AND a.Mremark1 LIKE '%' + #{mremark1} + '%' /* 통관요령 */</if>
+		<if test='mremark2 != null and mremark2 != ""'>AND a.Mremark2 LIKE '%' + #{mremark2} + '%' /* 물품정보 */</if>
+		<if test='mattached1 != null and mattached1 != ""'>AND a.Mattached1 LIKE '%' + #{mattached1} + '%' /* 파일첨무유무 */</if>
+		<if test='mattached2 != null and mattached2 != ""'>AND a.Mattached2 LIKE '%' + #{mattached2} + '%' /* hs상이사유 */</if>
+		<if test='mattached3 != null and mattached3 != ""'>AND a.Mattached3 LIKE '%' + #{mattached3} + '%' /* 상대국hs */</if>
+		<if test='mattached4 != null and mattached4 != ""'>AND a.Mattached4 LIKE '%' + #{mattached4} + '%' /* 참조사이트1 */</if>
+		<if test='mattached5 != null and mattached5 != ""'>AND a.Mattached5 LIKE '%' + #{mattached5} + '%' /* 참조사이트2 */</if>
+		<if test='mcusFlag != null and mcusFlag != ""'>AND a.Mcus_flag LIKE '%' + #{mcusFlag} + '%' /* 관세감면여부 */</if>
+		<if test='myogOkNo != null and myogOkNo != ""'>AND a.Myog_ok_no LIKE '%' + #{myogOkNo} + '%' /* 요건내용 */</if>
+		<if test='mNegukGubun != null and mNegukGubun != ""'>AND a.M_neguk_gubun LIKE '%' + #{mNegukGubun} + '%' /* 내국세구분 */</if>
+		<if test='mEduYn != null and mEduYn != ""'>AND a.M_edu_yn LIKE '%' + #{mEduYn} + '%' /* 교육세과세구분부호 */</if>
+		<if test='mNongYn != null and mNongYn != ""'>AND a.M_nong_yn LIKE '%' + #{mNongYn} + '%' /* 농특세과세구분부호 */</if>
+		<if test='mWeiPri != null and mWeiPri != ""'>AND a.MWei_Pri LIKE '%' + #{mWeiPri} + '%' /* 순중량 */</if>
+		<if test='mainKey != null and mainKey != ""'>AND a.Main_key LIKE '%' + #{mainKey} + '%' /* 미사용 */</if>
+		<if test='ftaText != null and ftaText != ""'>AND a.fta_text LIKE '%' + #{ftaText} + '%' /* FTA 참조사항 */</if>
+		<if test='sampleYn != null and sampleYn != ""'>AND a.sample_yn LIKE '%' + #{sampleYn} + '%' /* 유환,무환구분 */</if>
+		<if test='maddSpecCount != null and maddSpecCount != ""'>AND a.madd_spec_count LIKE '%' + #{maddSpecCount} + '%' /* 추가등록개수 */</if>
+		<if test='maddSpecContent != null and maddSpecContent != ""'>AND a.madd_spec_content LIKE '%' + #{maddSpecContent} + '%' /* 추가등록내용 */</if>
+		<if test='minusYn != null and minusYn != ""'>AND a.minus_yn LIKE '%' + #{minusYn} + '%' /* 공제요소구분 */</if>
+		<if test='mVatFlag != null and mVatFlag != ""'>AND a.MVat_Flag LIKE '%' + #{mVatFlag} + '%' /* 부가세구분부호 */</if>
+		<if test='mVatReductionCode != null and mVatReductionCode != ""'>AND a.MVat_Reduction_Code LIKE '%' + #{mVatReductionCode} + '%' /* 부가세감면부호 */</if>
+		<if test='mpurposeFlag != null and mpurposeFlag != ""'>AND a.Mpurpose_Flag LIKE '%' + #{mpurposeFlag} + '%' /* 용도대상구분 */</if>
+		<if test='mpurposeNo != null and mpurposeNo != ""'>AND a.Mpurpose_No LIKE '%' + #{mpurposeNo} + '%' /* 용도대상구분 참조사항 */</if>
+		<if test='mGoodscode != null and mGoodscode != ""'>AND a.mGoodscode LIKE '%' + #{mGoodscode} + '%' /* 표준품명 코드 */</if>
+		<if test='mSpeccode != null and mSpeccode != ""'>AND a.mSpeccode LIKE '%' + #{mSpeccode} + '%' /* 표준품명 스팩코드 */</if>
+		<if test='mprocessFlag != null and mprocessFlag != ""'>AND a.mprocess_flag LIKE '%' + #{mprocessFlag} + '%' /* 처리구분 */</if>
+		/*20160830끝*/
+
+		<if test='mmodel != null and mmodel != ""'>
+			AND (a.Mmodel_1 LIKE '%' + #{mmodel} + '%' OR a.Mmodel_2 LIKE '%' + #{mmodel} + '%' OR a.Mmodel_3 LIKE '%' + #{mmodel} + '%' OR
+			a.Mingredient_1 LIKE '%' + #{mmodel} + '%' OR a.Mingredient_2 LIKE '%' + #{mmodel} + '%' OR a.Mingredient_3 LIKE '%' + #{mmodel} + '%') /* 규격+성분 */
+		</if>
+
+		<if test='msangpyo != null and msangpyo != ""'>AND a.Msangpyo LIKE '%' + #{msangpyo} + '%' /* 상표명 */</if>
+		<if test='mconfirmFlag != null and mconfirmFlag != ""'>AND a.Mconfirm_flag LIKE '%' + #{mconfirmFlag} + '%' /* 확정상태 */</if>
+		<if test='mdivisionCode != null and mdivisionCode != ""'>AND a.Mdivision_code LIKE '%' + #{mdivisionCode} + '%' /* 사업부 */</if>
+		<if test='_DateType != null and _DateType != "ALL" and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+			<choose>
+				<when test='_DateType == "Mreg_date"'>AND a.Mreg_date BETWEEN #{strFromDate} AND #{strToDate} /* 등록일자 */</when>
+				<when test='_DateType == "Mconfirm_date"'>AND a.Mconfirm_date BETWEEN #{strFromDate} AND #{strToDate} /* 확정일자 */</when>
+				<when test='_DateType == "last_date"'>AND LEFT(a.EditDtm, 8) BETWEEN #{strFromDate} AND #{strToDate}</when>
+			</choose>
+		</if>
+		<if test='hsStatus != null and hsStatus != ""'>AND a.HsStatus LIKE '%' + #{hsStatus} + '%'</if>
+		<if test='tpStatus != null and tpStatus != ""'>AND a.TpStatus LIKE '%' + #{tpStatus} + '%'</if>
+		<if test='useYn != null and useYn != ""'>
+		    <choose>
+				<when test='useYn == "A"'>AND a.useYn in ('Y','X')</when>
+				<when test='useYn == "Y"'>AND a.useYn = #{useYn}</when>
+				<when test='useYn == "N"'>AND a.useYn = #{useYn}</when>
+				<when test='useYn == "X"'>AND a.useYn = #{useYn}</when>
+			</choose>
+		</if>
+		) datas
+		<if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+			WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+		</if>
+	</select>
+
+	<select id="selectItemInfo" resultType="map">
+		/* 자재마스터 단건 조회 */
+		SELECT *
+		FROM ${_defaultRmsDb}.[dbo].[MAAA100] WITH (NOLOCK)
+		<where>
+		    and UseYn = 'Y'
+			<if test='mcountNo != null and mcountNo != ""'>AND Mcount_no = #{mcountNo}</if>
+			<if test='mcoCom != null and mcoCom != ""'>AND Mco_com = #{mcoCom}</if>
+			<if test='mmodelCode != null and mmodelCode != ""'>AND Mmodel_code = #{mmodelCode}</if>
+		</where>
+	</select>
+
+	<select id="selectItemInfo1" resultType="map">
+		/* 자재마스터 단건 조회 */
+		SELECT *
+		FROM CPS.[dbo].[MAAA100] WITH (NOLOCK)
+		<where>
+		    and UseYn = 'Y'
+			<if test='mcoCom != null and mcoCom != ""'>AND Mco_com = #{mcoCom}</if>
+			<if test='mmodelCode != null and mmodelCode != ""'>AND Mmodel_code = #{mmodelCode}</if>
+		</where>
+	</select>
+
+	<update id="updateItemTPInfo">
+		/* TP단가 업데이트 */
+		UPDATE ${_defaultRmsDb}.[dbo].[MAAA100]
+		SET EditUserNm = #{_userId}
+		, EditDtm = REPLACE(CONVERT(VARCHAR(8), GETDATE(), 112)+CONVERT(VARCHAR(8), GETDATE(), 114), ':','')
+		, Munitprice = #{munitprice}
+		<where>
+			<if test='mcountNo != null and mcountNo != ""'>AND Mcount_no = #{mcountNo}</if>
+			<if test='mcoCom != null and mcoCom != ""'>AND Mco_com = #{mcoCom}</if>
+			<if test='mmodelCode != null and mmodelCode != ""'>AND Mmodel_code = #{mmodelCode}</if>
+		</where>
+	</update>
+
+	<select id="selectRmsItemNotYogList" resultType="map">
+		/* 자재마스터 요건관리 조회 */
+		SELECT datas.*
+		FROM (
+		SELECT ROW_NUMBER() OVER (ORDER BY a.Mcount_no, a.Seq) AS 'rownum',
+		a.*
+		FROM ${_defaultRmsDb}.[dbo].[MAAC100] a WITH (NOLOCK)
+		<where>
+			<if test='mcountNo != null and mcountNo != ""'>AND a.Mcount_No = #{mcountNo}</if>
+			<if test='seq != null and seq != ""'>AND a.SEQ = #{seq}</if>
+			<if test='lawCd != null and lawCd != ""'>AND a.LawCd LIKE '%' + #{lawCd} + '%'</if>
+			<if test='notYogSayuCd != null and notYogSayuCd != ""'>AND a.NotYogSayuCd LIKE '%' + #{notYogSayuCd} + '%'</if>
+			<if test='notYogSayuEtc != null and notYogSayuEtc != ""'>AND a.NotYogSayuEtc LIKE '%' + #{notYogSayuEtc} + '%'</if>
+		</where>
+		) datas
+		<if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+			WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+		</if>
+	</select>
+
+	<select id="selectRmsItemNotYogList1" resultType="map">
+		/* 에드워드 자재마스터 요건관리 조회 */
+		select
+		CASE WHEN ISNULL(a.EXIM_DIV,'')='EX' THEN '수출' ELSE '수입' END AS 'gubun',
+		a.LAW_CD as 'LawCd',
+		a.LAW_NM  as 'LawNm'
+		from rms.dbo.ED_CSTMNOTYOG a,  rms.[dbo].[ED_CSTMNOTYOG_DTL] b
+		<where>
+            AND a.CSTM_MNG_NO = b.CSTM_MNG_NO
+			and a.useYn='Y'
+			and b.useYn='Y'
+            <if test='hsCode != null and hsCode != ""'>AND a.HS_CD = #{hsCode}</if>
+            <if test='mcountNo != null and mcountNo != ""'>AND b.Mcount_no = #{mcountNo}</if>
+        </where>
+	</select>
+
+	<insert id="insertRmsItemNotYog">
+		/* 자재마스터 요건관리 입력 */
+		INSERT INTO ${_defaultRmsDb}.[dbo].[MAAC100]
+		([Mcount_No]
+		,[SEQ]
+		,[LawCd]
+		,[NotYogSayuCd]
+		,[NotYogSayuEtc]
+		,[AddDtm]
+		,[AddUserNm] )
+		VALUES
+		(#{mcountNo}
+		,#{seq}
+		,#{lawCd}
+		,#{notYogSayuCd}
+		,#{notYogSayuEtc}
+		,#{_currentDatetime}
+		,#{_userId} )
+	</insert>
+
+	<update id="updateRmsItemNotYog">
+		/* 자재마스터 요건관리 수정 */
+		UPDATE ${_defaultRmsDb}.[dbo].[MAAC100]
+		SET EditUserNm = #{_userId}
+		, EditDtm = #{_currentDatetime}
+		<if test='lawCd != null'>, LawCd = #{lawCd}</if>
+		<if test='notYogSayuCd != null'>, NotYogSayuCd = #{notYogSayuCd}</if>
+		<if test='notYogSayuEtc != null'>, NotYogSayuEtc = #{notYogSayuEtc}</if>
+		WHERE Mcount_No = #{mcountNo}
+		AND SEQ = #{seq}
+	</update>
+
+	<delete id="deleteRmsItemNotYog">
+		/* 자재마스터 요건관리 삭제 */
+		DELETE FROM ${_defaultRmsDb}.[dbo].[MAAC100]
+		WHERE Mcount_No = #{mcountNo}
+		AND SEQ = #{seq}
+	</delete>
+
+	<select id="selectItemAmdMasterList" resultType="map">
+		/* 자재마스터 변경 이력 조회(Master) */
+		SELECT datas.*
+		FROM (
+		SELECT ROW_NUMBER() OVER (ORDER BY Mcount_No, Amd_SEQ) AS 'rownum',
+		*
+		FROM ${_defaultRmsDb}.[dbo].[MAAB100M] WITH (NOLOCK)
+		WHERE Mcount_No = #{mcountNo}
+		and UseYn='Y'
+		) datas
+		<if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+			WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+		</if>
+	</select>
+
+	<select id="selectItemAmdDetailList" resultType="map">
+		/* 자재마스터 변경 이력 조회(Detail) */
+		SELECT datas.*
+		FROM (
+		SELECT ROW_NUMBER() OVER (ORDER BY Mcount_No, Amd_SEQ, Amd_Sub_SEQ) AS 'rownum',
+		*
+		FROM ${_defaultRmsDb}.[dbo].[MAAB100D] WITH (NOLOCK)
+		WHERE Mcount_No = #{mcountNo}
+		AND Amd_SEQ = #{amdSeq}
+		and UseYn='Y'
+		) datas
+		<if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+			WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+		</if>
+	</select>
+
+	<select id="selectItemAmdInspectionHistoryList" resultType="map">
+		/* 자재마스터 점검관리 변경이력 조회 */
+		SELECT datas.*
+		FROM (
+		SELECT ROW_NUMBER() OVER (ORDER BY a.Mcount_No, a.Amd_SEQ, b.Amd_Sub_SEQ) AS 'rownum',
+		a.Mcount_No, a.Amd_SEQ, b.Amd_Sub_SEQ, a.AmdNm, a.AmdDtm, a.AmdTxt1, a.AmdTxt2,
+		b.AmdItemId, b.AmdItemNm, b.AmdBf, b.AmdAf
+		FROM ${_defaultRmsDb}.[dbo].[MAAB100M] a WITH (NOLOCK)
+		INNER JOIN ${_defaultRmsDb}.[dbo].[MAAB100D] b WITH (NOLOCK)
+		ON a.Mcount_No = b.Mcount_No
+		AND a.Amd_SEQ = b.Amd_SEQ
+		and a.UseYn='Y'
+		and b.UseYn='Y'
+		<where>
+			<if test='mcountNo != null and mcountNo != ""'>AND a.Mcount_No = #{mcountNo} /* 관리번호(PK) */</if>
+			<if test='amdItemId != null and amdItemId != ""'>AND b.AmdItemId LIKE '%' + #{amdItemId} + '%' /* 변경항목코드 */</if>
+			<if test='amdItemNm != null and amdItemNm != ""'>AND b.AmdItemNm LIKE '%' + #{amdItemNm} + '%' /* 변경항목명 */</if>
+			<if test='sType != null and sType != "ALL" and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+				<choose>
+					<when test='sType == "amdDt_Day"'>AND LEFT(a.AmdDtm, 8) BETWEEN #{strFromDate} AND #{strToDate} /* 이력변경일자 */</when>
+				</choose>
+			</if>
+		</where>
+		) datas
+		<if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+			WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+		</if>
+	</select>
+
+	<select id="selectUnitPriceHistoryList" resultType="map">
+		/* UnitPrice 변경이력 조회 */
+		SELECT datas.*
+		FROM (
+		SELECT ROW_NUMBER() OVER (ORDER BY a.Mcount_No, a.Amd_SEQ, b.Amd_Sub_SEQ) AS 'rownum',
+		c.AddDtm, a.Mcount_No, a.Amd_SEQ, a.AmdDtm, b.AmdBf, b.AmdAf
+		FROM ${_defaultRmsDb}.[dbo].[MAAB100M] a WITH (NOLOCK)
+		INNER JOIN ${_defaultRmsDb}.[dbo].[MAAB100D] b WITH (NOLOCK)
+		ON a.Mcount_No = b.Mcount_No
+		AND a.Amd_SEQ = b.Amd_SEQ
+		AND a.AmdFlag != '자재변경검토요망'
+		and a.UseYn='Y'
+		and b.UseYn='Y'
+		INNER JOIN ${_defaultRmsDb}.[dbo].[MAAA100] c WITH (NOLOCK)
+		ON a.Mcount_No = c.Mcount_no
+		<where>
+			<if test='mcountNo != null and mcountNo != ""'>AND a.Mcount_No = #{mcountNo} /* 관리번호(PK) */</if>
+			<if test='amdItemId != null and amdItemId != ""'>AND b.AmdItemId LIKE '%' + #{amdItemId} + '%' /* 변경항목코드 */</if>
+		</where>
+		) datas
+		<if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+			WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+		</if>
+	</select>
+
+	<select id="selectCustomsUnitPriceList" resultType="map">
+		/* 통관단가 추이 */
+		SELECT datas.*
+		FROM (
+		select ROW_NUMBER() OVER (ORDER BY a.ImOkDtm DESC) AS 'rownum', a.ImSingoDt as 'yyyymmdd', b.ImDanga as 'itemUnitPrice', a.ImPayUnit as 'current' from
+		 CPS.dbo.IMAC100 a, CPS.dbo.IMAC110 b
+		where b.ImPumModelCode = #{itemMmodelCode}
+		and a.ImNapSaup = #{itemMcoCom}
+		and a.ImKey=b.ImKey
+		) datas
+		<if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+			WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+		</if>
+		order by datas.yyyymmdd desc
+	</select>
+	
+	<select id="selectCustomsUnitPriceList_back" resultType="map">
+		/* 엔컴 통관단가 추이 */
+		SELECT datas.*
+		FROM (
+		select ROW_NUMBER() OVER (ORDER BY a.Impo_ok_date DESC) AS 'rownum', a.Impo_singo_date as 'yyyymmdd', b.impum_danga as 'itemUnitPrice', a.Impo_gyelje_money as 'current' from
+		 ncustoms.kcba.impo1 a, ncustoms.kcba.Impo3 b
+		where b.Impum_jajae_code = #{itemMmodelCode}
+		and a.Impo_napse_saup = #{itemMcoCom}
+		and a.Impo_key=b.impum_key
+		union all
+		select ROW_NUMBER() OVER (ORDER BY a.Impo_ok_date DESC) AS 'rownum', a.Impo_singo_date as 'yyyymmdd', b.impum_danga as 'itemUnitPrice', a.Impo_gyelje_money as 'current' from
+		 ncustoms_ay.kcba.impo1 a, ncustoms_ay.kcba.Impo3 b
+		where b.Impum_jajae_code = #{itemMmodelCode}
+		and a.Impo_napse_saup = #{itemMcoCom}
+		and a.Impo_key=b.impum_key
+		union all
+		select ROW_NUMBER() OVER (ORDER BY a.Impo_ok_date DESC) AS 'rownum', a.Impo_singo_date as 'yyyymmdd', b.impum_danga as 'itemUnitPrice', a.Impo_gyelje_money as 'current' from
+		 ncustoms_bs.kcba.impo1 a, ncustoms_bs.kcba.Impo3 b
+		where b.Impum_jajae_code = #{itemMmodelCode}
+		and a.Impo_napse_saup = #{itemMcoCom}
+		and a.Impo_key=b.impum_key
+		union all
+		select ROW_NUMBER() OVER (ORDER BY a.Impo_ok_date DESC) AS 'rownum', a.Impo_singo_date as 'yyyymmdd', b.impum_danga as 'itemUnitPrice', a.Impo_gyelje_money as 'current' from
+		 ncustoms_ca.kcba.impo1 a, ncustoms_ca.kcba.Impo3 b
+		where b.Impum_jajae_code = #{itemMmodelCode}
+		and a.Impo_napse_saup = #{itemMcoCom}
+		and a.Impo_key=b.impum_key
+		union all
+		select ROW_NUMBER() OVER (ORDER BY a.Impo_ok_date DESC) AS 'rownum', a.Impo_singo_date as 'yyyymmdd', b.impum_danga as 'itemUnitPrice', a.Impo_gyelje_money as 'current' from
+		 ncustoms_cj.kcba.impo1 a, ncustoms_cj.kcba.Impo3 b
+		where b.Impum_jajae_code = #{itemMmodelCode}
+		and a.Impo_napse_saup = #{itemMcoCom}
+		and a.Impo_key=b.impum_key
+		union all
+		select ROW_NUMBER() OVER (ORDER BY a.Impo_ok_date DESC) AS 'rownum', a.Impo_singo_date as 'yyyymmdd', b.impum_danga as 'itemUnitPrice', a.Impo_gyelje_money as 'current' from
+		 ncustoms_cw.kcba.impo1 a, ncustoms_cw.kcba.Impo3 b
+		where b.Impum_jajae_code = #{itemMmodelCode}
+		and a.Impo_napse_saup = #{itemMcoCom}
+		and a.Impo_key=b.impum_key
+		union all
+		select ROW_NUMBER() OVER (ORDER BY a.Impo_ok_date DESC) AS 'rownum', a.Impo_singo_date as 'yyyymmdd', b.impum_danga as 'itemUnitPrice', a.Impo_gyelje_money as 'current' from
+		 ncustoms_dj.kcba.impo1 a, ncustoms_dj.kcba.Impo3 b
+		where b.Impum_jajae_code = #{itemMmodelCode}
+		and a.Impo_napse_saup = #{itemMcoCom}
+		and a.Impo_key=b.impum_key
+		union all
+		select ROW_NUMBER() OVER (ORDER BY a.Impo_ok_date DESC) AS 'rownum', a.Impo_singo_date as 'yyyymmdd', b.impum_danga as 'itemUnitPrice', a.Impo_gyelje_money as 'current' from
+		 ncustoms_gm.kcba.impo1 a, ncustoms_gm.kcba.Impo3 b
+		where b.Impum_jajae_code = #{itemMmodelCode}
+		and a.Impo_napse_saup = #{itemMcoCom}
+		and a.Impo_key=b.impum_key
+		union all
+		select ROW_NUMBER() OVER (ORDER BY a.Impo_ok_date DESC) AS 'rownum', a.Impo_singo_date as 'yyyymmdd', b.impum_danga as 'itemUnitPrice', a.Impo_gyelje_money as 'current' from
+		 ncustoms_ic.kcba.impo1 a, ncustoms_ic.kcba.Impo3 b
+		where b.Impum_jajae_code = #{itemMmodelCode}
+		and a.Impo_napse_saup = #{itemMcoCom}
+		and a.Impo_key=b.impum_key
+		union all
+		select ROW_NUMBER() OVER (ORDER BY a.Impo_ok_date DESC) AS 'rownum', a.Impo_singo_date as 'yyyymmdd', b.impum_danga as 'itemUnitPrice', a.Impo_gyelje_money as 'current' from
+		 ncustoms_jj.kcba.impo1 a, ncustoms_jj.kcba.Impo3 b
+		where b.Impum_jajae_code = #{itemMmodelCode}
+		and a.Impo_napse_saup = #{itemMcoCom}
+		and a.Impo_key=b.impum_key
+		union all
+		select ROW_NUMBER() OVER (ORDER BY a.Impo_ok_date DESC) AS 'rownum', a.Impo_singo_date as 'yyyymmdd', b.impum_danga as 'itemUnitPrice', a.Impo_gyelje_money as 'current' from
+		 ncustoms_pj.kcba.impo1 a, ncustoms_pj.kcba.Impo3 b
+		where b.Impum_jajae_code = #{itemMmodelCode}
+		and a.Impo_napse_saup = #{itemMcoCom}
+		and a.Impo_key=b.impum_key
+		union all
+		select ROW_NUMBER() OVER (ORDER BY a.Impo_ok_date DESC) AS 'rownum', a.Impo_singo_date as 'yyyymmdd', b.impum_danga as 'itemUnitPrice', a.Impo_gyelje_money as 'current' from
+		 ncustoms_pt.kcba.impo1 a, ncustoms_pt.kcba.Impo3 b
+		where b.Impum_jajae_code = #{itemMmodelCode}
+		and a.Impo_napse_saup = #{itemMcoCom}
+		and a.Impo_key=b.impum_key
+		union all
+		select ROW_NUMBER() OVER (ORDER BY a.Impo_ok_date DESC) AS 'rownum', a.Impo_singo_date as 'yyyymmdd', b.impum_danga as 'itemUnitPrice', a.Impo_gyelje_money as 'current' from
+		 ncustoms_sel_040.kcba.impo1 a, ncustoms_sel_040.kcba.Impo3 b
+		where b.Impum_jajae_code = #{itemMmodelCode}
+		and a.Impo_napse_saup = #{itemMcoCom}
+		and a.Impo_key=b.impum_key
+		union all
+		select ROW_NUMBER() OVER (ORDER BY a.Impo_ok_date DESC) AS 'rownum', a.Impo_singo_date as 'yyyymmdd', b.impum_danga as 'itemUnitPrice', a.Impo_gyelje_money as 'current' from
+		 ncustoms_sel4.kcba.impo1 a, ncustoms_sel4.kcba.Impo3 b
+		where b.Impum_jajae_code = #{itemMmodelCode}
+		and a.Impo_napse_saup = #{itemMcoCom}
+		and a.Impo_key=b.impum_key
+		union all
+		select ROW_NUMBER() OVER (ORDER BY a.Impo_ok_date DESC) AS 'rownum', a.Impo_singo_date as 'yyyymmdd', b.impum_danga as 'itemUnitPrice', a.Impo_gyelje_money as 'current' from
+		 ncustoms_sn.kcba.impo1 a, ncustoms_sn.kcba.Impo3 b
+		where b.Impum_jajae_code = #{itemMmodelCode}
+		and a.Impo_napse_saup = #{itemMcoCom}
+		and a.Impo_key=b.impum_key
+		union all
+		select ROW_NUMBER() OVER (ORDER BY a.Impo_ok_date DESC) AS 'rownum', a.Impo_singo_date as 'yyyymmdd', b.impum_danga as 'itemUnitPrice', a.Impo_gyelje_money as 'current' from
+		 ncustoms_us.kcba.impo1 a, ncustoms_us.kcba.Impo3 b
+		where b.Impum_jajae_code = #{itemMmodelCode}
+		and a.Impo_napse_saup = #{itemMcoCom}
+		and a.Impo_key=b.impum_key
+		union all
+		select ROW_NUMBER() OVER (ORDER BY a.Impo_ok_date DESC) AS 'rownum', a.Impo_singo_date as 'yyyymmdd', b.impum_danga as 'itemUnitPrice', a.Impo_gyelje_money as 'current' from
+		 ncustoms_yj.kcba.impo1 a, ncustoms_yj.kcba.Impo3 b
+		where b.Impum_jajae_code = #{itemMmodelCode}
+		and a.Impo_napse_saup = #{itemMcoCom}
+		and a.Impo_key=b.impum_key
+		union all
+		select ROW_NUMBER() OVER (ORDER BY a.Impo_ok_date DESC) AS 'rownum', a.Impo_singo_date as 'yyyymmdd', b.impum_danga as 'itemUnitPrice', a.Impo_gyelje_money as 'current' from
+		 ncustoms_ys.kcba.impo1 a, ncustoms_ys.kcba.Impo3 b
+		where b.Impum_jajae_code = #{itemMmodelCode}
+		and a.Impo_napse_saup = #{itemMcoCom}
+		and a.Impo_key=b.impum_key
+		) datas
+		<if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+			WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+		</if>
+		order by datas.yyyymmdd desc
+	</select>
+
+	<select id="selectCustomsUnitPriceDemoList" resultType="map">
+		/* 통관단가 추이 Demo */
+		SELECT datas.*
+		FROM (
+		select ROW_NUMBER() OVER (ORDER BY a.Impo_ok_date DESC) AS 'rownum', a.Impo_singo_date as 'yyyymmdd', b.impum_danga as 'itemUnitPrice', a.Impo_gyelje_money as 'current' from
+		 demoNcustomsPt.kcba.impo1 a, demoNcustomsPt.kcba.Impo3 b
+		where b.Impum_jajae_code = #{itemMmodelCode}
+		and a.Impo_napse_saup = #{itemMcoCom}
+		and a.Impo_key=b.impum_key
+		) datas
+		<if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+			WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+		</if>
+		order by datas.yyyymmdd desc
+	</select>
+
+	<select id="selectLCRList" resultType="map">
+		/* LCR 조회 */
+		select char(9)+a.Mmodel_code  as 'Mmodel_code', a.Munitprice_current, a.Munitprice, a.MunitpriceWon, a.Mdivision_code,
+		  SUM(a.gwan01) as 'gwan01',
+		  SUM(a.etc01) as 'etc01',
+		  SUM(a.su01) as 'su01',
+		  SUM(a.gwan02) as 'gwan02',
+		  SUM(a.etc02) as 'etc02',
+		  SUM(a.su02) as 'su02',
+		  SUM(a.gwan03) as 'gwan03',
+		  SUM(a.etc03) as 'etc03',
+		  SUM(a.su03) as 'su03',
+		  SUM(a.gwan04) as 'gwan04',
+		  SUM(a.etc04) as 'etc04',
+		  SUM(a.su04) as 'su04',
+		  SUM(a.gwan05) as 'gwan05',
+		  SUM(a.etc05) as 'etc05',
+		  SUM(a.su05) as 'su05',
+		  SUM(a.gwan06) as 'gwan06',
+		  SUM(a.etc06) as 'etc06',
+		  SUM(a.su06) as 'su06',
+		  SUM(a.gwan07) as 'gwan07',
+		  SUM(a.etc07) as 'etc07',
+		  SUM(a.su07) as 'su07',
+		  SUM(a.gwan08) as 'gwan08',
+		  SUM(a.etc08) as 'etc08',
+		  SUM(a.su08) as 'su08',
+		  SUM(a.gwan09) as 'gwan09',
+		  SUM(a.etc09) as 'etc09',
+		  SUM(a.su09) as 'su09',
+		  SUM(a.gwan10) as 'gwan10',
+		  SUM(a.etc10) as 'etc10',
+		  SUM(a.su10) as 'su10',
+		  SUM(a.gwan11) as 'gwan11',
+		  SUM(a.etc11) as 'etc11',
+		  SUM(a.su11) as 'su11',
+		  SUM(a.gwan12) as 'gwan12',
+		  SUM(a.etc12) as 'etc12',
+		  SUM(a.su12) as 'su12',
+		  SUM(a.gwan01 + a.gwan02 + a.gwan03+ a.gwan04+ a.gwan05+ a.gwan06+ a.gwan07+ a.gwan08+ a.gwan09+ a.gwan10+ a.gwan11+ a.gwan12) as 'gwantotal',
+		  SUM(a.etc01 + a.etc02 + a.etc03 + a.etc04 + a.etc05 + a.etc06 + a.etc07 + a.etc08 + a.etc09 + a.etc10 + a.etc11 + a.etc12) as 'etctotal',
+		  SUM(a.su01 + a.su02 + a.su03 + a.su04 + a.su05 + a.su06 + a.su07 + a.su08 + a.su09 + a.su10 + a.su11 + a.su12) as 'sutotal',
+		  CASE WHEN SUM(a.gwan01 + a.gwan02 + a.gwan03+ a.gwan04+ a.gwan05+ a.gwan06+ a.gwan07+ a.gwan08+ a.gwan09+ a.gwan10+ a.gwan11+ a.gwan12)=0 THEN '0' ELSE (SUM(a.gwan01 + a.gwan02 + a.gwan03+ a.gwan04+ a.gwan05+ a.gwan06+ a.gwan07+ a.gwan08+ a.gwan09+ a.gwan10+ a.gwan11+ a.gwan12) / SUM(a.su01 + a.su02 + a.su03 + a.su04 + a.su05 + a.su06 + a.su07 + a.su08 + a.su09 + a.su10 + a.su11 + a.su12)) / a.MunitpriceWon * 100 END as 'gwanper',
+		  CASE WHEN SUM(a.etc01 + a.etc02 + a.etc03 + a.etc04 + a.etc05 + a.etc06 + a.etc07 + a.etc08 + a.etc09 + a.etc10 + a.etc11 + a.etc12)=0 THEN '0' ELSE (SUM(a.etc01 + a.etc02 + a.etc03 + a.etc04 + a.etc05 + a.etc06 + a.etc07 + a.etc08 + a.etc09 + a.etc10 + a.etc11 + a.etc12) / SUM(a.su01 + a.su02 + a.su03 + a.su04 + a.su05 + a.su06 + a.su07 + a.su08 + a.su09 + a.su10 + a.su11 + a.su12)) / a.MunitpriceWon * 100 END as 'etcper'
+		from (
+		select a.Mmodel_code, a.Munitprice_current, a.Munitprice,
+		  CASE WHEN a.Munitprice_current='USD' then (a.Munitprice * (select round(AVG(USD),2,1) from ncustoms.kcba.Di_exch
+			where I_exch_jukyong_date like #{yyyy} + '%'))
+			  WHEN a.Munitprice_current='EUR' then (a.Munitprice * (select round(AVG(EUR),2,1) from ncustoms.kcba.Di_exch
+			where I_exch_jukyong_date like #{yyyy} + '%'))
+			else a.Munitprice end as 'MunitpriceWon',
+		  a.Mdivision_code, a.month,
+		  sum(a.aa) as 'gwan01',
+		  sum(a.bb) as 'etc01',
+		  sum(a.cc) as 'su01',
+		  0 as 'gwan02',
+		  0 as 'etc02',
+		  0 as 'su02',
+		  0 as 'gwan03',
+		  0 as 'etc03',
+		  0 as 'su03',
+		  0 as 'gwan04',
+		  0 as 'etc04',
+		  0 as 'su04',
+		  0 as 'gwan05',
+		  0 as 'etc05',
+		  0 as 'su05',
+		  0 as 'gwan06',
+		  0 as 'etc06',
+		  0 as 'su06',
+		  0 as 'gwan07',
+		  0 as 'etc07',
+		  0 as 'su07',
+		  0 as 'gwan08',
+		  0 as 'etc08',
+		  0 as 'su08',
+		  0 as 'gwan09',
+		  0 as 'etc09',
+		  0 as 'su09',
+		  0 as 'gwan10',
+		  0 as 'etc10',
+		  0 as 'su10',
+		  0 as 'gwan11',
+		  0 as 'etc11',
+		  0 as 'su11',
+		  0 as 'gwan12',
+		  0 as 'etc12',
+		  0 as 'su12'
+		from (
+		select distinct k.Mmodel_code, k.Munitprice, k.Munitprice_current, k.Mdivision_code, k.month, sum(k.duty1) as 'aa', sum(k.sup_ek) as 'bb', sum(k.su) as 'cc'
+			from
+			(select
+			distinct a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code,
+			substring(d.impo_singo_date,5,2) as 'month',
+			ISNULL(round(sum(c.duty),0),0) as 'duty1',
+			0 as 'sup_ek',
+			ISNULL(round(sum(b.Impum_su),0),0) as 'su'
+			from CPS.[dbo].[MAAA100] a
+			left outer join ncustoms.kcba.impo3 b
+			on a.Mmodel_code = b.Impum_jajae_code
+			inner join ncustoms.kcba.[impo3_m] c
+			on b.Impum_key = c.Impum_key
+			and b.Impum_lan = c.Impum_lan
+			and b.Impum_heang = c.Impum_heang
+			inner join ncustoms.kcba.impo1 d
+			on b.Impum_key = d.impo_key
+			and d.impo_singo_date like #{yyyy} + '%'
+			and substring(d.impo_singo_date,5,2)='01'
+			where a.Mco_com = #{taxNum}
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, d.impo_singo_date
+			union all
+			select
+			distinct a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code,
+			substring(d.impo_singo_date,5,2) as 'month',
+			0 as 'duty1',
+			ISNULL(round(sum(c.sup_ek),0),0) as 'sup_ek',
+			0 as 'su'
+			from CPS.[dbo].[MAAA100] a
+			left outer join ncustoms.kcba.impo3 b
+			on a.Mmodel_code = b.Impum_jajae_code
+			inner join ncustoms.kcba.[impo3_mDtl] c
+			on b.Impum_key = c.Impum_key
+			and b.Impum_lan = c.Impum_lan
+			and b.Impum_heang = c.Impum_heang
+			inner join ncustoms.kcba.impo1 d
+			on b.Impum_key = d.impo_key
+			and d.impo_singo_date like #{yyyy} + '%'
+			and substring(d.impo_singo_date,5,2)='01'
+			where a.Mco_com = #{taxNum}
+			and a.Mdivision_code like 'PL%'
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, d.impo_singo_date
+			union all
+			select
+			distinct a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code,
+			substring(d.impo_singo_date,5,2) as 'month',
+			0 as 'duty1',
+			ISNULL(round(sum(c.sup_ek),0),0) as 'sup_ek',
+			0 as 'su'
+			from CPS.[dbo].[MAAA100] a
+			left outer join ncustoms.kcba.impo3 b
+			on a.Mmodel_code = b.Impum_jajae_code
+			inner join ncustoms.kcba.[impo3_mDtl] c
+			on b.Impum_key = c.Impum_key
+			and b.Impum_lan = c.Impum_lan
+			and b.Impum_heang = c.Impum_heang
+			and c.ADJ_CD ='C014'
+			inner join ncustoms.kcba.impo1 d
+			on b.Impum_key = d.impo_key
+			and d.impo_singo_date like #{yyyy} + '%'
+			and substring(d.impo_singo_date,5,2)='01'
+			where a.Mco_com = #{taxNum}
+			and a.Mdivision_code not like 'PL%'
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, d.impo_singo_date) k
+			group by k.Mmodel_code, k.Munitprice, k.Munitprice_current, k.Mdivision_code, k.month ) a
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, a.month
+		union all
+		select a.Mmodel_code, a.Munitprice_current, a.Munitprice,
+		  CASE WHEN a.Munitprice_current='USD' then (a.Munitprice * (select round(AVG(USD),2,1) from ncustoms.kcba.Di_exch
+			where I_exch_jukyong_date like #{yyyy} + '%'))
+			  WHEN a.Munitprice_current='EUR' then (a.Munitprice * (select round(AVG(EUR),2,1) from ncustoms.kcba.Di_exch
+			where I_exch_jukyong_date like #{yyyy} + '%'))
+			else a.Munitprice end as 'MunitpriceWon',
+		  a.Mdivision_code, a.month,
+		  0 as 'gwan01',
+		  0 as 'etc01',
+		  0 as 'su01',
+		  sum(a.aa) as 'gwan02',
+		  sum(a.bb) as 'etc02',
+		  sum(a.cc) as 'su02',
+		  0 as 'gwan03',
+		  0 as 'etc03',
+		  0 as 'su03',
+		  0 as 'gwan04',
+		  0 as 'etc04',
+		  0 as 'su04',
+		  0 as 'gwan05',
+		  0 as 'etc05',
+		  0 as 'su05',
+		  0 as 'gwan06',
+		  0 as 'etc06',
+		  0 as 'su06',
+		  0 as 'gwan07',
+		  0 as 'etc07',
+		  0 as 'su07',
+		  0 as 'gwan08',
+		  0 as 'etc08',
+		  0 as 'su08',
+		  0 as 'gwan09',
+		  0 as 'etc09',
+		  0 as 'su09',
+		  0 as 'gwan10',
+		  0 as 'etc10',
+		  0 as 'su10',
+		  0 as 'gwan11',
+		  0 as 'etc11',
+		  0 as 'su11',
+		  0 as 'gwan12',
+		  0 as 'etc12',
+		  0 as 'su12'
+		from (
+		select distinct k.Mmodel_code, k.Munitprice, k.Munitprice_current, k.Mdivision_code, k.month, sum(k.duty1) as 'aa', sum(k.sup_ek) as 'bb', sum(k.su) as 'cc'
+			from
+			(select
+			distinct a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code,
+			substring(d.impo_singo_date,5,2) as 'month',
+			ISNULL(round(sum(c.duty),0),0) as 'duty1',
+			0 as 'sup_ek',
+			ISNULL(round(sum(b.Impum_su),0),0) as 'su'
+			from CPS.[dbo].[MAAA100] a
+			left outer join ncustoms.kcba.impo3 b
+			on a.Mmodel_code = b.Impum_jajae_code
+			inner join ncustoms.kcba.[impo3_m] c
+			on b.Impum_key = c.Impum_key
+			and b.Impum_lan = c.Impum_lan
+			and b.Impum_heang = c.Impum_heang
+			inner join ncustoms.kcba.impo1 d
+			on b.Impum_key = d.impo_key
+			and d.impo_singo_date like #{yyyy} + '%'
+			and substring(d.impo_singo_date,5,2)='02'
+			where a.Mco_com = #{taxNum}
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, d.impo_singo_date
+			union all
+			select
+			distinct a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code,
+			substring(d.impo_singo_date,5,2) as 'month',
+			0 as 'duty1',
+			ISNULL(round(sum(c.sup_ek),0),0) as 'sup_ek',
+			0 as 'su'
+			from CPS.[dbo].[MAAA100] a
+			left outer join ncustoms.kcba.impo3 b
+			on a.Mmodel_code = b.Impum_jajae_code
+			inner join ncustoms.kcba.[impo3_mDtl] c
+			on b.Impum_key = c.Impum_key
+			and b.Impum_lan = c.Impum_lan
+			and b.Impum_heang = c.Impum_heang
+			inner join ncustoms.kcba.impo1 d
+			on b.Impum_key = d.impo_key
+			and d.impo_singo_date like #{yyyy} + '%'
+			and substring(d.impo_singo_date,5,2)='02'
+			where a.Mco_com = #{taxNum}
+			and a.Mdivision_code like 'PL%'
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, d.impo_singo_date
+			union all
+			select
+			distinct a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code,
+			substring(d.impo_singo_date,5,2) as 'month',
+			0 as 'duty1',
+			ISNULL(round(sum(c.sup_ek),0),0) as 'sup_ek',
+			0 as 'su'
+			from CPS.[dbo].[MAAA100] a
+			left outer join ncustoms.kcba.impo3 b
+			on a.Mmodel_code = b.Impum_jajae_code
+			inner join ncustoms.kcba.[impo3_mDtl] c
+			on b.Impum_key = c.Impum_key
+			and b.Impum_lan = c.Impum_lan
+			and b.Impum_heang = c.Impum_heang
+			and c.ADJ_CD ='C014'
+			inner join ncustoms.kcba.impo1 d
+			on b.Impum_key = d.impo_key
+			and d.impo_singo_date like #{yyyy} + '%'
+			and substring(d.impo_singo_date,5,2)='02'
+			where a.Mco_com = #{taxNum}
+			and a.Mdivision_code not like 'PL%'
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, d.impo_singo_date) k
+			group by k.Mmodel_code, k.Munitprice, k.Munitprice_current, k.Mdivision_code, k.month ) a
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, a.month
+		union all
+		select a.Mmodel_code, a.Munitprice_current, a.Munitprice,
+		  CASE WHEN a.Munitprice_current='USD' then (a.Munitprice * (select round(AVG(USD),2,1) from ncustoms.kcba.Di_exch
+			where I_exch_jukyong_date like #{yyyy} + '%'))
+			  WHEN a.Munitprice_current='EUR' then (a.Munitprice * (select round(AVG(EUR),2,1) from ncustoms.kcba.Di_exch
+			where I_exch_jukyong_date like #{yyyy} + '%'))
+			else a.Munitprice end as 'MunitpriceWon',
+		  a.Mdivision_code, a.month,
+		  0 as 'gwan01',
+		  0 as 'etc01',
+		  0 as 'su01',
+		  0 as 'gwan02',
+		  0 as 'etc02',
+		  0 as 'su02',
+		  sum(a.aa) as 'gwan03',
+		  sum(a.bb) as 'etc03',
+		  sum(a.cc) as 'su03',
+		  0 as 'gwan04',
+		  0 as 'etc04',
+		  0 as 'su04',
+		  0 as 'gwan05',
+		  0 as 'etc05',
+		  0 as 'su05',
+		  0 as 'gwan06',
+		  0 as 'etc06',
+		  0 as 'su06',
+		  0 as 'gwan07',
+		  0 as 'etc07',
+		  0 as 'su07',
+		  0 as 'gwan08',
+		  0 as 'etc08',
+		  0 as 'su08',
+		  0 as 'gwan09',
+		  0 as 'etc09',
+		  0 as 'su09',
+		  0 as 'gwan10',
+		  0 as 'etc10',
+		  0 as 'su10',
+		  0 as 'gwan11',
+		  0 as 'etc11',
+		  0 as 'su11',
+		  0 as 'gwan12',
+		  0 as 'etc12',
+		  0 as 'su12'
+		from (
+		select distinct k.Mmodel_code, k.Munitprice, k.Munitprice_current, k.Mdivision_code, k.month, sum(k.duty1) as 'aa', sum(k.sup_ek) as 'bb', sum(k.su) as 'cc'
+			from
+			(select
+			distinct a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code,
+			substring(d.impo_singo_date,5,2) as 'month',
+			ISNULL(round(sum(c.duty),0),0) as 'duty1',
+			0 as 'sup_ek',
+			ISNULL(round(sum(b.Impum_su),0),0) as 'su'
+			from CPS.[dbo].[MAAA100] a
+			left outer join ncustoms.kcba.impo3 b
+			on a.Mmodel_code = b.Impum_jajae_code
+			inner join ncustoms.kcba.[impo3_m] c
+			on b.Impum_key = c.Impum_key
+			and b.Impum_lan = c.Impum_lan
+			and b.Impum_heang = c.Impum_heang
+			inner join ncustoms.kcba.impo1 d
+			on b.Impum_key = d.impo_key
+			and d.impo_singo_date like #{yyyy} + '%'
+			and substring(d.impo_singo_date,5,2)='03'
+			where a.Mco_com = #{taxNum}
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, d.impo_singo_date
+			union all
+			select
+			distinct a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code,
+			substring(d.impo_singo_date,5,2) as 'month',
+			0 as 'duty1',
+			ISNULL(round(sum(c.sup_ek),0),0) as 'sup_ek',
+			0 as 'su'
+			from CPS.[dbo].[MAAA100] a
+			left outer join ncustoms.kcba.impo3 b
+			on a.Mmodel_code = b.Impum_jajae_code
+			inner join ncustoms.kcba.[impo3_mDtl] c
+			on b.Impum_key = c.Impum_key
+			and b.Impum_lan = c.Impum_lan
+			and b.Impum_heang = c.Impum_heang
+			inner join ncustoms.kcba.impo1 d
+			on b.Impum_key = d.impo_key
+			and d.impo_singo_date like #{yyyy} + '%'
+			and substring(d.impo_singo_date,5,2)='03'
+			where a.Mco_com = #{taxNum}
+			and a.Mdivision_code like 'PL%'
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, d.impo_singo_date
+			union all
+			select
+			distinct a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code,
+			substring(d.impo_singo_date,5,2) as 'month',
+			0 as 'duty1',
+			ISNULL(round(sum(c.sup_ek),0),0) as 'sup_ek',
+			0 as 'su'
+			from CPS.[dbo].[MAAA100] a
+			left outer join ncustoms.kcba.impo3 b
+			on a.Mmodel_code = b.Impum_jajae_code
+			inner join ncustoms.kcba.[impo3_mDtl] c
+			on b.Impum_key = c.Impum_key
+			and b.Impum_lan = c.Impum_lan
+			and b.Impum_heang = c.Impum_heang
+			and c.ADJ_CD ='C014'
+			inner join ncustoms.kcba.impo1 d
+			on b.Impum_key = d.impo_key
+			and d.impo_singo_date like #{yyyy} + '%'
+			and substring(d.impo_singo_date,5,2)='03'
+			where a.Mco_com = #{taxNum}
+			and a.Mdivision_code not like 'PL%'
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, d.impo_singo_date) k
+			group by k.Mmodel_code, k.Munitprice, k.Munitprice_current, k.Mdivision_code, k.month ) a
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, a.month
+		union all
+		select a.Mmodel_code, a.Munitprice_current, a.Munitprice,
+		  CASE WHEN a.Munitprice_current='USD' then (a.Munitprice * (select round(AVG(USD),2,1) from ncustoms.kcba.Di_exch
+			where I_exch_jukyong_date like #{yyyy} + '%'))
+			  WHEN a.Munitprice_current='EUR' then (a.Munitprice * (select round(AVG(EUR),2,1) from ncustoms.kcba.Di_exch
+			where I_exch_jukyong_date like #{yyyy} + '%'))
+			else a.Munitprice end as 'MunitpriceWon',
+		  a.Mdivision_code, a.month,
+		  0 as 'gwan01',
+		  0 as 'etc01',
+		  0 as 'su01',
+		  0 as 'gwan02',
+		  0 as 'etc02',
+		  0 as 'su02',
+		  0 as 'gwan03',
+		  0 as 'etc03',
+		  0 as 'su03',
+		  sum(a.aa) as 'gwan04',
+		  sum(a.bb) as 'etc04',
+		  sum(a.cc) as 'su04',
+		  0 as 'gwan05',
+		  0 as 'etc05',
+		  0 as 'su05',
+		  0 as 'gwan06',
+		  0 as 'etc06',
+		  0 as 'su06',
+		  0 as 'gwan07',
+		  0 as 'etc07',
+		  0 as 'su07',
+		  0 as 'gwan08',
+		  0 as 'etc08',
+		  0 as 'su08',
+		  0 as 'gwan09',
+		  0 as 'etc09',
+		  0 as 'su09',
+		  0 as 'gwan10',
+		  0 as 'etc10',
+		  0 as 'su10',
+		  0 as 'gwan11',
+		  0 as 'etc11',
+		  0 as 'su11',
+		  0 as 'gwan12',
+		  0 as 'etc12',
+		  0 as 'su12'
+		from (
+		select distinct k.Mmodel_code, k.Munitprice, k.Munitprice_current, k.Mdivision_code, k.month, sum(k.duty1) as 'aa', sum(k.sup_ek) as 'bb', sum(k.su) as 'cc'
+			from
+			(select
+			distinct a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code,
+			substring(d.impo_singo_date,5,2) as 'month',
+			ISNULL(round(sum(c.duty),0),0) as 'duty1',
+			0 as 'sup_ek',
+			ISNULL(round(sum(b.Impum_su),0),0) as 'su'
+			from CPS.[dbo].[MAAA100] a
+			left outer join ncustoms.kcba.impo3 b
+			on a.Mmodel_code = b.Impum_jajae_code
+			inner join ncustoms.kcba.[impo3_m] c
+			on b.Impum_key = c.Impum_key
+			and b.Impum_lan = c.Impum_lan
+			and b.Impum_heang = c.Impum_heang
+			inner join ncustoms.kcba.impo1 d
+			on b.Impum_key = d.impo_key
+			and d.impo_singo_date like #{yyyy} + '%'
+			and substring(d.impo_singo_date,5,2)='04'
+			where a.Mco_com = #{taxNum}
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, d.impo_singo_date
+			union all
+			select
+			distinct a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code,
+			substring(d.impo_singo_date,5,2) as 'month',
+			0 as 'duty1',
+			ISNULL(round(sum(c.sup_ek),0),0) as 'sup_ek',
+			0 as 'su'
+			from CPS.[dbo].[MAAA100] a
+			left outer join ncustoms.kcba.impo3 b
+			on a.Mmodel_code = b.Impum_jajae_code
+			inner join ncustoms.kcba.[impo3_mDtl] c
+			on b.Impum_key = c.Impum_key
+			and b.Impum_lan = c.Impum_lan
+			and b.Impum_heang = c.Impum_heang
+			inner join ncustoms.kcba.impo1 d
+			on b.Impum_key = d.impo_key
+			and d.impo_singo_date like #{yyyy} + '%'
+			and substring(d.impo_singo_date,5,2)='04'
+			where a.Mco_com = #{taxNum}
+			and a.Mdivision_code like 'PL%'
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, d.impo_singo_date
+			union all
+			select
+			distinct a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code,
+			substring(d.impo_singo_date,5,2) as 'month',
+			0 as 'duty1',
+			ISNULL(round(sum(c.sup_ek),0),0) as 'sup_ek',
+			0 as 'su'
+			from CPS.[dbo].[MAAA100] a
+			left outer join ncustoms.kcba.impo3 b
+			on a.Mmodel_code = b.Impum_jajae_code
+			inner join ncustoms.kcba.[impo3_mDtl] c
+			on b.Impum_key = c.Impum_key
+			and b.Impum_lan = c.Impum_lan
+			and b.Impum_heang = c.Impum_heang
+			and c.ADJ_CD ='C014'
+			inner join ncustoms.kcba.impo1 d
+			on b.Impum_key = d.impo_key
+			and d.impo_singo_date like #{yyyy} + '%'
+			and substring(d.impo_singo_date,5,2)='04'
+			where a.Mco_com = #{taxNum}
+			and a.Mdivision_code not like 'PL%'
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, d.impo_singo_date) k
+			group by k.Mmodel_code, k.Munitprice, k.Munitprice_current, k.Mdivision_code, k.month ) a
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, a.month
+		union all
+		select a.Mmodel_code, a.Munitprice_current, a.Munitprice,
+		  CASE WHEN a.Munitprice_current='USD' then (a.Munitprice * (select round(AVG(USD),2,1) from ncustoms.kcba.Di_exch
+			where I_exch_jukyong_date like #{yyyy} + '%'))
+			  WHEN a.Munitprice_current='EUR' then (a.Munitprice * (select round(AVG(EUR),2,1) from ncustoms.kcba.Di_exch
+			where I_exch_jukyong_date like #{yyyy} + '%'))
+			else a.Munitprice end as 'MunitpriceWon',
+		  a.Mdivision_code, a.month,
+		  0 as 'gwan01',
+		  0 as 'etc01',
+		  0 as 'su01',
+		  0 as 'gwan02',
+		  0 as 'etc02',
+		  0 as 'su02',
+		  0 as 'gwan03',
+		  0 as 'etc03',
+		  0 as 'su03',
+		  0 as 'gwan04',
+		  0 as 'etc04',
+		  0 as 'su04',
+		  sum(a.aa) as 'gwan05',
+		  sum(a.bb) as 'etc05',
+		  sum(a.cc) as 'su05',
+		  0 as 'gwan06',
+		  0 as 'etc06',
+		  0 as 'su06',
+		  0 as 'gwan07',
+		  0 as 'etc07',
+		  0 as 'su07',
+		  0 as 'gwan08',
+		  0 as 'etc08',
+		  0 as 'su08',
+		  0 as 'gwan09',
+		  0 as 'etc09',
+		  0 as 'su09',
+		  0 as 'gwan10',
+		  0 as 'etc10',
+		  0 as 'su10',
+		  0 as 'gwan11',
+		  0 as 'etc11',
+		  0 as 'su11',
+		  0 as 'gwan12',
+		  0 as 'etc12',
+		  0 as 'su12'
+		from (
+		select distinct k.Mmodel_code, k.Munitprice, k.Munitprice_current, k.Mdivision_code, k.month, sum(k.duty1) as 'aa', sum(k.sup_ek) as 'bb', sum(k.su) as 'cc'
+			from
+			(select
+			distinct a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code,
+			substring(d.impo_singo_date,5,2) as 'month',
+			ISNULL(round(sum(c.duty),0),0) as 'duty1',
+			0 as 'sup_ek',
+			ISNULL(round(sum(b.Impum_su),0),0) as 'su'
+			from CPS.[dbo].[MAAA100] a
+			left outer join ncustoms.kcba.impo3 b
+			on a.Mmodel_code = b.Impum_jajae_code
+			inner join ncustoms.kcba.[impo3_m] c
+			on b.Impum_key = c.Impum_key
+			and b.Impum_lan = c.Impum_lan
+			and b.Impum_heang = c.Impum_heang
+			inner join ncustoms.kcba.impo1 d
+			on b.Impum_key = d.impo_key
+			and d.impo_singo_date like #{yyyy} + '%'
+			and substring(d.impo_singo_date,5,2)='05'
+			where a.Mco_com = #{taxNum}
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, d.impo_singo_date
+			union all
+			select
+			distinct a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code,
+			substring(d.impo_singo_date,5,2) as 'month',
+			0 as 'duty1',
+			ISNULL(round(sum(c.sup_ek),0),0) as 'sup_ek',
+			0 as 'su'
+			from CPS.[dbo].[MAAA100] a
+			left outer join ncustoms.kcba.impo3 b
+			on a.Mmodel_code = b.Impum_jajae_code
+			inner join ncustoms.kcba.[impo3_mDtl] c
+			on b.Impum_key = c.Impum_key
+			and b.Impum_lan = c.Impum_lan
+			and b.Impum_heang = c.Impum_heang
+			inner join ncustoms.kcba.impo1 d
+			on b.Impum_key = d.impo_key
+			and d.impo_singo_date like #{yyyy} + '%'
+			and substring(d.impo_singo_date,5,2)='05'
+			where a.Mco_com = #{taxNum}
+			and a.Mdivision_code like 'PL%'
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, d.impo_singo_date
+			union all
+			select
+			distinct a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code,
+			substring(d.impo_singo_date,5,2) as 'month',
+			0 as 'duty1',
+			ISNULL(round(sum(c.sup_ek),0),0) as 'sup_ek',
+			0 as 'su'
+			from CPS.[dbo].[MAAA100] a
+			left outer join ncustoms.kcba.impo3 b
+			on a.Mmodel_code = b.Impum_jajae_code
+			inner join ncustoms.kcba.[impo3_mDtl] c
+			on b.Impum_key = c.Impum_key
+			and b.Impum_lan = c.Impum_lan
+			and b.Impum_heang = c.Impum_heang
+			and c.ADJ_CD ='C014'
+			inner join ncustoms.kcba.impo1 d
+			on b.Impum_key = d.impo_key
+			and d.impo_singo_date like #{yyyy} + '%'
+			and substring(d.impo_singo_date,5,2)='05'
+			where a.Mco_com = #{taxNum}
+			and a.Mdivision_code not like 'PL%'
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, d.impo_singo_date) k
+			group by k.Mmodel_code, k.Munitprice, k.Munitprice_current, k.Mdivision_code, k.month ) a
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, a.month
+		union all
+		select a.Mmodel_code, a.Munitprice_current, a.Munitprice,
+		  CASE WHEN a.Munitprice_current='USD' then (a.Munitprice * (select round(AVG(USD),2,1) from ncustoms.kcba.Di_exch
+			where I_exch_jukyong_date like #{yyyy} + '%'))
+			  WHEN a.Munitprice_current='EUR' then (a.Munitprice * (select round(AVG(EUR),2,1) from ncustoms.kcba.Di_exch
+			where I_exch_jukyong_date like #{yyyy} + '%'))
+			else a.Munitprice end as 'MunitpriceWon',
+		  a.Mdivision_code, a.month,
+		  0 as 'gwan01',
+		  0 as 'etc01',
+		  0 as 'su01',
+		  0 as 'gwan02',
+		  0 as 'etc02',
+		  0 as 'su02',
+		  0 as 'gwan03',
+		  0 as 'etc03',
+		  0 as 'su03',
+		  0 as 'gwan04',
+		  0 as 'etc04',
+		  0 as 'su04',
+		  0 as 'gwan05',
+		  0 as 'etc05',
+		  0 as 'su05',
+		  sum(a.aa) as 'gwan06',
+		  sum(a.bb) as 'etc06',
+		  sum(a.cc) as 'su06',
+		  0 as 'gwan07',
+		  0 as 'etc07',
+		  0 as 'su07',
+		  0 as 'gwan08',
+		  0 as 'etc08',
+		  0 as 'su08',
+		  0 as 'gwan09',
+		  0 as 'etc09',
+		  0 as 'su09',
+		  0 as 'gwan10',
+		  0 as 'etc10',
+		  0 as 'su10',
+		  0 as 'gwan11',
+		  0 as 'etc11',
+		  0 as 'su11',
+		  0 as 'gwan12',
+		  0 as 'etc12',
+		  0 as 'su12'
+		from (
+		select distinct k.Mmodel_code, k.Munitprice, k.Munitprice_current, k.Mdivision_code, k.month, sum(k.duty1) as 'aa', sum(k.sup_ek) as 'bb', sum(k.su) as 'cc'
+			from
+			(select
+			distinct a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code,
+			substring(d.impo_singo_date,5,2) as 'month',
+			ISNULL(round(sum(c.duty),0),0) as 'duty1',
+			0 as 'sup_ek',
+			ISNULL(round(sum(b.Impum_su),0),0) as 'su'
+			from CPS.[dbo].[MAAA100] a
+			left outer join ncustoms.kcba.impo3 b
+			on a.Mmodel_code = b.Impum_jajae_code
+			inner join ncustoms.kcba.[impo3_m] c
+			on b.Impum_key = c.Impum_key
+			and b.Impum_lan = c.Impum_lan
+			and b.Impum_heang = c.Impum_heang
+			inner join ncustoms.kcba.impo1 d
+			on b.Impum_key = d.impo_key
+			and d.impo_singo_date like #{yyyy} + '%'
+			and substring(d.impo_singo_date,5,2)='06'
+			where a.Mco_com = #{taxNum}
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, d.impo_singo_date
+			union all
+			select
+			distinct a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code,
+			substring(d.impo_singo_date,5,2) as 'month',
+			0 as 'duty1',
+			ISNULL(round(sum(c.sup_ek),0),0) as 'sup_ek',
+			0 as 'su'
+			from CPS.[dbo].[MAAA100] a
+			left outer join ncustoms.kcba.impo3 b
+			on a.Mmodel_code = b.Impum_jajae_code
+			inner join ncustoms.kcba.[impo3_mDtl] c
+			on b.Impum_key = c.Impum_key
+			and b.Impum_lan = c.Impum_lan
+			and b.Impum_heang = c.Impum_heang
+			inner join ncustoms.kcba.impo1 d
+			on b.Impum_key = d.impo_key
+			and d.impo_singo_date like #{yyyy} + '%'
+			and substring(d.impo_singo_date,5,2)='06'
+			where a.Mco_com = #{taxNum}
+			and a.Mdivision_code like 'PL%'
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, d.impo_singo_date
+			union all
+			select
+			distinct a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code,
+			substring(d.impo_singo_date,5,2) as 'month',
+			0 as 'duty1',
+			ISNULL(round(sum(c.sup_ek),0),0) as 'sup_ek',
+			0 as 'su'
+			from CPS.[dbo].[MAAA100] a
+			left outer join ncustoms.kcba.impo3 b
+			on a.Mmodel_code = b.Impum_jajae_code
+			inner join ncustoms.kcba.[impo3_mDtl] c
+			on b.Impum_key = c.Impum_key
+			and b.Impum_lan = c.Impum_lan
+			and b.Impum_heang = c.Impum_heang
+			and c.ADJ_CD ='C014'
+			inner join ncustoms.kcba.impo1 d
+			on b.Impum_key = d.impo_key
+			and d.impo_singo_date like #{yyyy} + '%'
+			and substring(d.impo_singo_date,5,2)='06'
+			where a.Mco_com = #{taxNum}
+			and a.Mdivision_code not like 'PL%'
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, d.impo_singo_date) k
+			group by k.Mmodel_code, k.Munitprice, k.Munitprice_current, k.Mdivision_code, k.month ) a
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, a.month
+		union all
+		select a.Mmodel_code, a.Munitprice_current, a.Munitprice,
+		  CASE WHEN a.Munitprice_current='USD' then (a.Munitprice * (select round(AVG(USD),2,1) from ncustoms.kcba.Di_exch
+			where I_exch_jukyong_date like #{yyyy} + '%'))
+			  WHEN a.Munitprice_current='EUR' then (a.Munitprice * (select round(AVG(EUR),2,1) from ncustoms.kcba.Di_exch
+			where I_exch_jukyong_date like #{yyyy} + '%'))
+			else a.Munitprice end as 'MunitpriceWon',
+		  a.Mdivision_code, a.month,
+		  0 as 'gwan01',
+		  0 as 'etc01',
+		  0 as 'su01',
+		  0 as 'gwan02',
+		  0 as 'etc02',
+		  0 as 'su02',
+		  0 as 'gwan03',
+		  0 as 'etc03',
+		  0 as 'su03',
+		  0 as 'gwan04',
+		  0 as 'etc04',
+		  0 as 'su04',
+		  0 as 'gwan05',
+		  0 as 'etc05',
+		  0 as 'su05',
+		  0 as 'gwan06',
+		  0 as 'etc06',
+		  0 as 'su06',
+		  CASE WHEN #{yyyy}='2017' then 0
+		  else sum(a.aa) end as 'gwan07',
+		  CASE WHEN #{yyyy}='2017' then 0
+		  else sum(a.bb) end as 'etc07',
+		  CASE WHEN #{yyyy}='2017' then 0
+		  else sum(a.cc) end as 'su07',
+		  0 as 'gwan08',
+		  0 as 'etc08',
+		  0 as 'su08',
+		  0 as 'gwan09',
+		  0 as 'etc09',
+		  0 as 'su09',
+		  0 as 'gwan10',
+		  0 as 'etc10',
+		  0 as 'su10',
+		  0 as 'gwan11',
+		  0 as 'etc11',
+		  0 as 'su11',
+		  0 as 'gwan12',
+		  0 as 'etc12',
+		  0 as 'su12'
+		from (
+		select distinct k.Mmodel_code, k.Munitprice, k.Munitprice_current, k.Mdivision_code,  k.month, sum(k.duty1) as 'aa', sum(k.sup_ek) as 'bb', sum(k.su) as 'cc'
+			from
+			(select
+			distinct a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code,
+			substring(d.impo_singo_date,5,2) as 'month',
+			ISNULL(round(sum(c.duty),0),0) as 'duty1',
+			0 as 'sup_ek',
+			ISNULL(round(sum(b.Impum_su),0),0) as 'su'
+			from CPS.[dbo].[MAAA100] a
+			left outer join ncustoms.kcba.impo3 b
+			on a.Mmodel_code = b.Impum_jajae_code
+			inner join ncustoms.kcba.[impo3_m] c
+			on b.Impum_key = c.Impum_key
+			and b.Impum_lan = c.Impum_lan
+			and b.Impum_heang = c.Impum_heang
+			inner join ncustoms.kcba.impo1 d
+			on b.Impum_key = d.impo_key
+			and d.impo_singo_date like #{yyyy} + '%'
+			and substring(d.impo_singo_date,5,2)='07'
+			where a.Mco_com = #{taxNum}
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, d.impo_singo_date
+			union all
+			select
+			distinct a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code,
+			substring(d.impo_singo_date,5,2) as 'month',
+			0 as 'duty1',
+			ISNULL(round(sum(c.sup_ek),0),0) as 'sup_ek',
+			0 as 'su'
+			from CPS.[dbo].[MAAA100] a
+			left outer join ncustoms.kcba.impo3 b
+			on a.Mmodel_code = b.Impum_jajae_code
+			inner join ncustoms.kcba.[impo3_mDtl] c
+			on b.Impum_key = c.Impum_key
+			and b.Impum_lan = c.Impum_lan
+			and b.Impum_heang = c.Impum_heang
+			inner join ncustoms.kcba.impo1 d
+			on b.Impum_key = d.impo_key
+			and d.impo_singo_date like #{yyyy} + '%'
+			and substring(d.impo_singo_date,5,2)='07'
+			where a.Mco_com = #{taxNum}
+			and a.Mdivision_code like 'PL%'
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, d.impo_singo_date
+			union all
+			select
+			distinct a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code,
+			substring(d.impo_singo_date,5,2) as 'month',
+			0 as 'duty1',
+			ISNULL(round(sum(c.sup_ek),0),0) as 'sup_ek',
+			0 as 'su'
+			from CPS.[dbo].[MAAA100] a
+			left outer join ncustoms.kcba.impo3 b
+			on a.Mmodel_code = b.Impum_jajae_code
+			inner join ncustoms.kcba.[impo3_mDtl] c
+			on b.Impum_key = c.Impum_key
+			and b.Impum_lan = c.Impum_lan
+			and b.Impum_heang = c.Impum_heang
+			and c.ADJ_CD ='C014'
+			inner join ncustoms.kcba.impo1 d
+			on b.Impum_key = d.impo_key
+			and d.impo_singo_date like #{yyyy} + '%'
+			and substring(d.impo_singo_date,5,2)='07'
+			where a.Mco_com = #{taxNum}
+			and a.Mdivision_code not like 'PL%'
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, d.impo_singo_date) k
+			group by k.Mmodel_code, k.Munitprice, k.Munitprice_current, k.Mdivision_code, k.month ) a
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, a.month
+		union all
+		select a.Mmodel_code, a.Munitprice_current, a.Munitprice,
+		  CASE WHEN a.Munitprice_current='USD' then (a.Munitprice * (select round(AVG(USD),2,1) from ncustoms.kcba.Di_exch
+			where I_exch_jukyong_date like #{yyyy} + '%'))
+			  WHEN a.Munitprice_current='EUR' then (a.Munitprice * (select round(AVG(EUR),2,1) from ncustoms.kcba.Di_exch
+			where I_exch_jukyong_date like #{yyyy} + '%'))
+			else a.Munitprice end as 'MunitpriceWon',
+		  a.Mdivision_code, a.month,
+		  0 as 'gwan01',
+		  0 as 'etc01',
+		  0 as 'su01',
+		  0 as 'gwan02',
+		  0 as 'etc02',
+		  0 as 'su02',
+		  0 as 'gwan03',
+		  0 as 'etc03',
+		  0 as 'su03',
+		  0 as 'gwan04',
+		  0 as 'etc04',
+		  0 as 'su04',
+		  0 as 'gwan05',
+		  0 as 'etc05',
+		  0 as 'su05',
+		  0 as 'gwan06',
+		  0 as 'etc06',
+		  0 as 'su06',
+		  0 as 'gwan07',
+		  0 as 'etc07',
+		  0 as 'su07',
+		  CASE WHEN #{yyyy}='2017' then 0
+		  else sum(a.aa) end as 'gwan08',
+		  CASE WHEN #{yyyy}='2017' then 0
+		  else sum(a.bb) end as 'etc08',
+		  CASE WHEN #{yyyy}='2017' then 0
+		  else sum(a.cc) end as 'su08',
+		  0 as 'gwan09',
+		  0 as 'etc09',
+		  0 as 'su09',
+		  0 as 'gwan10',
+		  0 as 'etc10',
+		  0 as 'su10',
+		  0 as 'gwan11',
+		  0 as 'etc11',
+		  0 as 'su11',
+		  0 as 'gwan12',
+		  0 as 'etc12',
+		  0 as 'su12'
+		from (
+		select distinct k.Mmodel_code, k.Munitprice, k.Munitprice_current, k.Mdivision_code,  k.month, sum(k.duty1) as 'aa', sum(k.sup_ek) as 'bb', sum(k.su) as 'cc'
+			from
+			(select
+			distinct a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code,
+			substring(d.impo_singo_date,5,2) as 'month',
+			ISNULL(round(sum(c.duty),0),0) as 'duty1',
+			0 as 'sup_ek',
+			ISNULL(round(sum(b.Impum_su),0),0) as 'su'
+			from CPS.[dbo].[MAAA100] a
+			left outer join ncustoms.kcba.impo3 b
+			on a.Mmodel_code = b.Impum_jajae_code
+			inner join ncustoms.kcba.[impo3_m] c
+			on b.Impum_key = c.Impum_key
+			and b.Impum_lan = c.Impum_lan
+			and b.Impum_heang = c.Impum_heang
+			inner join ncustoms.kcba.impo1 d
+			on b.Impum_key = d.impo_key
+			and d.impo_singo_date like #{yyyy} + '%'
+			and substring(d.impo_singo_date,5,2)='08'
+			where a.Mco_com = #{taxNum}
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code,  d.impo_singo_date
+			union all
+			select
+			distinct a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code,
+			substring(d.impo_singo_date,5,2) as 'month',
+			0 as 'duty1',
+			ISNULL(round(sum(c.sup_ek),0),0) as 'sup_ek',
+			0 as 'su'
+			from CPS.[dbo].[MAAA100] a
+			left outer join ncustoms.kcba.impo3 b
+			on a.Mmodel_code = b.Impum_jajae_code
+			inner join ncustoms.kcba.[impo3_mDtl] c
+			on b.Impum_key = c.Impum_key
+			and b.Impum_lan = c.Impum_lan
+			and b.Impum_heang = c.Impum_heang
+			inner join ncustoms.kcba.impo1 d
+			on b.Impum_key = d.impo_key
+			and d.impo_singo_date like #{yyyy} + '%'
+			and substring(d.impo_singo_date,5,2)='08'
+			where a.Mco_com = #{taxNum}
+			and a.Mdivision_code like 'PL%'
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, d.impo_singo_date
+			union all
+			select
+			distinct a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code,
+			substring(d.impo_singo_date,5,2) as 'month',
+			0 as 'duty1',
+			ISNULL(round(sum(c.sup_ek),0),0) as 'sup_ek',
+			0 as 'su'
+			from CPS.[dbo].[MAAA100] a
+			left outer join ncustoms.kcba.impo3 b
+			on a.Mmodel_code = b.Impum_jajae_code
+			inner join ncustoms.kcba.[impo3_mDtl] c
+			on b.Impum_key = c.Impum_key
+			and b.Impum_lan = c.Impum_lan
+			and b.Impum_heang = c.Impum_heang
+			and c.ADJ_CD ='C014'
+			inner join ncustoms.kcba.impo1 d
+			on b.Impum_key = d.impo_key
+			and d.impo_singo_date like #{yyyy} + '%'
+			and substring(d.impo_singo_date,5,2)='08'
+			where a.Mco_com = #{taxNum}
+			and a.Mdivision_code not like 'PL%'
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, d.impo_singo_date) k
+			group by k.Mmodel_code, k.Munitprice, k.Munitprice_current, k.Mdivision_code, k.month ) a
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, a.month
+		union all
+		select a.Mmodel_code, a.Munitprice_current, a.Munitprice,
+		  CASE WHEN a.Munitprice_current='USD' then (a.Munitprice * (select round(AVG(USD),2,1) from ncustoms.kcba.Di_exch
+			where I_exch_jukyong_date like #{yyyy} + '%'))
+			  WHEN a.Munitprice_current='EUR' then (a.Munitprice * (select round(AVG(EUR),2,1) from ncustoms.kcba.Di_exch
+			where I_exch_jukyong_date like #{yyyy} + '%'))
+			else a.Munitprice end as 'MunitpriceWon',
+		  a.Mdivision_code, a.month,
+		  0 as 'gwan01',
+		  0 as 'etc01',
+		  0 as 'su01',
+		  0 as 'gwan02',
+		  0 as 'etc02',
+		  0 as 'su02',
+		  0 as 'gwan03',
+		  0 as 'etc03',
+		  0 as 'su03',
+		  0 as 'gwan04',
+		  0 as 'etc04',
+		  0 as 'su04',
+		  0 as 'gwan05',
+		  0 as 'etc05',
+		  0 as 'su05',
+		  0 as 'gwan06',
+		  0 as 'etc06',
+		  0 as 'su06',
+		  0 as 'gwan07',
+		  0 as 'etc07',
+		  0 as 'su07',
+		  0 as 'gwan08',
+		  0 as 'etc08',
+		  0 as 'su08',
+		  sum(a.aa) as 'gwan09',
+		  sum(a.bb) as 'etc09',
+		  sum(a.cc) as 'su09',
+		  0 as 'gwan10',
+		  0 as 'etc10',
+		  0 as 'su10',
+		  0 as 'gwan11',
+		  0 as 'etc11',
+		  0 as 'su11',
+		  0 as 'gwan12',
+		  0 as 'etc12',
+		  0 as 'su12'
+		from (
+		select distinct k.Mmodel_code, k.Munitprice, k.Munitprice_current, k.Mdivision_code,  k.month, sum(k.duty1) as 'aa', sum(k.sup_ek) as 'bb', sum(k.su) as 'cc'
+			from
+			(select
+			distinct a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code,
+			substring(d.impo_singo_date,5,2) as 'month',
+			ISNULL(round(sum(c.duty),0),0) as 'duty1',
+			0 as 'sup_ek',
+			ISNULL(round(sum(b.Impum_su),0),0) as 'su'
+			from CPS.[dbo].[MAAA100] a
+			left outer join ncustoms.kcba.impo3 b
+			on a.Mmodel_code = b.Impum_jajae_code
+			inner join ncustoms.kcba.[impo3_m] c
+			on b.Impum_key = c.Impum_key
+			and b.Impum_lan = c.Impum_lan
+			and b.Impum_heang = c.Impum_heang
+			inner join ncustoms.kcba.impo1 d
+			on b.Impum_key = d.impo_key
+			and d.impo_singo_date like #{yyyy} + '%'
+			and substring(d.impo_singo_date,5,2)='09'
+			where a.Mco_com = #{taxNum}
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, d.impo_singo_date
+			union all
+			select
+			distinct a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code,
+			substring(d.impo_singo_date,5,2) as 'month',
+			0 as 'duty1',
+			ISNULL(round(sum(c.sup_ek),0),0) as 'sup_ek',
+			0 as 'su'
+			from CPS.[dbo].[MAAA100] a
+			left outer join ncustoms.kcba.impo3 b
+			on a.Mmodel_code = b.Impum_jajae_code
+			inner join ncustoms.kcba.[impo3_mDtl] c
+			on b.Impum_key = c.Impum_key
+			and b.Impum_lan = c.Impum_lan
+			and b.Impum_heang = c.Impum_heang
+			inner join ncustoms.kcba.impo1 d
+			on b.Impum_key = d.impo_key
+			and d.impo_singo_date like #{yyyy} + '%'
+			and substring(d.impo_singo_date,5,2)='09'
+			where a.Mco_com = #{taxNum}
+			and a.Mdivision_code like 'PL%'
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, d.impo_singo_date
+			union all
+			select
+			distinct a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code,
+			substring(d.impo_singo_date,5,2) as 'month',
+			0 as 'duty1',
+			ISNULL(round(sum(c.sup_ek),0),0) as 'sup_ek',
+			0 as 'su'
+			from CPS.[dbo].[MAAA100] a
+			left outer join ncustoms.kcba.impo3 b
+			on a.Mmodel_code = b.Impum_jajae_code
+			inner join ncustoms.kcba.[impo3_mDtl] c
+			on b.Impum_key = c.Impum_key
+			and b.Impum_lan = c.Impum_lan
+			and b.Impum_heang = c.Impum_heang
+			and c.ADJ_CD ='C014'
+			inner join ncustoms.kcba.impo1 d
+			on b.Impum_key = d.impo_key
+			and d.impo_singo_date like #{yyyy} + '%'
+			and substring(d.impo_singo_date,5,2)='09'
+			where a.Mco_com = #{taxNum}
+			and a.Mdivision_code not like 'PL%'
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, d.impo_singo_date) k
+			group by k.Mmodel_code, k.Munitprice, k.Munitprice_current, k.Mdivision_code, k.month ) a
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, a.month
+		union all
+		select a.Mmodel_code, a.Munitprice_current, a.Munitprice,
+		  CASE WHEN a.Munitprice_current='USD' then (a.Munitprice * (select round(AVG(USD),2,1) from ncustoms.kcba.Di_exch
+			where I_exch_jukyong_date like #{yyyy} + '%'))
+			  WHEN a.Munitprice_current='EUR' then (a.Munitprice * (select round(AVG(EUR),2,1) from ncustoms.kcba.Di_exch
+			where I_exch_jukyong_date like #{yyyy} + '%'))
+			else a.Munitprice end as 'MunitpriceWon',
+		  a.Mdivision_code, a.month,
+		  0 as 'gwan01',
+		  0 as 'etc01',
+		  0 as 'su01',
+		  0 as 'gwan02',
+		  0 as 'etc02',
+		  0 as 'su02',
+		  0 as 'gwan03',
+		  0 as 'etc03',
+		  0 as 'su03',
+		  0 as 'gwan04',
+		  0 as 'etc04',
+		  0 as 'su04',
+		  0 as 'gwan05',
+		  0 as 'etc05',
+		  0 as 'su05',
+		  0 as 'gwan06',
+		  0 as 'etc06',
+		  0 as 'su06',
+		  0 as 'gwan07',
+		  0 as 'etc07',
+		  0 as 'su07',
+		  0 as 'gwan08',
+		  0 as 'etc08',
+		  0 as 'su08',
+		  0 as 'gwan09',
+		  0 as 'etc09',
+		  0 as 'su09',
+		  sum(a.aa) as 'gwan10',
+		  sum(a.bb) as 'etc10',
+		  sum(a.cc) as 'su10',
+		  0 as 'gwan11',
+		  0 as 'etc11',
+		  0 as 'su11',
+		  0 as 'gwan12',
+		  0 as 'etc12',
+		  0 as 'su12'
+		from (
+		select distinct k.Mmodel_code, k.Munitprice, k.Munitprice_current, k.Mdivision_code,  k.month, sum(k.duty1) as 'aa', sum(k.sup_ek) as 'bb', sum(k.su) as 'cc'
+			from
+			(select
+			distinct a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code,
+			substring(d.impo_singo_date,5,2) as 'month',
+			ISNULL(round(sum(c.duty),0),0) as 'duty1',
+			0 as 'sup_ek',
+			ISNULL(round(sum(b.Impum_su),0),0) as 'su'
+			from CPS.[dbo].[MAAA100] a
+			left outer join ncustoms.kcba.impo3 b
+			on a.Mmodel_code = b.Impum_jajae_code
+			inner join ncustoms.kcba.[impo3_m] c
+			on b.Impum_key = c.Impum_key
+			and b.Impum_lan = c.Impum_lan
+			and b.Impum_heang = c.Impum_heang
+			inner join ncustoms.kcba.impo1 d
+			on b.Impum_key = d.impo_key
+			and d.impo_singo_date like #{yyyy} + '%'
+			and substring(d.impo_singo_date,5,2)='10'
+			where a.Mco_com = #{taxNum}
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code,  d.impo_singo_date
+			union all
+			select
+			distinct a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code,
+			substring(d.impo_singo_date,5,2) as 'month',
+			0 as 'duty1',
+			ISNULL(round(sum(c.sup_ek),0),0) as 'sup_ek',
+			0 as 'su'
+			from CPS.[dbo].[MAAA100] a
+			left outer join ncustoms.kcba.impo3 b
+			on a.Mmodel_code = b.Impum_jajae_code
+			inner join ncustoms.kcba.[impo3_mDtl] c
+			on b.Impum_key = c.Impum_key
+			and b.Impum_lan = c.Impum_lan
+			and b.Impum_heang = c.Impum_heang
+			inner join ncustoms.kcba.impo1 d
+			on b.Impum_key = d.impo_key
+			and d.impo_singo_date like #{yyyy} + '%'
+			and substring(d.impo_singo_date,5,2)='10'
+			where a.Mco_com = #{taxNum}
+			and a.Mdivision_code like 'PL%'
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, d.impo_singo_date
+			union all
+			select
+			distinct a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code,
+			substring(d.impo_singo_date,5,2) as 'month',
+			0 as 'duty1',
+			ISNULL(round(sum(c.sup_ek),0),0) as 'sup_ek',
+			0 as 'su'
+			from CPS.[dbo].[MAAA100] a
+			left outer join ncustoms.kcba.impo3 b
+			on a.Mmodel_code = b.Impum_jajae_code
+			inner join ncustoms.kcba.[impo3_mDtl] c
+			on b.Impum_key = c.Impum_key
+			and b.Impum_lan = c.Impum_lan
+			and b.Impum_heang = c.Impum_heang
+			and c.ADJ_CD ='C014'
+			inner join ncustoms.kcba.impo1 d
+			on b.Impum_key = d.impo_key
+			and d.impo_singo_date like #{yyyy} + '%'
+			and substring(d.impo_singo_date,5,2)='10'
+			where a.Mco_com = #{taxNum}
+			and a.Mdivision_code not like 'PL%'
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, d.impo_singo_date) k
+			group by k.Mmodel_code, k.Munitprice, k.Munitprice_current, k.Mdivision_code, k.month ) a
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, a.month
+		union all
+		select a.Mmodel_code, a.Munitprice_current, a.Munitprice,
+		  CASE WHEN a.Munitprice_current='USD' then (a.Munitprice * (select round(AVG(USD),2,1) from ncustoms.kcba.Di_exch
+			where I_exch_jukyong_date like #{yyyy} + '%'))
+			  WHEN a.Munitprice_current='EUR' then (a.Munitprice * (select round(AVG(EUR),2,1) from ncustoms.kcba.Di_exch
+			where I_exch_jukyong_date like #{yyyy} + '%'))
+			else a.Munitprice end as 'MunitpriceWon',
+		  a.Mdivision_code, a.month,
+		  0 as 'gwan01',
+		  0 as 'etc01',
+		  0 as 'su01',
+		  0 as 'gwan02',
+		  0 as 'etc02',
+		  0 as 'su02',
+		  0 as 'gwan03',
+		  0 as 'etc03',
+		  0 as 'su03',
+		  0 as 'gwan04',
+		  0 as 'etc04',
+		  0 as 'su04',
+		  0 as 'gwan05',
+		  0 as 'etc05',
+		  0 as 'su05',
+		  0 as 'gwan06',
+		  0 as 'etc06',
+		  0 as 'su06',
+		  0 as 'gwan07',
+		  0 as 'etc07',
+		  0 as 'su07',
+		  0 as 'gwan08',
+		  0 as 'etc08',
+		  0 as 'su08',
+		  0 as 'gwan09',
+		  0 as 'etc09',
+		  0 as 'su09',
+		  0 as 'gwan10',
+		  0 as 'etc10',
+		  0 as 'su10',
+		  sum(a.aa) as 'gwan11',
+		  sum(a.bb) as 'etc11',
+		  sum(a.cc) as 'su11',
+		  0 as 'gwan12',
+		  0 as 'etc12',
+		  0 as 'su12'
+		from (
+		select distinct k.Mmodel_code, k.Munitprice, k.Munitprice_current, k.Mdivision_code,  k.month, sum(k.duty1) as 'aa', sum(k.sup_ek) as 'bb', sum(k.su) as 'cc'
+			from
+			(select
+			distinct a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code,
+			substring(d.impo_singo_date,5,2) as 'month',
+			ISNULL(round(sum(c.duty),0),0) as 'duty1',
+			0 as 'sup_ek',
+			ISNULL(round(sum(b.Impum_su),0),0) as 'su'
+			from CPS.[dbo].[MAAA100] a
+			left outer join ncustoms.kcba.impo3 b
+			on a.Mmodel_code = b.Impum_jajae_code
+			inner join ncustoms.kcba.[impo3_m] c
+			on b.Impum_key = c.Impum_key
+			and b.Impum_lan = c.Impum_lan
+			and b.Impum_heang = c.Impum_heang
+			inner join ncustoms.kcba.impo1 d
+			on b.Impum_key = d.impo_key
+			and d.impo_singo_date like #{yyyy} + '%'
+			and substring(d.impo_singo_date,5,2)='11'
+			where a.Mco_com = #{taxNum}
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code,  d.impo_singo_date
+			union all
+			select
+			distinct a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code,
+			substring(d.impo_singo_date,5,2) as 'month',
+			0 as 'duty1',
+			ISNULL(round(sum(c.sup_ek),0),0) as 'sup_ek',
+			0 as 'su'
+			from CPS.[dbo].[MAAA100] a
+			left outer join ncustoms.kcba.impo3 b
+			on a.Mmodel_code = b.Impum_jajae_code
+			inner join ncustoms.kcba.[impo3_mDtl] c
+			on b.Impum_key = c.Impum_key
+			and b.Impum_lan = c.Impum_lan
+			and b.Impum_heang = c.Impum_heang
+			inner join ncustoms.kcba.impo1 d
+			on b.Impum_key = d.impo_key
+			and d.impo_singo_date like #{yyyy} + '%'
+			and substring(d.impo_singo_date,5,2)='11'
+			where a.Mco_com = #{taxNum}
+			and a.Mdivision_code like 'PL%'
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, d.impo_singo_date
+			union all
+			select
+			distinct a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code,
+			substring(d.impo_singo_date,5,2) as 'month',
+			0 as 'duty1',
+			ISNULL(round(sum(c.sup_ek),0),0) as 'sup_ek',
+			0 as 'su'
+			from CPS.[dbo].[MAAA100] a
+			left outer join ncustoms.kcba.impo3 b
+			on a.Mmodel_code = b.Impum_jajae_code
+			inner join ncustoms.kcba.[impo3_mDtl] c
+			on b.Impum_key = c.Impum_key
+			and b.Impum_lan = c.Impum_lan
+			and b.Impum_heang = c.Impum_heang
+			and c.ADJ_CD ='C014'
+			inner join ncustoms.kcba.impo1 d
+			on b.Impum_key = d.impo_key
+			and d.impo_singo_date like #{yyyy} + '%'
+			and substring(d.impo_singo_date,5,2)='11'
+			where a.Mco_com = #{taxNum}
+			and a.Mdivision_code not like 'PL%'
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, d.impo_singo_date) k
+			group by k.Mmodel_code, k.Munitprice, k.Munitprice_current, k.Mdivision_code, k.month ) a
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, a.month
+		union all
+		select a.Mmodel_code, a.Munitprice_current, a.Munitprice,
+		  CASE WHEN a.Munitprice_current='USD' then (a.Munitprice * (select round(AVG(USD),2,1) from ncustoms.kcba.Di_exch
+			where I_exch_jukyong_date like #{yyyy} + '%'))
+			  WHEN a.Munitprice_current='EUR' then (a.Munitprice * (select round(AVG(EUR),2,1) from ncustoms.kcba.Di_exch
+			where I_exch_jukyong_date like #{yyyy} + '%'))
+			else a.Munitprice end as 'MunitpriceWon',
+		  a.Mdivision_code, a.month,
+		  0 as 'gwan01',
+		  0 as 'etc01',
+		  0 as 'su01',
+		  0 as 'gwan02',
+		  0 as 'etc02',
+		  0 as 'su02',
+		  0 as 'gwan03',
+		  0 as 'etc03',
+		  0 as 'su03',
+		  0 as 'gwan04',
+		  0 as 'etc04',
+		  0 as 'su04',
+		  0 as 'gwan05',
+		  0 as 'etc05',
+		  0 as 'su05',
+		  0 as 'gwan06',
+		  0 as 'etc06',
+		  0 as 'su06',
+		  0 as 'gwan07',
+		  0 as 'etc07',
+		  0 as 'su07',
+		  0 as 'gwan08',
+		  0 as 'etc08',
+		  0 as 'su08',
+		  0 as 'gwan09',
+		  0 as 'etc09',
+		  0 as 'su09',
+		  0 as 'gwan10',
+		  0 as 'etc10',
+		  0 as 'su10',
+		  0 as 'gwan11',
+		  0 as 'etc11',
+		  0 as 'su11',
+		  sum(a.aa) as 'gwan12',
+		  sum(a.bb) as 'etc12',
+		  sum(a.cc) as 'su12'
+		from (
+		select distinct k.Mmodel_code, k.Munitprice, k.Munitprice_current, k.Mdivision_code, k.month, sum(k.duty1) as 'aa', sum(k.sup_ek) as 'bb', sum(k.su) as 'cc'
+			from
+			(select
+			distinct a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code,
+			substring(d.impo_singo_date,5,2) as 'month',
+			ISNULL(round(sum(c.duty),0),0) as 'duty1',
+			0 as 'sup_ek',
+			ISNULL(round(sum(b.Impum_su),0),0) as 'su'
+			from CPS.[dbo].[MAAA100] a
+			left outer join ncustoms.kcba.impo3 b
+			on a.Mmodel_code = b.Impum_jajae_code
+			inner join ncustoms.kcba.[impo3_m] c
+			on b.Impum_key = c.Impum_key
+			and b.Impum_lan = c.Impum_lan
+			and b.Impum_heang = c.Impum_heang
+			inner join ncustoms.kcba.impo1 d
+			on b.Impum_key = d.impo_key
+			and d.impo_singo_date like #{yyyy} + '%'
+			and substring(d.impo_singo_date,5,2)='12'
+			where a.Mco_com = #{taxNum}
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, d.impo_singo_date
+			union all
+			select
+			distinct a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code,
+			substring(d.impo_singo_date,5,2) as 'month',
+			0 as 'duty1',
+			ISNULL(round(sum(c.sup_ek),0),0) as 'sup_ek',
+			0 as 'su'
+			from CPS.[dbo].[MAAA100] a
+			left outer join ncustoms.kcba.impo3 b
+			on a.Mmodel_code = b.Impum_jajae_code
+			inner join ncustoms.kcba.[impo3_mDtl] c
+			on b.Impum_key = c.Impum_key
+			and b.Impum_lan = c.Impum_lan
+			and b.Impum_heang = c.Impum_heang
+			inner join ncustoms.kcba.impo1 d
+			on b.Impum_key = d.impo_key
+			and d.impo_singo_date like #{yyyy} + '%'
+			and substring(d.impo_singo_date,5,2)='12'
+			where a.Mco_com = #{taxNum}
+			and a.Mdivision_code like 'PL%'
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, d.impo_singo_date
+			union all
+			select
+			distinct a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code,
+			substring(d.impo_singo_date,5,2) as 'month',
+			0 as 'duty1',
+			ISNULL(round(sum(c.sup_ek),0),0) as 'sup_ek',
+			0 as 'su'
+			from CPS.[dbo].[MAAA100] a
+			left outer join ncustoms.kcba.impo3 b
+			on a.Mmodel_code = b.Impum_jajae_code
+			inner join ncustoms.kcba.[impo3_mDtl] c
+			on b.Impum_key = c.Impum_key
+			and b.Impum_lan = c.Impum_lan
+			and b.Impum_heang = c.Impum_heang
+			and c.ADJ_CD ='C014'
+			inner join ncustoms.kcba.impo1 d
+			on b.Impum_key = d.impo_key
+			and d.impo_singo_date like #{yyyy} + '%'
+			and substring(d.impo_singo_date,5,2)='12'
+			where a.Mco_com = #{taxNum}
+			and a.Mdivision_code not like 'PL%'
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, d.impo_singo_date) k
+			group by k.Mmodel_code, k.Munitprice, k.Munitprice_current, k.Mdivision_code, k.month ) a
+			group by a.Mmodel_code, a.Munitprice, a.Munitprice_current, a.Mdivision_code, a.month
+		) a
+		<where>
+			<if test='mmodelCode != null and mmodelCode != ""'>AND a.Mmodel_code like '%' + #{mmodelCode} + '%'</if>
+			<if test='mdivisionCode != null and mdivisionCode != ""'>AND a.Mdivision_code like '%' + #{mdivisionCode} + '%'</if>
+		</where>
+		group by a.Mmodel_code, a.Munitprice_current, a.Munitprice, a.MunitpriceWon, a.Mdivision_code
+	</select>
+
+	<select id="selectCompItemInfo" resultType="map">
+		/* 자재마스터 + 요건 자재 조회 */
+		select * from
+		(
+		SELECT Mco_name, Mco_com, Mmodel_code, Mhs_code, Mstd_goods, Mmodel_1, Mqty_ut, Munitprice, Morigin1
+		FROM CPS.[dbo].[MAAA100] WITH (NOLOCK)
+		union all
+		select mcoName as 'Mco_name', mcoCom as 'Mco_com', mmodelCode as 'Mmodel_code', mhsCode as 'Mhs_code'
+		, mstdGoods as 'Mstd_goods', mmodel1 as 'Mmodel_1', mqtyUt as 'Mqty_ut', munitPrice as 'Munitprice', morigin1 as 'Morigin1'
+		from soo.dbo.CPS_Compliance_Item WITH (NOLOCK)
+		where newCheck = 'N'
+		and useYn = 'Y'
+		) a
+		<where>
+			<if test='mcoCom != null and mcoCom != ""'>AND a.Mco_com = #{mcoCom}</if>
+			<if test='mmodelCode != null and mmodelCode != ""'>AND a.Mmodel_code like '%' + #{mmodelCode} + '%'</if>
+		</where>
+	</select>
+
+	<select id="selectItemCheck" resultType="map">
+		/* 자재코드 검색 */
+		SELECT Mmodel_code
+		FROM CPS.[dbo].[MAAA100] WITH (NOLOCK)
+		<where>
+			<if test='Mco_com != null and Mco_com != ""'>AND Mco_com = #{Mco_com}</if>
+			<if test='Mmodel_code != null and Mmodel_code != ""'>AND Mmodel_code = #{Mmodel_code}</if>
+		</where>
+	</select>
+
+	<select id="selectHsList" resultType="map">
+		/* HS 검색 */
+		SELECT Hsbuho_code, Hsbuho_gwanse_gbn, Hsbuho_seyul, Hsbuho_popum, Hsbuho_guraepum
+		FROM ncustoms.kcba.dHsbuho WITH (NOLOCK)
+		<where>
+			<if test='hscode != null and hscode != ""'>AND Hsbuho_code like #{hscode} + '%'</if>
+		</where>
+	</select>
+
+	<insert id="insertItemMaster">
+		/* 자재마스터 입력 */
+		INSERT INTO CPS.[dbo].[MAAA100]
+		(Mcount_no,
+		Mmodel_code,
+		Mco_name,
+		Mco_com,
+		Mreg_date,
+		Mend_date,
+		Mhs_code,
+		Mhs_kind,
+		Mhs_rate,
+		Mattached3,
+		Mstd_goods,
+		Mger_goods,
+		Morigin1,
+		Munitprice,
+		Mqty_ut,
+		Munitprice_current,
+		Mmodel_1,
+		Mmodel_2,
+		Mmodel_3,
+		Mingredient_1,
+		Mingredient_2,
+		Mingredient_3,
+		fta_yn,
+		fta_text,
+		Myog_flag,
+		Myog_ok_no,
+		Mprovisional,
+		sample_yn,
+		Mremark1,
+		Mremark2,
+		useYn,
+		addUserId,
+		Mconfirm_flag,
+		AddDtm,
+		EditDtm )
+		VALUES
+		(#{Mcount_no}
+		,#{Mmodel_code}
+		,#{hsRegUserComName}
+		,#{hsRegUserComTaxNum}
+		,#{Mreg_date}
+		,#{Mend_date}
+		,#{Mhs_code}
+		,#{Mhs_kind}
+		,#{Mhs_rate}
+		,#{Mattached3}
+		,#{Mstd_goods}
+		,#{Mger_goods}
+		,#{Morigin1}
+		,#{Munitprice}
+		,#{Mqty_ut}
+		,#{Munitprice_current}
+		,#{Mmodel_1}
+		,#{Mmodel_2}
+		,#{Mmodel_3}
+		,#{Mingredient_1}
+		,#{Mingredient_2}
+		,#{Mingredient_3}
+		,#{fta_yn}
+		,#{fta_text}
+		,#{Myog_flag}
+		,#{Myog_ok_no}
+		,#{Mprovisional}
+		,#{sample_yn}
+		,#{Mremark1}
+		,#{Mremark2}
+		,#{useYn}
+		,#{_userId}
+		,'N'
+		,#{First_date}
+		,#{last_date} )
+	</insert>
+
+	<insert id="insertItemMaster1">
+		/* 자재마스터 입력 */
+		INSERT INTO CPS.[dbo].[MAAA100]
+		(Mcount_no,
+		Mmodel_code,
+		Mco_code,
+		Mco_name,
+		Mco_com,
+		Mtcano,
+		Mconfirm_flag,
+		Mshipper,
+		Mshipper_code,
+		Mreg_date,
+		Mend_date,
+		Mindo_code,
+		Munitprice,
+		Munitprice_current,
+		Morigin1,
+		Morigin2,
+		Morigin3,
+		Morigin4,
+		fta_yn,
+		Mattached1,
+		Mreview_flag,
+		Mmodel_1,
+		Mmodel_2,
+		Mmodel_3,
+		Mingredient_1,
+		Mingredient_2,
+		Mingredient_3,
+		Munitprice_Rate,
+		TpStatus,
+		Mqty_ut,
+		Mdraw_unit,
+		MVat_Flag,
+		Myog_flag,
+		minus_yn,
+		Mprovisional,
+		sample_yn,
+		Mpurpose_Flag,
+		Mcus_entry1,
+		Mcus_entry2,
+		Mcus_entry3,
+		deal_BizRNo,
+		useYn,
+		addUserId,
+		editUserId,
+		AddDtm,
+		EditDtm,
+		AddUserNm,
+		EditUserNm,
+		Msp_code,
+		Msangpyo,
+		Mhs_code,
+		Mhs_kind,
+		Mstd_goods,
+		Mger_goods,
+		Mattached3,
+		TeamKey)
+		VALUES
+		(#{Mcount_no},
+		#{Mmodel_code},
+		#{Mco_code},
+		#{Mco_name},
+		#{Mco_com},
+		#{Mtcano},
+		#{Mconfirm_flag},
+		#{Mshipper},
+		#{Mshipper_code},
+		#{Mreg_date},
+		#{Mend_date},
+		#{Mindo_code},
+		#{Munitprice},
+		#{Munitprice_current},
+		#{Morigin1},
+		#{Morigin2},
+		#{Morigin3},
+		#{Morigin4},
+		#{fta_yn},
+		#{Mattached1},
+		#{Mreview_flag},
+		#{Mmodel_1},
+		#{Mmodel_2},
+		#{Mmodel_3},
+		#{Mingredient_1},
+		#{Mingredient_2},
+		#{Mingredient_3},
+		#{Munitprice_Rate},
+		#{TpStatus},
+		#{Mqty_ut},
+		#{Mdraw_unit},
+		#{MVat_Flag},
+		#{Myog_flag},
+		#{minus_yn},
+		#{Mprovisional},
+		#{sample_yn},
+		#{Mpurpose_Flag,},
+		#{Mcus_entry1},
+		#{Mcus_entry2},
+		#{Mcus_entry3},
+		#{deal_BizRNo},
+		#{useYn},
+		#{_userId},
+		#{_userId},
+		#{First_date},
+		#{last_date},
+		#{first_user},
+		#{last_user},
+		#{Msp_code},
+		#{Msangpyo},
+		#{Mhs_code},
+		#{Mhs_kind},
+		#{Mstd_goods},
+		#{Mger_goods},
+		#{Mattached3},
+		#{UserPartCd})
+	</insert>
+
+	<insert id="insertItemMaster2">
+		/* 자재마스터 입력 */
+		INSERT INTO CPS.[dbo].[MAAA100]
+		(Mcount_no,
+		Mmodel_code,
+		Mtcano,
+		Mco_code,
+		Mco_name,
+		Mco_com,
+		Mshipper,
+		Mmaker,
+		Mreg_date,
+		Mend_date,
+		Mhs_code,
+		Mhs_kind,
+		Mhs_rate,
+		Mstd_goods,
+		Mger_goods,
+		Morigin1,
+		Mmodel_1,
+		Mmodel_2,
+		Mmodel_3,
+		Mremark1,
+		Mqty_ut,
+		useYn,
+		addUserId,
+		MmakerCD,
+		RefundYN,
+		OrigExpYN,
+		AddDtm,
+		EditDtm)
+		VALUES
+		(#{Mcount_no},
+		#{Mmodel_code},
+		#{Mtcano},
+		#{Mco_code},
+		#{hsRegUserComName},
+		#{hsRegUserComTaxNum},
+		#{Mshipper},
+		#{Mmaker},
+		#{Mreg_date},
+		#{Mend_date},
+		#{Mhs_code},
+		#{Mhs_kind},
+		#{Mhs_rate},
+		#{Mstd_goods},
+		#{Mger_goods},
+		#{Morigin1},
+		#{Mmodel_1},
+		#{Mmodel_2},
+		#{Mmodel_3},
+		#{Mremark1},
+		#{Mqty_ut},
+		#{useYn},
+		#{_userId},
+		#{MmakerCD},
+		#{RefundYN},
+		#{OrigExpYN},
+		#{First_date},
+		#{last_date})
+	</insert>
+
+	<update id="updateItemMaster">
+		/* 자재마스터 수정 */
+		UPDATE CPS.[dbo].[MAAA100]
+		SET EditUserNm = #{_userId}
+		, EditDtm = REPLACE(CONVERT(VARCHAR(8), GETDATE(), 112)+CONVERT(VARCHAR(8), GETDATE(), 114), ':','')
+		<if test='hsRegUserComName != null'>,Mco_name = #{hsRegUserComName}</if>
+		<if test='hsRegUserComTaxNum != null'>,Mco_com = #{hsRegUserComTaxNum}</if>
+		<if test='Mreg_date != null'>,Mreg_date = #{Mreg_date}</if>
+		<if test='Mend_date != null'>,Mend_date = #{Mend_date}</if>
+		<if test='Mhs_code != null'>,Mhs_code = #{Mhs_code}</if>
+		<if test='Mhs_kind != null'>,Mhs_kind = #{Mhs_kind}</if>
+		<if test='Mhs_rate != null'>,Mhs_rate = #{Mhs_rate}</if>
+		<if test='Mstd_goods != null'>,Mstd_goods = #{Mstd_goods}</if>
+		<if test='Mger_goods != null'>,Mger_goods = #{Mger_goods}</if>
+		<if test='Mmodel_1 != null'>,Mmodel_1 = #{Mmodel_1}</if>
+		<if test='Mmodel_2 != null'>,Mmodel_2 = #{Mmodel_2}</if>
+		<if test='Mmodel_3 != null'>,Mmodel_3 = #{Mmodel_3}</if>
+		<if test='Mingredient_1 != null'>,Mingredient_1 = #{Mingredient_1}</if>
+		<if test='Mingredient_2 != null'>,Mingredient_2 = #{Mingredient_2}</if>
+		<if test='Mingredient_3 != null'>,Mingredient_3 = #{Mingredient_3}</if>
+		<if test='Morigin1 != null'>,Morigin1 = #{Morigin1}</if>
+		<if test='Mprovisional != null'>,Mprovisional = #{Mprovisional}</if>
+		<if test='Mqty_ut != null'>,Mqty_ut = #{Mqty_ut}</if>
+		<if test='Munitprice_current != null'>,Munitprice_current = #{Munitprice_current}</if>
+		<if test='Munitprice != null'>,Munitprice = #{Munitprice}</if>
+		<if test='Mremark1 != null'>,Mremark1 = #{Mremark1}</if>
+		<if test='Mremark2 != null'>,Mremark2 = #{Mremark2}</if>
+		<if test='Mattached3 != null'>,Mattached3 = #{Mattached3}</if>
+		<if test='fta_yn != null'>,fta_yn = #{fta_yn}</if>
+		<if test='fta_text != null'>,fta_text = #{fta_text}</if>
+		<if test='sample_yn != null'>,sample_yn = #{sample_yn}</if>
+		<if test='Myog_flag != null'>,Myog_flag = #{Myog_flag}</if>
+		<if test='Myog_ok_no != null'>,Myog_ok_no = #{Myog_ok_no}</if>
+		WHERE Mcount_no = #{Mcount_no}
+	</update>
+
+	<update id="updateItemMaster1">
+		/* 자재마스터 수정 */
+		UPDATE CPS.[dbo].[MAAA100]
+		SET EditDtm = REPLACE(CONVERT(VARCHAR(8), GETDATE(), 112)+CONVERT(VARCHAR(8), GETDATE(), 114), ':','')
+		<if test='_userNm != null'>, EditUserNm = #{_userNm}</if>
+		<if test='_userId != null'>, editUserId = #{_userId}</if>
+		<if test='hsRegUserComName != null'>,Mco_name = #{hsRegUserComName}</if>
+		<if test='hsRegUserComTaxNum != null'>,Mco_com = #{hsRegUserComTaxNum}</if>
+		<if test='Mreg_date != null'>,Mreg_date = #{Mreg_date}</if>
+		<if test='Mend_date != null'>,Mend_date = #{Mend_date}</if>
+		<if test='Mhs_code != null'>,Mhs_code = #{Mhs_code}</if>
+		<if test='Mhs_kind != null'>,Mhs_kind = #{Mhs_kind}</if>
+		<if test='Mhs_rate != null'>,Mhs_rate = #{Mhs_rate}</if>
+		<if test='Mstd_goods != null'>,Mstd_goods = #{Mstd_goods}</if>
+		<if test='Mger_goods != null'>,Mger_goods = #{Mger_goods}</if>
+		<if test='Mmodel_1 != null'>,Mmodel_1 = #{Mmodel_1}</if>
+		<if test='Mmodel_2 != null'>,Mmodel_2 = #{Mmodel_2}</if>
+		<if test='Mmodel_3 != null'>,Mmodel_3 = #{Mmodel_3}</if>
+		<if test='Morigin1 != null'>,Morigin1 = #{Morigin1}</if>
+		<if test='Mqty_ut != null'>,Mqty_ut = #{Mqty_ut}</if>
+		<if test='Mremark1 != null'>,Mremark1 = #{Mremark1}</if>
+		<if test='MmakerCD != null'>,MmakerCD = #{MmakerCD}</if>
+		<if test='Mshipper != null'>,Mshipper = #{Mshipper}</if>
+		<if test='RefundYN != null'>,RefundYN = #{RefundYN}</if>
+		<if test='OrigExpYN != null'>,OrigExpYN = #{OrigExpYN}</if>
+		<if test='useYn != null'>,useYn = #{useYn}</if>
+		WHERE Mcount_no = #{Mcount_no}
+	</update>
+
+	<select id="findItemAmdMasterMaxSeq" resultType="map">
+    	/* 자재마스터 변경 이력 마스터 maxseq 조회 */
+        SELECT RIGHT('000' + CAST(ISNULL(MAX(Amd_SEQ), 0)+1 AS VARCHAR), 3 ) AS 'masterAmdSeq'
+		FROM CPS.[dbo].[MAAB100M] WITH (NOLOCK)
+		WHERE Mcount_No = #{Mcount_no}
+		and UseYn='Y'
+    </select>
+
+	<insert id="insertItemAmdMst">
+	    /* 자재마스터 변경 이력 마스터 입력 */
+		INSERT INTO CPS.[dbo].[MAAB100M]
+	           ([Mcount_No]
+	           ,[Amd_SEQ]
+	           ,[AmdDtm]
+	           ,[AmdNm]
+	           ,[AmdTxt1]
+	           ,[AmdTxt2]
+	           ,[AmdFlag]
+	           ,[JiCd]
+	           ,[JiNm]
+	           ,[LastIp]
+	           ,[EditDtm]
+	           ,[EditUserNm]
+	           ,[UseYn]
+	           ,[AddUserKey]
+	           ,[AddUserNm]
+	           ,[AddDtm])
+		VALUES
+	           (#{Mcount_no}
+	           ,#{amdSeq}
+	           ,REPLACE(CONVERT(VARCHAR(8), GETDATE(), 112)+CONVERT(VARCHAR(8), GETDATE(), 114), ':','')
+	           ,#{_userNm}
+	           ,#{amdTxt1}
+	           ,#{amdTxt2}
+	           ,'수정(MAT)'
+	           ,''
+	           ,''
+	           ,''
+	           ,REPLACE(CONVERT(VARCHAR(8), GETDATE(), 112)+CONVERT(VARCHAR(8), GETDATE(), 114), ':','')
+	           ,#{_userId}
+	           ,#{UseYn}
+	           ,#{_userId}
+	           ,#{_userNm}
+	           ,REPLACE(CONVERT(VARCHAR(8), GETDATE(), 112)+CONVERT(VARCHAR(8), GETDATE(), 114), ':',''))
+	</insert>
+
+	<select id="findItemAmdDetailMaxSeq" resultType="map">
+    	/* 자재마스터 변경 이력 디테일 maxseq 조회 */
+        SELECT RIGHT('000' + CAST(ISNULL(MAX(Amd_Sub_SEQ), 0)+1 AS VARCHAR), 3 ) AS 'detailAmdSeq'
+		FROM CPS.[dbo].[MAAB100D] WITH (NOLOCK)
+		WHERE Mcount_No = #{Mcount_no}
+		AND Amd_SEQ = #{amdSeq}
+		and UseYn='Y'
+    </select>
+
+	<insert id="insertItemAmdDtl">
+		/* 자재마스터 변경 이력 디테일 입력 */
+	    INSERT INTO CPS.[dbo].[MAAB100D]
+	           ([Mcount_No]
+	           ,[Amd_SEQ]
+	           ,[Amd_Sub_SEQ]
+	           ,[AmdItemId]
+	           ,[AmdItemNm]
+	           ,[AmdBf]
+	           ,[AmdAf]
+	           ,[UseYn]
+	           ,[AddUserKey]
+	           ,[AddUserNm]
+	           ,[AddDtm])
+     	VALUES
+	           (#{Mcount_no}
+	           ,#{amdSeq}
+	           ,#{amdSubSeq}
+	           ,#{amdItemId}
+	           ,#{amdItemNm}
+	           ,#{amdBf}
+	           ,#{amdAf}
+	           ,#{UseYn}
+	           ,#{_userId}
+	           ,#{_userNm}
+	           ,REPLACE(CONVERT(VARCHAR(8), GETDATE(), 112)+CONVERT(VARCHAR(8), GETDATE(), 114), ':',''))
+	</insert>
+
+	<select id="selectItemCompList" resultType="map">
+		/* 자재 마스터 조회 */
+		SELECT datas.*
+		FROM (
+		SELECT ROW_NUMBER() OVER (ORDER BY a.Mreg_date DESC) AS 'rownum',
+		a.Mcount_no, a.Mmodel_code, a.Mco_name, a.Mhs_code AS 'hdnMhsCode', a.Mger_goods,
+		ISNULL((SELECT count(yogKey) FROM soo.dbo.CPS_Yogun_Master WITH (NOLOCK) WHERE a.Mco_com = yogSaup and a.Mmodel_code = jajaeCode and useYn='Y' and gubun='전파'), 0) AS 'junpaCount'
+		FROM CPS.[dbo].[MAAA100] a WITH (NOLOCK)
+		WHERE 1 = 1
+		<if test='taxNum != null and taxNum != ""'>
+            <choose>
+                <when test='taxNum == "all"'>AND a.Mco_com IN (select userSaup from soo.dbo.CPS_SaveCustomer where userKey = #{ID} and useYn='Y')</when>
+                <otherwise>AND a.Mco_com = #{taxNum}</otherwise>
+            </choose>
+        </if>
+		<if test='mmodelCode != null and mmodelCode != ""'>AND a.Mmodel_code LIKE '%' + #{mmodelCode} + '%'</if>
+		<if test='mgerGoods != null and mgerGoods != ""'>AND a.Mger_goods LIKE '%' + #{mgerGoods} + '%'</if>
+		<if test='mhsCode != null and mhsCode != ""'>AND a.Mhs_code LIKE '%' + #{mhsCode} + '%'</if>
+		<if test='_DateType != null and _DateType != "ALL" and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+			<choose>
+				<when test='_DateType == "Mreg_date"'>AND a.Mreg_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+				<when test='_DateType == "Mconfirm_date"'>AND a.Mconfirm_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+				<when test='_DateType == "last_date"'>AND LEFT(a.EditDtm, 8) BETWEEN #{strFromDate} AND #{strToDate}</when>
+			</choose>
+		</if>
+		) datas
+		<if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+			WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+		</if>
+	</select>
+
+	<select id="selectInvoiceMasterList" resultType="map">
+		/* 수입 인보이스 마스터 조회 */
+		SELECT CASE WHEN len(a.impo_jungsan_date) > 7 THEN '정산'
+		 WHEN len(a.impo_banchul_date) > 7 THEN '반출'
+		 WHEN len(a.impo_ok_date) > 7 THEN '수리'
+		 WHEN len(a.impo_jubsu_date) > 7 THEN '접수'
+		 WHEN len(a.impo_banip_date) > 7 THEN '반입'
+		 WHEN len(a.impo_unsong_date) > 7 THEN '운송'
+		 WHEN len(a.impo_iphang_date) > 7 THEN '입항'
+		 WHEN len(a.Impo_mf_date) > 7 THEN '적하'
+		 WHEN len(a.impo_ip_sc_date) > 7 THEN '입예'
+		 WHEN len(a.move_dt) > 7 THEN '전환'
+		 WHEN a.Impo_save_gbn != 'Y' THEN '임시'
+		 ELSE '작성' END as status, *
+		FROM rms.dbo.recv_impo1 a WITH (NOLOCK)
+		WHERE 1 = 1
+		<if test='key_no != null and key_no != ""'>AND a.key_no = #{key_no}</if>
+		<if test='impoNapseSangho != null and impoNapseSangho != ""'>AND a.Impo_napse_sangho LIKE '%' + #{impoNapseSangho} + '%'</if>
+		<if test='impoBlNo != null and impoBlNo != ""'>AND a.Impo_bl_no LIKE '%' + #{impoBlNo} + '%'</if>
+		<if test='impoSingoNo != null and impoSingoNo != ""'>AND a.Impo_singo_no LIKE '%' + #{impoSingoNo} + '%'</if>
+		<if test='_DateType != null and _DateType != "ALL" and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+			<choose>
+				<when test='_DateType == "req_date"'>AND a.req_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+			</choose>
+		</if>
+		order by a.key_no desc
+	</select>
+
+	<insert id="copyInvoiceMasterList">
+		/* Invoice 복사 */
+		INSERT INTO [rms].[dbo].[recv_impo1]
+		(key_no,
+		Impo_year,
+		Impo_chk_dg,
+		Impo_save_gbn,
+		Impo_tcano,
+		Impo_singoja_sangho,
+		Impo_suipja_code,
+		Impo_suipja_sangho,
+		Impo_SuipSaupNo,
+		Impo_suipja_tong,
+		Impo_suipja_gubun,
+		Impo_daecode,
+		Impo_daesangho,
+		Impo_napse_code,
+		Impo_napse_sangho,
+		Impo_napse_tong,
+		Impo_napse_name,
+		Impo_napse_saup,
+		Impo_napse_post,
+		Impo_napse_juso,
+		Impo_napse_email,
+		Impo_damdangja,
+		Impo_napse_tel,
+		Impo_singo_gubun,
+		Impo_plan,
+		Impo_gele_gubun,
+		Impo_jonglu,
+		Impo_wonsanji_yn,
+		Impo_jingsu_type,
+		Impo_file_no1,
+		Impo_file_no2,
+		Impo_UseSinGbn,
+		Impo_bl_type,
+		Impo_chamjo_no,
+		Impo_bl_no,
+		Impo_bl_gubun,
+		Impo_mbl_no,
+		Impo_bl_sayu_code,
+		Impo_mrn_no,
+		Impo_msn,
+		Impo_hsn,
+		Impo_MngObjYN,
+		Impo_unsong_type,
+		Impo_unsong_box,
+		Impo_Forwarder_Code,
+		Impo_Forwarder_sangho,
+		Impo_jukchl_code,
+		Impo_jukchl_name,
+		Impo_teuksong,
+		Impo_teuksong_name,
+		Impo_hanggu_code,
+		Impo_hanggu_name,
+		Impo_unsu_gigwan,
+		Impo_unsu_name,
+		Impo_ship_name,
+		Impo_sungi_code,
+		Impo_pojang_su,
+		Impo_pojang_danwi,
+		Impo_total_jung,
+		Impo_iphang_date,
+		Impo_banip_date,
+		Impo_jangch_buho,
+		Impo_jangch_jangso,
+		Impo_jangch_name,
+		Impo_segwan,
+		Impo_gwa,
+		Impo_fre_won,
+		Impo_fre_money,
+		Impo_ins_input,
+		Impo_ins_yn,
+		Impo_gonggub,
+		Impo_gonggub_buho,
+		Impo_gonggub_sangho,
+		Impo_gyelje,
+		Impo_gakyk_yn,
+		Impo_indo_jogun,
+		Impo_gyelje_money,
+		Impo_gyelje_input,
+		Impo_plus_yul_gubun,
+		Impo_plus_money,
+		Impo_plus,
+		Impo_minus_yul_gubun,
+		Impo_minus_money,
+		Impo_minus,
+		UserID,
+		UserNM,
+		first_nm,
+		AddDtTime,
+		addUserId,
+		req_date
+		)
+		select
+		#{k_no},
+		#{Impo_year},
+		Impo_chk_dg,
+		'N',
+		Impo_tcano,
+		Impo_singoja_sangho,
+		Impo_suipja_code,
+		Impo_suipja_sangho,
+		Impo_SuipSaupNo,
+		Impo_suipja_tong,
+		Impo_suipja_gubun,
+		Impo_daecode,
+		Impo_daesangho,
+		Impo_napse_code,
+		Impo_napse_sangho,
+		Impo_napse_tong,
+		Impo_napse_name,
+		Impo_napse_saup,
+		Impo_napse_post,
+		Impo_napse_juso,
+		Impo_napse_email,
+		Impo_damdangja,
+		Impo_napse_tel,
+		Impo_singo_gubun,
+		Impo_plan,
+		Impo_gele_gubun,
+		Impo_jonglu,
+		Impo_wonsanji_yn,
+		Impo_jingsu_type,
+		Impo_file_no1,
+		Impo_file_no2,
+		Impo_UseSinGbn,
+		Impo_bl_type,
+		Impo_chamjo_no,
+		Impo_bl_no,
+		Impo_bl_gubun,
+		Impo_mbl_no,
+		Impo_bl_sayu_code,
+		Impo_mrn_no,
+		Impo_msn,
+		Impo_hsn,
+		Impo_MngObjYN,
+		Impo_unsong_type,
+		Impo_unsong_box,
+		Impo_Forwarder_Code,
+		Impo_Forwarder_sangho,
+		Impo_jukchl_code,
+		Impo_jukchl_name,
+		Impo_teuksong,
+		Impo_teuksong_name,
+		Impo_hanggu_code,
+		Impo_hanggu_name,
+		Impo_unsu_gigwan,
+		Impo_unsu_name,
+		Impo_ship_name,
+		Impo_sungi_code,
+		Impo_pojang_su,
+		Impo_pojang_danwi,
+		Impo_total_jung,
+		Impo_iphang_date,
+		Impo_banip_date,
+		Impo_jangch_buho,
+		Impo_jangch_jangso,
+		Impo_jangch_name,
+		Impo_segwan,
+		Impo_gwa,
+		Impo_fre_won,
+		Impo_fre_money,
+		Impo_ins_input,
+		Impo_ins_yn,
+		Impo_gonggub,
+		Impo_gonggub_buho,
+		Impo_gonggub_sangho,
+		Impo_gyelje,
+		Impo_gakyk_yn,
+		Impo_indo_jogun,
+		Impo_gyelje_money,
+		Impo_gyelje_input,
+		Impo_plus_yul_gubun,
+		Impo_plus_money,
+		Impo_plus,
+		Impo_minus_yul_gubun,
+		Impo_minus_money,
+		Impo_minus,
+		#{_userId},
+		#{_userNm},
+		#{_userId},
+		#{AddDtTime},
+		#{_userId},
+		#{req_date}
+		from rms.dbo.recv_impo1
+		where key_no = #{key_no}
+	</insert>
+
+	<insert id="insertInvoiceImpo1">
+		/* Invoice 입력 */
+		INSERT INTO [rms].[dbo].[recv_impo1]
+		(key_no,
+		Impo_year,
+		Impo_chk_dg,
+		Impo_save_gbn,
+		Impo_tcano,
+		Impo_singoja_sangho,
+		Impo_suipja_code,
+		Impo_suipja_sangho,
+		Impo_SuipSaupNo,
+		Impo_suipja_tong,
+		Impo_suipja_gubun,
+		Impo_daecode,
+		Impo_daesangho,
+		Impo_napse_code,
+		Impo_napse_sangho,
+		Impo_napse_tong,
+		Impo_napse_name,
+		Impo_napse_saup,
+		Impo_napse_post,
+		Impo_napse_juso,
+		Impo_napse_email,
+		Impo_damdangja,
+		Impo_napse_tel,
+		Impo_singo_gubun,
+		Impo_plan,
+		Impo_gele_gubun,
+		Impo_jonglu,
+		Impo_wonsanji_yn,
+		Impo_jingsu_type,
+		Impo_file_no1,
+		Impo_file_no2,
+		Impo_UseSinGbn,
+		Impo_bl_type,
+		Impo_chamjo_no,
+		Impo_bl_no,
+		Impo_bl_gubun,
+		Impo_mbl_no,
+		Impo_bl_sayu_code,
+		Impo_mrn_no,
+		Impo_msn,
+		Impo_hsn,
+		Impo_MngObjYN,
+		Impo_unsong_type,
+		Impo_unsong_box,
+		Impo_Forwarder_Code,
+		Impo_Forwarder_sangho,
+		Impo_jukchl_code,
+		Impo_jukchl_name,
+		Impo_teuksong,
+		Impo_teuksong_name,
+		Impo_hanggu_code,
+		Impo_hanggu_name,
+		Impo_unsu_gigwan,
+		Impo_unsu_name,
+		Impo_ship_name,
+		Impo_sungi_code,
+		Impo_pojang_su,
+		Impo_pojang_danwi,
+		Impo_total_jung,
+		Impo_iphang_date,
+		Impo_banip_date,
+		Impo_jangch_buho,
+		Impo_jangch_jangso,
+		Impo_jangch_name,
+		Impo_segwan,
+		Impo_gwa,
+		Impo_fre_won,
+		Impo_fre_money,
+		Impo_ins_input,
+		Impo_ins_yn,
+		UserID,
+		UserNM,
+		first_nm,
+		AddDtTime,
+		addUserId,
+		req_date
+		)
+		VALUES
+		(#{key_no},
+		#{Impo_year},
+		#{Impo_chk_dg},
+		#{Impo_save_gbn},
+		#{Impo_tcano},
+		#{Impo_singoja_sangho},
+		#{Impo_suipja_code},
+		#{Impo_suipja_sangho},
+		#{Impo_SuipSaupNo},
+		#{Impo_suipja_tong},
+		#{Impo_suipja_gubun},
+		#{Impo_daecode},
+		#{Impo_daesangho},
+		#{Impo_napse_code},
+		#{Impo_napse_sangho},
+		#{Impo_napse_tong},
+		#{Impo_napse_name},
+		#{Impo_napse_saup},
+		#{Impo_napse_post},
+		#{Impo_napse_juso},
+		#{Impo_napse_email},
+		#{Impo_damdangja},
+		#{Impo_napse_tel},
+		#{Impo_singo_gubun},
+		#{Impo_plan},
+		#{Impo_gele_gubun},
+		#{Impo_jonglu},
+		#{Impo_wonsanji_yn},
+		#{Impo_jingsu_type},
+		#{Impo_file_no1},
+		#{Impo_file_no2},
+		#{Impo_UseSinGbn},
+		#{Impo_bl_type},
+		#{Impo_chamjo_no},
+		#{Impo_bl_no},
+		#{Impo_bl_gubun},
+		#{Impo_mbl_no},
+		#{Impo_bl_sayu_code},
+		#{Impo_mrn_no},
+		#{Impo_msn},
+		#{Impo_hsn},
+		#{Impo_MngObjYN},
+		#{Impo_unsong_type},
+		#{Impo_unsong_box},
+		#{Impo_Forwarder_Code},
+		#{Impo_Forwarder_sangho},
+		#{Impo_jukchl_code},
+		#{Impo_jukchl_name},
+		#{Impo_teuksong},
+		#{Impo_teuksong_name},
+		#{Impo_hanggu_code},
+		#{Impo_hanggu_name},
+		#{Impo_unsu_gigwan},
+		#{Impo_unsu_name},
+		#{Impo_ship_name},
+		#{Impo_sungi_code},
+		#{Impo_pojang_su},
+		#{Impo_pojang_danwi},
+		#{Impo_total_jung},
+		#{Impo_iphang_date},
+		#{Impo_banip_date},
+		#{Impo_jangch_buho},
+		#{Impo_jangch_jangso},
+		#{Impo_jangch_name},
+		#{Impo_segwan},
+		#{Impo_gwa},
+		#{Impo_fre_won},
+		#{Impo_fre_money},
+		#{Impo_ins_input},
+		#{Impo_ins_yn},
+		#{_userId},
+		#{_userNm},
+		#{_userId},
+		#{AddDtTime},
+		#{_userId},
+		#{req_date}
+		)
+	</insert>
+
+	<select id="selectInvoiceItemList" resultType="map">
+		/* 수입 인보이스 Item 조회 */
+		SELECT *
+		FROM rms.dbo.recv_impo3 a WITH (NOLOCK)
+		WHERE a.key_no = #{key_no}
+		<if test='Impum_jajae_code != null and Impum_jajae_code != ""'>AND a.Impum_jajae_code = #{Impum_jajae_code}</if>
+		<if test='im3_seq != null and im3_seq != ""'>AND a.im3_seq = #{im3_seq}</if>
+		<if test='Imlan_hs != null and Imlan_hs != ""'>AND a.Mhs_code = #{Imlan_hs}</if>
+		order by a.im3_seq asc
+	</select>
+
+	<insert id="insertInvoiceImpo3">
+		/* Invoice Item 입력 */
+		INSERT INTO [rms].[dbo].[recv_impo3]
+		(key_no,
+		im3_seq,
+		Impum_jajae_code,
+		Impum_gukyk1,
+		Impum_gukyk2,
+		Impum_gukyk3,
+		Impum_sungbun1,
+		Impum_sungbun2,
+		Impum_sungbun3,
+		Impum_su,
+		Impum_su_danwi,
+		Impum_danga,
+		Impum_amt,
+		mcount_no,
+		Mhs_code,
+		Mhs_kind,
+		Mhs_rate,
+		Munitprice_current,
+		Morigin1,
+		Morigin2,
+		Morigin3,
+		Morigin4,
+		Morigin5,
+		Mcus_flag,
+		Mcus_gam_code,
+		Myog_flag,
+		fta_yn,
+		invoice_no,
+		invoice_dt,
+		Mnet_wei,
+		wonsanji_no,
+		Mattached3,
+		new_jaje_yn,
+		last_dt,
+		last_nm,
+		Impum_ivno,
+		Mstd_goods,
+		Mger_goods,
+		Msp_code,
+		Msangpyo,
+		MVat_Flag,
+		Mprovisional,
+		minus_yn,
+		sample_yn,
+		Mpurpose_Flag,
+		bun_1,
+		bun_2,
+		bun_3,
+		bun_4,
+		bun_5,
+		bun_6,
+		Impum_lan,
+		Impum_heang,
+		M_neguk_gubun,
+		M_neguk_code,
+		M_neguk_myun,
+		Myog_ok_no
+		)
+		VALUES
+		(#{key_no},
+		#{im3_seq},
+		#{Impum_jajae_code},
+		#{Impum_gukyk1},
+		#{Impum_gukyk2},
+		#{Impum_gukyk3},
+		#{Impum_sungbun1},
+		#{Impum_sungbun2},
+		#{Impum_sungbun3},
+		#{Impum_su},
+		#{Impum_su_danwi},
+		#{Impum_danga},
+		#{Impum_amt},
+		#{mcount_no},
+		#{Mhs_code},
+		#{Mhs_kind},
+		#{Mhs_rate},
+		#{Munitprice_current},
+		#{Morigin1},
+		#{Morigin2},
+		#{Morigin3},
+		#{Morigin4},
+		#{Morigin5},
+		#{Mcus_flag},
+		#{Mcus_gam_code},
+		#{Myog_flag},
+		#{fta_yn},
+		#{invoice_no},
+		#{invoice_dt},
+		#{Mnet_wei},
+		#{wonsanji_no},
+		#{Mattached3},
+		#{new_jaje_yn},
+		#{last_dt},
+		#{_userNm},
+		#{Impum_ivno},
+		#{Mstd_goods},
+		#{Mger_goods},
+		#{Msp_code},
+		#{Msangpyo},
+		#{MVat_Flag},
+		#{Mprovisional},
+		#{minus_yn},
+		#{sample_yn},
+		#{Mpurpose_Flag},
+		#{bun_1},
+		#{bun_2},
+		#{bun_3},
+		#{bun_4},
+		#{bun_5},
+		#{bun_6},
+		'',
+		'',
+		'',
+		'',
+		'',
+		''
+		)
+	</insert>
+
+	<update id="modiInvoiceImpo3">
+		/* Invoice Item 수정 */
+		update [rms].[dbo].[recv_impo3]
+	    set
+		Impum_jajae_code 	= #{Impum_jajae_code},
+		Impum_gukyk1 		= #{Impum_gukyk1},
+		Impum_gukyk2 		= #{Impum_gukyk2},
+		Impum_gukyk3 		= #{Impum_gukyk3},
+		Impum_sungbun1 		= #{Impum_sungbun1},
+		Impum_sungbun2 		= #{Impum_sungbun2},
+		Impum_sungbun3 		= #{Impum_sungbun3},
+		Impum_su 			= #{Impum_su},
+		Impum_su_danwi 		= #{Impum_su_danwi},
+		Impum_danga 		= #{Impum_danga},
+		Impum_amt 			= #{Impum_amt},
+		mcount_no 			= #{mcount_no},
+		Mhs_code 			= #{Mhs_code},
+		Mhs_kind 			= #{Mhs_kind},
+		Mhs_rate 			= #{Mhs_rate},
+		Munitprice_current 	= #{Munitprice_current},
+		Morigin1 			= #{Morigin1},
+		Morigin2 			= #{Morigin2},
+		Morigin3 			= #{Morigin3},
+		Morigin4 			= #{Morigin4},
+		Morigin5 			= #{Morigin5},
+		Mcus_flag 			= #{Mcus_flag},
+		Mcus_gam_code 		= #{Mcus_gam_code},
+		Myog_flag 			= #{Myog_flag},
+		fta_yn 				= #{fta_yn},
+		invoice_no 			= #{invoice_no},
+		invoice_dt 			= #{invoice_dt},
+		last_dt 			= #{last_dt},
+		last_nm 			= #{last_nm}
+		where key_no 		= #{key_no}
+		and im3_seq 		= #{im3_seq}
+	</update>
+
+	<delete id="delInvoiceImpo1">
+		/* 수입 인보이스 삭제 */
+		delete from rms.dbo.recv_impo1
+		where key_no = #{key_no}
+	</delete>
+
+	<delete id="delInvoiceImpo3">
+		/* 수입 인보이스 Item 삭제 */
+		delete from rms.dbo.recv_impo3
+		where key_no = #{key_no}
+		<if test='im3_seq != null and im3_seq != ""'>AND im3_seq = #{im3_seq}</if>
+	</delete>
+
+	<update id="updateInvoiceImpo1">
+		/* Invoice 공통 수정 */
+		update [rms].[dbo].[recv_impo1]
+		set
+		Impo_chk_dg				= #{Impo_chk_dg},
+		Impo_save_gbn 			= #{Impo_save_gbn},
+		Impo_tcano 				= #{Impo_tcano},
+		Impo_singoja_sangho 	= #{Impo_singoja_sangho},
+		Impo_suipja_code 		= #{Impo_suipja_code},
+		Impo_suipja_sangho 		= #{Impo_suipja_sangho},
+		Impo_SuipSaupNo 		= #{Impo_SuipSaupNo},
+		Impo_suipja_tong	 	= #{Impo_suipja_tong},
+		Impo_suipja_gubun 		= #{Impo_suipja_gubun},
+		Impo_daecode 			= #{Impo_daecode},
+		Impo_daesangho 			= #{Impo_daesangho},
+		Impo_napse_code 		= #{Impo_napse_code},
+		Impo_napse_sangho 		= #{Impo_napse_sangho},
+		Impo_napse_tong 		= #{Impo_napse_tong},
+		Impo_napse_name		 	= #{Impo_napse_name},
+		Impo_napse_saup 		= #{Impo_napse_saup},
+		Impo_napse_post 		= #{Impo_napse_post},
+		Impo_napse_juso 		= #{Impo_napse_juso},
+		Impo_napse_email 		= #{Impo_napse_email},
+		Impo_damdangja 			= #{Impo_damdangja},
+		Impo_napse_tel 			= #{Impo_napse_tel},
+		Impo_singo_gubun 		= #{Impo_singo_gubun},
+		Impo_plan 				= #{Impo_plan},
+		Impo_gele_gubun 		= #{Impo_gele_gubun},
+		Impo_jonglu 			= #{Impo_jonglu},
+		Impo_wonsanji_yn 		= #{Impo_wonsanji_yn},
+		Impo_jingsu_type 		= #{Impo_jingsu_type},
+		Impo_file_no1 			= #{Impo_file_no1},
+		Impo_file_no2 			= #{Impo_file_no2},
+		Impo_UseSinGbn 			= #{Impo_UseSinGbn},
+		Impo_bl_type 			= #{Impo_bl_type},
+		Impo_chamjo_no 			= #{Impo_chamjo_no},
+		Impo_bl_no 				= #{Impo_bl_no},
+		Impo_bl_gubun 			= #{Impo_bl_gubun},
+		Impo_mbl_no 			= #{Impo_mbl_no},
+		Impo_bl_sayu_code 		= #{Impo_bl_sayu_code},
+		Impo_mrn_no 			= #{Impo_mrn_no},
+		Impo_msn 				= #{Impo_msn},
+		Impo_hsn 				= #{Impo_hsn},
+		Impo_MngObjYN 			= #{Impo_MngObjYN},
+		Impo_unsong_type 		= #{Impo_unsong_type},
+		Impo_unsong_box 		= #{Impo_unsong_box},
+		Impo_Forwarder_Code 	= #{Impo_Forwarder_Code},
+		Impo_Forwarder_sangho 	= #{Impo_Forwarder_sangho},
+		Impo_jukchl_code 		= #{Impo_jukchl_code},
+		Impo_jukchl_name 		= #{Impo_jukchl_name},
+		Impo_teuksong 			= #{Impo_teuksong},
+		Impo_teuksong_name 		= #{Impo_teuksong_name},
+		Impo_hanggu_code 		= #{Impo_hanggu_code},
+		Impo_hanggu_name 		= #{Impo_hanggu_name},
+		Impo_unsu_gigwan 		= #{Impo_unsu_gigwan},
+		Impo_unsu_name 			= #{Impo_unsu_name},
+		Impo_ship_name 			= #{Impo_ship_name},
+		Impo_sungi_code 		= #{Impo_sungi_code},
+		Impo_pojang_su 			= #{Impo_pojang_su},
+		Impo_pojang_danwi 		= #{Impo_pojang_danwi},
+		Impo_total_jung 		= #{Impo_total_jung},
+		Impo_iphang_date 		= #{Impo_iphang_date},
+		Impo_banip_date 		= #{Impo_banip_date},
+		Impo_jangch_buho 		= #{Impo_jangch_buho},
+		Impo_jangch_jangso 		= #{Impo_jangch_jangso},
+		Impo_jangch_name 		= #{Impo_jangch_name},
+		Impo_segwan 			= #{Impo_segwan},
+		Impo_gwa 				= #{Impo_gwa},
+		Impo_fre_won 			= #{Impo_fre_won},
+		Impo_fre_money 			= #{Impo_fre_money},
+		Impo_ins_input 			= #{Impo_ins_input},
+		Impo_ins_yn 			= #{Impo_ins_yn},
+		EditDtTime 				= #{EditDtTime},
+		editUserId 				= #{_userId},
+		req_date 				= #{req_date}
+		where key_no 			= #{key_no}
+	</update>
+
+	<update id="updateInvoiceImpo1Sub">
+		/* Invoice 공통 수정 */
+		update [rms].[dbo].[recv_impo1]
+		set
+		Impo_save_gbn 			= #{Impo_save_gbn},
+		Impo_gonggub 			= #{Impo_gonggub},
+		Impo_gonggub_buho 		= #{Impo_gonggub_buho},
+		Impo_gonggub_sangho 	= #{Impo_gonggub_sangho},
+		Impo_gyelje 			= #{Impo_gyelje},
+		Impo_gakyk_yn 			= #{Impo_gakyk_yn},
+		Impo_indo_jogun 		= #{Impo_indo_jogun},
+		Impo_gyelje_money 		= #{Impo_gyelje_money},
+		Impo_gyelje_input 		= #{Impo_gyelje_input},
+		Impo_plus_yul_gubun 	= #{Impo_plus_yul_gubun},
+		Impo_plus_money 		= #{Impo_plus_money},
+		Impo_plus 				= #{Impo_plus},
+		Impo_minus_yul_gubun 	= #{Impo_minus_yul_gubun},
+		Impo_minus_money 		= #{Impo_minus_money},
+		Impo_minus 				= #{Impo_minus},
+		EditDtTime 				= #{EditDtTime},
+		editUserId 				= #{_userId}
+		where key_no 			= #{key_no}
+	</update>
+
+	<update id="updateInvoiceImpo1Jung">
+		/* Invoice 순중량 수정 */
+		update [rms].[dbo].[recv_impo1]
+		set
+		im_tot_net_wei 	= #{im_tot_net_wei},
+		EditDtTime 		= #{last_dt},
+		editUserId 		= #{_userNm}
+		where key_no 	= #{key_no}
+	</update>
+
+	<update id="updateInvoiceImpo1ImpoKey">
+		/* Invoice ImpoKey 수정 */
+		update [rms].[dbo].[recv_impo1]
+		set
+		Impo_key 	 	= #{impo_key},
+		Impo_jechl_no 	= #{Impo_jechl_no},
+		Impo_singo_no 	= #{Impo_singo_no},
+		Impo_singo_date = #{currentDate1}
+		where key_no = #{key_no}
+	</update>
+
+	<select id="selectInvoiceItemGroupByList1" resultType="map">
+		/* 수입 인보이스 란분류  세번작은순 FTA체크해제*/
+		select a.mhs_code, a.Mhs_kind, a.Morigin1, a.Morigin2, a.Morigin3, a.Morigin4, a.Mcus_flag, SUM(a.Impum_su) as 'su' , SUM(a.Impum_amt) as 'amt', count(a.mhs_code) as 'gukyk',
+		(select SUM(Impum_su) from rms.dbo.recv_impo3
+		where key_no = #{key_no}) as 'suTotal',
+		(select SUM(Impum_amt) from rms.dbo.recv_impo3
+		where key_no = #{key_no}) as 'amtTotal',
+		b.im_tot_net_wei
+		from rms.dbo.recv_impo3 a, rms.dbo.recv_impo1 b
+		where a.key_no = b.key_no
+		and a.key_no = #{key_no}
+		group by a.mhs_code, a.Mhs_kind, a.Morigin1, a.Morigin2, a.Morigin3, a.Morigin4, a.Mcus_flag,b.im_tot_net_wei
+		order by mhs_code
+	</select>
+
+	<select id="selectInvoiceItemGroupByList2" resultType="map">
+		/* 수입 인보이스 란분류  세번작은순 FTA체크*/
+		select a.mhs_code, a.Mhs_kind, a.Morigin1, a.Morigin2, a.Morigin3, a.Morigin4, a.Mcus_flag, SUM(a.Impum_su) as 'su' , SUM(a.Impum_amt) as 'amt', count(a.mhs_code) as 'gukyk',
+		(select SUM(Impum_su) from rms.dbo.recv_impo3
+		where key_no = #{key_no}) as 'suTotal',
+		(select SUM(Impum_amt) from rms.dbo.recv_impo3
+		where key_no = #{key_no}) as 'amtTotal',
+		b.im_tot_net_wei
+		from rms.dbo.recv_impo3 a, rms.dbo.recv_impo1 b
+		where a.key_no = b.key_no
+		and a.key_no = #{key_no}
+		group by a.mhs_code, a.Mhs_kind, a.Morigin1, a.Morigin2, a.Morigin3, a.Morigin4, a.Mcus_flag,b.im_tot_net_wei
+		order by mhs_code, (case when Morigin1 like 'F%' then 0 else 1 end)
+	</select>
+
+	<select id="selectInvoiceItemGroupByList3" resultType="map">
+		/* 수입 인보이스 란분류  세번큰순 FTA체크해제*/
+		select a.mhs_code, a.Mhs_kind, a.Morigin1, a.Morigin2, a.Morigin3, a.Morigin4, a.Mcus_flag, SUM(a.Impum_su) as 'su' , SUM(a.Impum_amt) as 'amt', count(a.mhs_code) as 'gukyk',
+		(select SUM(Impum_su) from rms.dbo.recv_impo3
+		where key_no = #{key_no}) as 'suTotal',
+		(select SUM(Impum_amt) from rms.dbo.recv_impo3
+		where key_no = #{key_no}) as 'amtTotal',
+		b.im_tot_net_wei
+		from rms.dbo.recv_impo3 a, rms.dbo.recv_impo1 b
+		where a.key_no = b.key_no
+		and a.key_no = #{key_no}
+		group by a.mhs_code, a.Mhs_kind, a.Morigin1, a.Morigin2, a.Morigin3, a.Morigin4, a.Mcus_flag,b.im_tot_net_wei
+		order by mhs_code desc
+	</select>
+
+	<select id="selectInvoiceItemGroupByList4" resultType="map">
+		/* 수입 인보이스 란분류  세번큰순 FTA체크*/
+		select a.mhs_code, a.Mhs_kind, a.Morigin1, a.Morigin2, a.Morigin3, a.Morigin4, a.Mcus_flag, SUM(a.Impum_su) as 'su' , SUM(a.Impum_amt) as 'amt', count(a.mhs_code) as 'gukyk',
+		(select SUM(Impum_su) from rms.dbo.recv_impo3
+		where key_no = #{key_no}) as 'suTotal',
+		(select SUM(Impum_amt) from rms.dbo.recv_impo3
+		where key_no = #{key_no}) as 'amtTotal',
+		b.im_tot_net_wei
+		from rms.dbo.recv_impo3 a, rms.dbo.recv_impo1 b
+		where a.key_no = b.key_no
+		and a.key_no = #{key_no}
+		group by a.mhs_code, a.Mhs_kind, a.Morigin1, a.Morigin2, a.Morigin3, a.Morigin4, a.Mcus_flag,b.im_tot_net_wei
+		order by mhs_code desc, (case when Morigin1 like 'F%' then 0 else 1 end)
+	</select>
+
+	<select id="selectInvoiceLanList" resultType="map">
+		/* 수입 인보이스 란분류  리스트*/
+		select key_no,
+		Imlan_jechl_lan,
+		Imlan_hs,
+		Imlan_seyul_gubun,
+		Imlan_cost,
+		Imlan_jung,
+		Imlan_mulryang,
+		Imlan_wonsanji_code,
+		im2_qty,
+		Im2_tot_amt,
+		Imlan_gwan_seyula,
+		Imlan_gurae_pum,
+		Imlan_model_code,
+		Imlan_model,
+		Imlan_gwan_gam_gubun,
+		last_dt,
+		last_nm
+		from rms.dbo.recv_impo2
+		where key_no = #{key_no}
+	</select>
+
+	<delete id="delInvoiceLan">
+		/* 수입 인보이스 란 삭제 */
+		delete from rms.dbo.recv_impo2
+		where key_no = #{key_no}
+	</delete>
+
+	<insert id="insertInvoiceLan">
+		/* Invoice 란 입력 */
+		INSERT INTO [rms].[dbo].[recv_impo2]
+		(key_no,
+		Imlan_jechl_lan,
+		Imlan_hs,
+		Imlan_seyul_gubun,
+		Imlan_cost,
+		Imlan_jung,
+		Imlan_jung_danwi,
+		Imlan_su,
+		Imlan_wonsanji_code,
+		Imlan_wonsanji_name,
+		Imlan_popum,
+		Imlan_gurae_pum,
+		Imlan_gwan_seyula,
+		Imlan_gwan_seyulc,
+		Imlan_su_danwi,
+		im2_qty,
+		Im2_tot_amt,
+		Imlan_mulryang,
+		Imlan_mulryang_danwi,
+		Imlan_model_code,
+		Imlan_model,
+		Imlan_gwan_hs,
+		Imlan_gwan_gele,
+		Imlan_gwan_gumsa,
+		Imlan_plus_yul_gubun,
+		Imlan_plus_money,
+		Imlan_minus_yul_gubun,
+		Imlan_minus_money,
+		Imlan_wonsanji_dcsn_base,
+		Imlan_wonsanji_mark,
+		Imlan_wonsanji_bang,
+		Imlan_oExemptSayuCd,
+		imlan_gwan_gubun,
+		Imlan_Attachi,
+		Imlan_gukyk_cnt,
+		last_dt,
+		last_nm
+		)
+		VALUES
+		(#{key_no},
+		#{jechlLan},
+		#{Imlan_hs},
+		#{Imlan_seyul_gubun},
+		#{Imlan_cost},
+		#{Imlan_jung},
+		#{Imlan_jung_danwi},
+		#{Imlan_su},
+		#{Imlan_wonsanji_code},
+		#{Imlan_wonsanji_name},
+		#{Imlan_popum},
+		#{Imlan_gurae_pum},
+		#{Imlan_gwan_seyula},
+		#{Imlan_gwan_seyulc},
+		#{Imlan_su_danwi},
+		#{Imlan_su},
+		#{Imlan_cost},
+		#{Imlan_mulryang},
+		#{Imlan_mulryang_danwi},
+		#{Imlan_model_code},
+		#{Imlan_model},
+		#{Imlan_gwan_hs},
+		#{Imlan_gwan_gele},
+		#{Imlan_gwan_gumsa},
+		#{Imlan_plus_yul_gubun},
+		#{Imlan_plus_money},
+		#{Imlan_minus_yul_gubun},
+		#{Imlan_minus_money},
+		#{Imlan_wonsanji_dcsn_base},
+		#{Imlan_wonsanji_mark},
+		#{Imlan_wonsanji_bang},
+		#{Imlan_oExemptSayuCd},
+		#{imlan_gwan_gubun},
+		#{Imlan_Attachi},
+		#{Imlan_gukyk_cnt},
+		#{last_dt},
+		#{_userNm}
+		)
+	</insert>
+
+	<insert id="insertInvoiceTotalImpo1List">
+		/* Invoice impo1 입력 */
+		insert into ${_defaultDB}.kcba.impo1
+		select
+		#{impo_key},
+		#{impo_year},
+		#{Impo_jechl_no},
+		Impo_chk_dg,
+		Impo_tcano,
+		'IM',
+		'N',
+		Impo_file_no1,
+		Impo_file_no2,
+		Impo_singoja_sangho,
+		Impo_suipja_code,
+		Impo_suipja_sangho,
+		Impo_suipja_muyk,
+		Impo_suipja_gubun,
+		Impo_napse_code,
+		Impo_napse_sangho,
+		SUBSTRING(Impo_napse_name,0,6),
+		Impo_napse_post,
+		Impo_napse_juso,
+		Impo_napse_tong,
+		'04',
+		Impo_napse_saup,
+		Impo_upja_code,
+		Impo_upja_sangho,
+		Impo_gonggub,
+		Impo_gonggub_sangho,
+		Impo_gonggub_buho,
+		Impo_segwan,
+		Impo_gwa,
+		#{Impo_singo_no},
+		Impo_plan,
+		Impo_singo_gubun,
+		req_date,
+		Impo_gele_gubun,
+		Impo_jonglu,
+		Impo_wonsanji_yn,
+		Impo_gakyk_yn,
+		Impo_gyelje,
+		Impo_iphang_date,
+		Impo_hanggu_code,
+		Impo_hanggu_name,
+		Impo_hanggu_gubun,
+		Impo_ship_name,
+		Impo_mbl_no,
+		Impo_unsu_gigwan,
+		Impo_unsu_name,
+		Impo_sungi_code,
+		Impo_ship_name,
+		Impo_unsong_type,
+		Impo_unsong_box,
+		Impo_jukchl_code,
+		Impo_jukchl_name,
+		Impo_bl_no,
+		Impo_bl_gubun,
+		SUBSTRING(Impo_banip_date,0,9),
+		Impo_jangch_buho,
+		Impo_jangch_name,
+		Impo_jangch_jangso,
+		Impo_jangch_gwa,
+		Impo_mrn_no,
+		Impo_lan,
+		Impo_jingsu_type,
+		Impo_napbu_date1,
+		Impo_napbu_date2,
+		Impo_napbu_no,
+		Impo_damdang_no,
+		Impo_damdang_name,
+		Impo_indo_jogun,
+		Impo_gyelje_money,
+		Impo_gyelje_input,
+		Impo_usd_exch,
+		Impo_exch_yul,
+		Impo_ins_yn,
+		Impo_ins_total,
+		Impo_ins_singo,
+		Impo_fre_money,
+		Impo_fre_exch,
+		Impo_fre,
+		Impo_fre_won,
+		Impo_ins_input,
+		Impo_ins_last,
+		Impo_plus_yul_gubun,
+		Impo_plus_yul,
+		Impo_plus_money,
+		Impo_plus_exch,
+		Impo_plus,
+		Impo_plus_won,
+		Impo_plus_total,
+		Impo_minus_yul_gubun,
+		Impo_minus_yul,
+		Impo_minus_money,
+		Impo_minus_exch,
+		Impo_minus,
+		Impo_minus_won,
+		Impo_minus_total,
+		Impo_charge_money,
+		Impo_charge_exch,
+		Impo_charge,
+		Impo_charge_won,
+		Impo_pojang_su,
+		Impo_pojang_danwi,
+		Impo_total_jung,
+		'KG',
+		Impo_cost,
+		Impo_gamjungga_bf,
+		Impo_rate,
+		Impo_cif_total_won,
+		Impo_cif_total_usd,
+		Impo_gwan_tax,
+		Impo_teuk_tax,
+		Impo_oil_tax,
+		Impo_ju_tax,
+		Impo_neguk_tax,
+		Impo_edu_tax,
+		Impo_nong_tax,
+		Impo_vat_gwapyo,
+		Impo_gwase_vat_gwapyo,
+		Impo_myunse_vat_gwapyo,
+		Impo_vat_tax,
+		Impo_gasan_tax,
+		Impo_gita_tax,
+		Impo_total_tax,
+		Impo_teuksong,
+		Impo_teuksong_name,
+		Impo_chamjo_no,
+		Impo_gije,
+		Impo_ok_date,
+		Impo_jubsu_date,
+		Impo_bl_type,
+		'AB',
+		'9',
+		Impo_gasan_ilsu,
+		Impo_gasangum_myunje,
+		Impo_send_result,
+		Impo_receive_result,
+		Impo_jung_chasu,
+		'0',
+		Impo_damdangja,
+		Impo_jangchi_cnt,
+		Impo_webserver,
+		Impo_daecode,
+		Impo_daesangho,
+		Impo_DaeSaupNo,
+		Impo_SuipSaupNo,
+		Impo_suip_Upte,
+		Impo_suip_jongMok,
+		Impo_Napse_Upte,
+		Impo_Napse_jongMok,
+		Log_type,
+		Event_type,
+		Fax_send,
+		SCAN_LINK,
+		Impo_bl_sayu_code,
+		Impo_bl_sayu,
+		userno,
+		impo_cs,
+		Impo_misingo_tax,
+		Impo_misingo_tax_yn,
+		Impo_singoja_name,
+		'Y',
+		Impo_InlandFre,
+		Impo_InlandFre_Exch,
+		Impo_InlandFre_Money,
+		'NO',
+		Impo_rsltGakyk_Date,
+		Impo_5SMRegNo,
+		Impo_singoja_tel,
+		Impo_singoja_email,
+		Impo_napse_tel,
+		Impo_napse_email,
+		Impo_Forwarder_Code,
+		Impo_Forwarder_sangho,
+		Impo_suipja_tong,
+		mail_send,
+		impo_GoldAccGbn,
+		SMSSend,
+		lg_down_dt,
+		lg_up_dt,
+		lg_im_up,
+		UserID,
+		UserNM,
+		AddDtTime,
+		EditDtTime,
+		Impo_UseSinGbn,
+		Impo_UseSinDt,
+		Impo_NapseComNo,
+		impo_bose_sendgbn,
+		impo_bose_recvgbn,
+		AttachImageYN,
+		0,
+		'',
+		'',
+		'',
+		IMPO_SINGOJA,
+		IMPO_NAPSE_ROADCD,
+		IMPO_NAPSE_BUILDMNGNO,
+		IMPO_NAPSE_JUSOD,
+		IMPO_NJUNG_DANWI,
+		IMPO_SINGOJA_TELD,
+		IMPO_OK_DTTM,
+		PayDelayYN,
+		MultiSaveGbn,
+		ReviewYN,
+		RvVerify,
+		impo_result_AttchDocGbn
+		from rms.dbo.recv_impo1
+		where key_no = #{key_no}
+	</insert>
+
+	<update id="updateInvoiceImpo2ImpoKey">
+		/* Invoice impo2 ImpoKey 수정 */
+		update [rms].[dbo].[recv_impo2]
+		set
+		Imlan_key 	 = #{impo_key}
+		where key_no = #{key_no}
+	</update>
+
+	<insert id="insertInvoiceTotalImpo2List">
+		/* Invoice 란 입력 */
+		insert into ${_defaultDB}.kcba.impo2
+		select
+		#{impo_key},
+		Imlan_jechl_lan,
+		Imlan_hs,
+		Imlan_whan_jepum,
+		Imlan_seyul_gubun,
+		Imlan_seyul_prn,
+		Imlan_popum,
+		Imlan_gurae_pum,
+		Imlan_model_code,
+		Imlan_model,
+		Imlan_gwan_gele,
+		Imlan_gwan_hs,
+		Imlan_gwan_gumsa,
+		Imlan_gwan_gije1,
+		Imlan_gwan_gije2,
+		Imlan_gwan_gije3,
+		Imlan_gwan_gije4,
+		Imlan_gije1,
+		Imlan_gije2,
+		Imlan_gije3,
+		Imlan_gije4,
+		Imlan_gije5,
+		Imlan_gije6,
+		Imlan_gije7,
+		Imlan_gije8,
+		Imlan_gije9,
+		Imlan_gije10,
+		Imlan_Attachi,
+		Imlan_gukyk_cnt,
+		Imlan_yogun_cnt,
+		Imlan_cost,
+		Imlan_fre_won,
+		Imlan_ins_won,
+		Imlan_plus_yul_gubun,
+		Imlan_plus_yul,
+		Imlan_plus_money,
+		Imlan_plus_exch,
+		Imlan_plus,
+		Imlan_plus_won,
+		Imlan_plus_div,
+		Imlan_minus_yul_gubun,
+		Imlan_minus_yul,
+		Imlan_minus_money,
+		Imlan_minus_exch,
+		Imlan_minus,
+		Imlan_minus_won,
+		Imlan_minus_div,
+		Imlan_charge_won,
+		Imlan_gwan_gubun,
+		Imlan_gwan_gam_gubun,
+		Imlan_gwan_gam_buho,
+		Imlan_gwan_bunnap_cnt,
+		Imlan_gwan_gyeng_yul,
+		Imlan_gwan_seyula,
+		Imlan_gwan_seyulb,
+		Imlan_gwan_danga,
+		Imlan_gwan_te1,
+		Imlan_gwan_te2,
+		Imlan_min_amt,
+		Imlan_total_min,
+		Imlan_neguk_gubun,
+		Imlan_neguk_code,
+		Imlan_neguk_myun,
+		Imlan_neguk_seyul,
+		Imlan_neguk_jong,
+		Imlan_edu_yn,
+		Imlan_teuk_gijun1,
+		Imlan_teuk_cnt,
+		Imlan_dosu,
+		Imlan_ju_su,
+		Imlan_nong_gubun,
+		Imlan_vat_gubun,
+		Imlan_vat_gam_buho,
+		Imlan_vat_gyeng_yul,
+		Imlan_cif_won,
+		Imlan_cif_usd,
+		Imlan_gyeng_gam,
+		Imlan_gwanse_gam,
+		Imlan_gwan_case,
+		Imlan_gwan_seyulc,
+		Imlan_special,
+		Imlan_san_gwan,
+		Imlan_myun_gwan,
+		Imlan_gyeng_gwan,
+		Imlan_gwan_tax,
+		Imlan_teuk_gijun2,
+		Imlan_neguk_gwapyo,
+		Imlan_san_neguk,
+		Imlan_myun_neguk,
+		Imlan_neguk_tax,
+		Imlan_edu_seyul,
+		Imlan_san_edu,
+		Imlan_myun_edu,
+		Imlan_edu_tax,
+		Imlan_gwapyo_nong1,
+		Imlan_seyul_nong1,
+		Imlan_nong_tax1,
+		Imlan_gwapyo_nong2,
+		Imlan_seyul_nong2,
+		Imlan_nong_tax2,
+		Imlan_gwapyo_nong,
+		Imlan_seyul_nong,
+		Imlan_nong_tax,
+		Imlan_tot_gwapyo,
+		Imlan_gwapyo_vat,
+		Imlan_myun_gwapyo,
+		Imlan_san_vat,
+		Imlan_myun_vat,
+		Imlan_vat_tax,
+		Imlan_total_tax,
+		Imlan_calc_gubun,
+		Imlan_calc_guen,
+		Imlan_jung,
+		Imlan_jung_danwi,
+		Imlan_su,
+		Imlan_su_danwi,
+		Imlan_mulryang,
+		Imlan_mulryang_danwi,
+		Imlan_wonsanji_code,
+		Imlan_wonsanji_name,
+		Imlan_cs,
+		Imlan_cs_gumsa1,
+		Imlan_cs_gumsa2,
+		Imlan_etc,
+		Imlan_sahu_gigwan1,
+		Imlan_sahu_gigwan2,
+		Imlan_sahu_gigwan3,
+		Imlan_wonsanji_mark,
+		Imlan_wonsanji_bang,
+		Imlan_wonsanji_type,
+		Imlan_wonsanji_no,
+		Imlan_wonsanji_date,
+		Imlan_wonsanji_cntry,
+		Imlan_wonsanji_gigwan,
+		imlan_modify_gbn,
+		Imlan_wonsanji_base,
+		Imlan_wonsanji_issue_loc,
+		Imlan_wonsanji_issue_clr,
+		Imlan_wonsanji_dcsn_base,
+		Imlan_GoodsOfficeDocNo,
+		imlan_wonsanji_div_yn,
+		imlan_wonsanji_tot_qty,
+		imlan_wonsanji_use_qty,
+		imlan_wonsanji_tot_wght,
+		imlan_wonsanji_use_wght,
+		imlan_fta_obj,
+		Imlan_GoodsCode,
+		Imlan_SpecCode,
+		Imlan_StdGoodsCode,
+		Imlan_NotYogCnt,
+		Imlan_oExemptSayuCd,
+		Imlan_JuMyunCd,
+		imlan_JepumJajaeGbn,
+		imlan_JepumLanNo,
+		IMLAN_CHECKNEEDGBN,
+		IMLAN_GWANSE_GIJUN,
+		Imlan_neguk_seyulN,
+		DELFLAG,
+		IMLAN_ELASTICCD,
+		IMLAN_ELASTIC_SEYULa,
+		IMLAN_ELASTIC_SEYULb,
+		IMLAN_ELASTIC_SEYUL,
+		IMLAN_YOGCHK
+		from rms.dbo.recv_impo2
+		where key_no = #{key_no}
+	</insert>
+
+	<update id="updateInvoiceImpo3ImpoKey">
+		/* Invoice impo3 ImpoKey 수정 */
+		update [rms].[dbo].[recv_impo3]
+		set
+		Impum_key 	 	= #{impo_key},
+		Impum_lan 		= #{Impum_lan},
+		Impum_heang 	= #{Impum_heang}
+		where key_no 	= #{key_no}
+		and im3_seq 	= #{im3_seq}
+	</update>
+
+	<insert id="insertInvoiceTotalImpo3List">
+		/* Invoice 행 입력 */
+		insert into ${_defaultDB}.kcba.impo3
+		select
+		#{impo_key},
+		#{Impum_lan},
+		#{Impum_heang},
+		Impum_jajae_code,
+		Impum_gukyk1,
+		Impum_gukyk2,
+		Impum_gukyk3,
+		Impum_sungbun1,
+		Impum_sungbun2,
+		Impum_sungbun3,
+		Impum_su,
+		Impum_su_danwi,
+		Impum_danga,
+		Impum_amt,
+		C31,
+		Impum_ivno,
+		impum_contactno,
+		impum_chamjo_no,
+		IMPUM_REPEATREGNO,
+		JJGBN,
+		DELFLAG
+		from rms.dbo.recv_impo3
+		where key_no = #{key_no}
+		and im3_seq  = #{im3_seq}
+	</insert>
+
+	<select id="selectSysCodeList" resultType="map">
+		/* 시스템코드 조회*/
+		select CD_DESC_ENG from soo_MST.dbo.TBR_SYS_CODE
+		where MCD = #{mcd}
+		and CD = #{cd}
+	</select>
+
+	<select id="selectHsCodeList" resultType="map">
+		/* hs코드 조회*/
+		select Hsbuho_seyul, Hsbuho_popum, Hsbuho_guraepum, Hsbuho_jung, Hsbuho_su
+		from ncustoms.kcba.dhsbuho
+		where Hsbuho_code = #{hsCode}
+		  and Hsbuho_gwanse_gbn = #{kind}
+	</select>
+
+	<select id="selectLanItemList" resultType="map">
+		/* 란에 입력될 item 조회*/
+		select Msp_code, Msangpyo, Mcus_entry1, Mcus_entry2, Mcus_entry3, Mdraw_unit
+		from CPS.[dbo].[MAAA100]
+		where Mcount_no in (
+		select top 1 mcount_no from rms.dbo.recv_impo3
+		where key_no = #{key_no}
+		and Mhs_code = #{hsCode}
+		order by im3_seq)
+	</select>
+
+	<update id="modiInvoiceImpo2">
+		/* Invoice impo2 중량 수정 */
+		update [rms].[dbo].[recv_impo2]
+		set
+		Imlan_jung 	 		= #{Imlan_jung}
+		where key_no 		= #{key_no}
+		and Imlan_jechl_lan = #{Imlan_jechl_lan}
+	</update>
+
+	<select id="selectDnoList" resultType="map">
+		/* 수입신고번호 제출번호 가져오기*/
+		select RIGHT('0000' + CAST(RIGHT(ISNULL(MAX(NO_IMPO), 0), 4) + 1 AS VARCHAR), 4) as 'NO_IMPO'
+		from ${_defaultDB}.kcba.MAINNO
+		where NO_YEAR = #{impo_year}
+		and NO_MM = #{currentMonth}
+	</select>
+
+	<update id="updateDnoList">
+		/* 수입신고번호 제출번호 수정 */
+		update ${_defaultDB}.kcba.MAINNO
+		set
+		NO_IMPO 	  	= #{NO_IMPO}
+		where NO_YEAR 	= #{impo_year}
+		and NO_MM 		= #{currentMonth}
+	</update>
+
+	<select id="selectDnoList1" resultType="map">
+		/* 수입신고번호 제출번호 가져오기*/
+		select RIGHT('000000' + CAST(RIGHT(ISNULL(MAX(No_impo), 0), 6) + 1 AS VARCHAR), 6) as 'No_impo'
+		from ${_defaultDB}.kcba.dno
+		WHERE No_year = #{impo_year}
+		and No_user = #{dno}
+	</select>
+
+	<update id="updateDnoList1">
+		/* 수입신고번호 제출번호 수정 */
+		update ${_defaultDB}.kcba.dno
+		set
+		No_impo 	  	= #{NO_IMPO}
+		WHERE No_year 	= #{impo_year}
+		and No_user 	= #{dno}
+	</update>
+	
+	<select id="selectTradeList" resultType="map">
+		/* 자재코드 통관내역*/
+		SELECT top 10 datas.*
+		FROM (
+		select ImKey as 'Impo_key', ImRecvResult as 'Impo_receive_result', ImCsType as 'Impo_cs', ImNapSangho as 'Impo_napse_sangho', ImBlNo as 'Impo_bl_no', 
+				ImMblNo as 'Impo_mbl_no', ImSingoNo as 'Impo_singo_no',
+				ImIphangDt as 'Impo_iphang_date', ImBanipDtm as 'Impo_banip_date', ImSingoDt as 'Impo_singo_date', ImOkDtm as 'Impo_Ok_date', ImJubsuDtm as 'Impo_jubsu_date',
+				ImFileNo1 as 'Impo_file_no1', ImGongSangho as 'Impo_gonggub_sangho', ImJukchulNm as 'Impo_jukchl_name', ImHangguNm as 'Impo_hanggu_name', 
+				ImJangchiNm as 'Impo_jangch_name', ImPacSu as 'Impo_pojang_su', ImJungTotal as 'Impo_total_jung', ImForwarderSangho as 'Impo_Forwarder_sangho', ImSingoGbn as 'impo_singo_gubun',
+				ImPayTotal as 'Impo_Gyelje_Input', ImTotalTax as 'Impo_total_tax', ImFreWon as 'Impo_fre_won', ImCifWon as 'Impo_cif_total_won', ImCifUsd as 'Impo_cif_total_usd', 
+				ImTax as 'Impo_gwan_tax', ImVatTotal as 'Impo_vat_tax',	(ImTotalTax-(ImTax+ImVatTotal)) AS 'Impo_etc_tax', ImSegwan as 'impo_segwan', 'ncustoms' as 'defaultDb'
+		from CPS.dbo.IMAC100
+		where ImKey in (
+		select ImKey from CPS.dbo.IMAC110
+		where (ImPumModelCode = #{mmodelCode} or ImGukyk1 = #{mmodelCode}))
+		and ImNapSaup = #{mcoCom}
+		) datas
+		order by datas.Impo_iphang_date desc
+	</select>
+
+	<select id="selectTradeList_back" resultType="map">
+		/* 엔컴 자재코드 통관내역*/
+		SELECT top 10 datas.*
+		FROM (
+		select Impo_key, Impo_receive_result, Impo_cs, Impo_napse_sangho, Impo_bl_no, Impo_mbl_no, Impo_singo_no,
+				Impo_iphang_date, Impo_banip_date, Impo_singo_date, Impo_Ok_date, Impo_jubsu_date,
+				Impo_file_no1, Impo_gonggub_sangho, Impo_jukchl_name, Impo_hanggu_name, Impo_jangch_name,
+				Impo_pojang_su, Impo_total_jung, Impo_Forwarder_sangho, impo_singo_gubun,
+				Impo_Gyelje_Input, Impo_total_tax, Impo_fre_won, Impo_cif_total_won, Impo_cif_total_usd, Impo_gwan_tax, Impo_vat_tax,
+				(Impo_total_tax-(Impo_gwan_tax+Impo_vat_tax)) AS 'Impo_etc_tax', impo_segwan, 'ncustoms' as 'defaultDb'
+		from ncustoms.kcba.Impo1
+		where Impo_key in (
+		select Impum_key from ncustoms.kcba.Impo3
+		where (Impum_jajae_code = #{mmodelCode} or Impum_gukyk1 = #{mmodelCode}))
+		and Impo_napse_saup = #{mcoCom}
+		union all
+		select Impo_key, Impo_receive_result, Impo_cs, Impo_napse_sangho, Impo_bl_no, Impo_mbl_no, Impo_singo_no,
+				Impo_iphang_date, Impo_banip_date, Impo_singo_date, Impo_Ok_date, Impo_jubsu_date,
+				Impo_file_no1, Impo_gonggub_sangho, Impo_jukchl_name, Impo_hanggu_name, Impo_jangch_name,
+				Impo_pojang_su, Impo_total_jung, Impo_Forwarder_sangho, impo_singo_gubun,
+				Impo_Gyelje_Input, Impo_total_tax, Impo_fre_won, Impo_cif_total_won, Impo_cif_total_usd, Impo_gwan_tax, Impo_vat_tax,
+				(Impo_total_tax-(Impo_gwan_tax+Impo_vat_tax)) AS 'Impo_etc_tax', impo_segwan, 'ncustoms_bs' as 'defaultDb'
+		from ncustoms_bs.kcba.Impo1
+		where Impo_key in (
+		select Impum_key from ncustoms_bs.kcba.Impo3
+		where (Impum_jajae_code = #{mmodelCode} or Impum_gukyk1 = #{mmodelCode}))
+		and Impo_napse_saup = #{mcoCom}
+		union all
+		select Impo_key, Impo_receive_result, Impo_cs, Impo_napse_sangho, Impo_bl_no, Impo_mbl_no, Impo_singo_no,
+				Impo_iphang_date, Impo_banip_date, Impo_singo_date, Impo_Ok_date, Impo_jubsu_date,
+				Impo_file_no1, Impo_gonggub_sangho, Impo_jukchl_name, Impo_hanggu_name, Impo_jangch_name,
+				Impo_pojang_su, Impo_total_jung, Impo_Forwarder_sangho, impo_singo_gubun,
+				Impo_Gyelje_Input, Impo_total_tax, Impo_fre_won, Impo_cif_total_won, Impo_cif_total_usd, Impo_gwan_tax, Impo_vat_tax,
+				(Impo_total_tax-(Impo_gwan_tax+Impo_vat_tax)) AS 'Impo_etc_tax', impo_segwan, 'ncustoms_ca' as 'defaultDb'
+		from ncustoms_ca.kcba.Impo1
+		where Impo_key in (
+		select Impum_key from ncustoms_ca.kcba.Impo3
+		where (Impum_jajae_code = #{mmodelCode} or Impum_gukyk1 = #{mmodelCode}))
+		and Impo_napse_saup = #{mcoCom}
+		union all
+		select Impo_key, Impo_receive_result, Impo_cs, Impo_napse_sangho, Impo_bl_no, Impo_mbl_no, Impo_singo_no,
+				Impo_iphang_date, Impo_banip_date, Impo_singo_date, Impo_Ok_date, Impo_jubsu_date,
+				Impo_file_no1, Impo_gonggub_sangho, Impo_jukchl_name, Impo_hanggu_name, Impo_jangch_name,
+				Impo_pojang_su, Impo_total_jung, Impo_Forwarder_sangho, impo_singo_gubun,
+				Impo_Gyelje_Input, Impo_total_tax, Impo_fre_won, Impo_cif_total_won, Impo_cif_total_usd, Impo_gwan_tax, Impo_vat_tax,
+				(Impo_total_tax-(Impo_gwan_tax+Impo_vat_tax)) AS 'Impo_etc_tax', impo_segwan, 'ncustoms_cj' as 'defaultDb'
+		from ncustoms_cj.kcba.Impo1
+		where Impo_key in (
+		select Impum_key from ncustoms_cj.kcba.Impo3
+		where (Impum_jajae_code = #{mmodelCode} or Impum_gukyk1 = #{mmodelCode}))
+		and Impo_napse_saup = #{mcoCom}
+		union all
+		select Impo_key, Impo_receive_result, Impo_cs, Impo_napse_sangho, Impo_bl_no, Impo_mbl_no, Impo_singo_no,
+				Impo_iphang_date, Impo_banip_date, Impo_singo_date, Impo_Ok_date, Impo_jubsu_date,
+				Impo_file_no1, Impo_gonggub_sangho, Impo_jukchl_name, Impo_hanggu_name, Impo_jangch_name,
+				Impo_pojang_su, Impo_total_jung, Impo_Forwarder_sangho, impo_singo_gubun,
+				Impo_Gyelje_Input, Impo_total_tax, Impo_fre_won, Impo_cif_total_won, Impo_cif_total_usd, Impo_gwan_tax, Impo_vat_tax,
+				(Impo_total_tax-(Impo_gwan_tax+Impo_vat_tax)) AS 'Impo_etc_tax', impo_segwan, 'ncustoms_cw' as 'defaultDb'
+		from ncustoms_cw.kcba.Impo1
+		where Impo_key in (
+		select Impum_key from ncustoms_cw.kcba.Impo3
+		where (Impum_jajae_code = #{mmodelCode} or Impum_gukyk1 = #{mmodelCode}))
+		and Impo_napse_saup = #{mcoCom}
+		union all
+		select Impo_key, Impo_receive_result, Impo_cs, Impo_napse_sangho, Impo_bl_no, Impo_mbl_no, Impo_singo_no,
+				Impo_iphang_date, Impo_banip_date, Impo_singo_date, Impo_Ok_date, Impo_jubsu_date,
+				Impo_file_no1, Impo_gonggub_sangho, Impo_jukchl_name, Impo_hanggu_name, Impo_jangch_name,
+				Impo_pojang_su, Impo_total_jung, Impo_Forwarder_sangho, impo_singo_gubun,
+				Impo_Gyelje_Input, Impo_total_tax, Impo_fre_won, Impo_cif_total_won, Impo_cif_total_usd, Impo_gwan_tax, Impo_vat_tax,
+				(Impo_total_tax-(Impo_gwan_tax+Impo_vat_tax)) AS 'Impo_etc_tax', impo_segwan, 'ncustoms_dj' as 'defaultDb'
+		from ncustoms_dj.kcba.Impo1
+		where Impo_key in (
+		select Impum_key from ncustoms_dj.kcba.Impo3
+		where (Impum_jajae_code = #{mmodelCode} or Impum_gukyk1 = #{mmodelCode}))
+		and Impo_napse_saup = #{mcoCom}
+		union all
+		select Impo_key, Impo_receive_result, Impo_cs, Impo_napse_sangho, Impo_bl_no, Impo_mbl_no, Impo_singo_no,
+				Impo_iphang_date, Impo_banip_date, Impo_singo_date, Impo_Ok_date, Impo_jubsu_date,
+				Impo_file_no1, Impo_gonggub_sangho, Impo_jukchl_name, Impo_hanggu_name, Impo_jangch_name,
+				Impo_pojang_su, Impo_total_jung, Impo_Forwarder_sangho, impo_singo_gubun,
+				Impo_Gyelje_Input, Impo_total_tax, Impo_fre_won, Impo_cif_total_won, Impo_cif_total_usd, Impo_gwan_tax, Impo_vat_tax,
+				(Impo_total_tax-(Impo_gwan_tax+Impo_vat_tax)) AS 'Impo_etc_tax', impo_segwan, 'ncustoms_gm' as 'defaultDb'
+		from ncustoms_gm.kcba.Impo1
+		where Impo_key in (
+		select Impum_key from ncustoms_gm.kcba.Impo3
+		where (Impum_jajae_code = #{mmodelCode} or Impum_gukyk1 = #{mmodelCode}))
+		and Impo_napse_saup = #{mcoCom}
+		union all
+		select Impo_key, Impo_receive_result, Impo_cs, Impo_napse_sangho, Impo_bl_no, Impo_mbl_no, Impo_singo_no,
+				Impo_iphang_date, Impo_banip_date, Impo_singo_date, Impo_Ok_date, Impo_jubsu_date,
+				Impo_file_no1, Impo_gonggub_sangho, Impo_jukchl_name, Impo_hanggu_name, Impo_jangch_name,
+				Impo_pojang_su, Impo_total_jung, Impo_Forwarder_sangho, impo_singo_gubun,
+				Impo_Gyelje_Input, Impo_total_tax, Impo_fre_won, Impo_cif_total_won, Impo_cif_total_usd, Impo_gwan_tax, Impo_vat_tax,
+				(Impo_total_tax-(Impo_gwan_tax+Impo_vat_tax)) AS 'Impo_etc_tax', impo_segwan, 'ncustoms_ic' as 'defaultDb'
+		from ncustoms_ic.kcba.Impo1
+		where Impo_key in (
+		select Impum_key from ncustoms_ic.kcba.Impo3
+		where (Impum_jajae_code = #{mmodelCode} or Impum_gukyk1 = #{mmodelCode}))
+		and Impo_napse_saup = #{mcoCom}
+		union all
+		select Impo_key, Impo_receive_result, Impo_cs, Impo_napse_sangho, Impo_bl_no, Impo_mbl_no, Impo_singo_no,
+				Impo_iphang_date, Impo_banip_date, Impo_singo_date, Impo_Ok_date, Impo_jubsu_date,
+				Impo_file_no1, Impo_gonggub_sangho, Impo_jukchl_name, Impo_hanggu_name, Impo_jangch_name,
+				Impo_pojang_su, Impo_total_jung, Impo_Forwarder_sangho, impo_singo_gubun,
+				Impo_Gyelje_Input, Impo_total_tax, Impo_fre_won, Impo_cif_total_won, Impo_cif_total_usd, Impo_gwan_tax, Impo_vat_tax,
+				(Impo_total_tax-(Impo_gwan_tax+Impo_vat_tax)) AS 'Impo_etc_tax', impo_segwan, 'ncustoms_jj' as 'defaultDb'
+		from ncustoms_jj.kcba.Impo1
+		where Impo_key in (
+		select Impum_key from ncustoms_jj.kcba.Impo3
+		where (Impum_jajae_code = #{mmodelCode} or Impum_gukyk1 = #{mmodelCode}))
+		and Impo_napse_saup = #{mcoCom}
+		union all
+		select Impo_key, Impo_receive_result, Impo_cs, Impo_napse_sangho, Impo_bl_no, Impo_mbl_no, Impo_singo_no,
+				Impo_iphang_date, Impo_banip_date, Impo_singo_date, Impo_Ok_date, Impo_jubsu_date,
+				Impo_file_no1, Impo_gonggub_sangho, Impo_jukchl_name, Impo_hanggu_name, Impo_jangch_name,
+				Impo_pojang_su, Impo_total_jung, Impo_Forwarder_sangho, impo_singo_gubun,
+				Impo_Gyelje_Input, Impo_total_tax, Impo_fre_won, Impo_cif_total_won, Impo_cif_total_usd, Impo_gwan_tax, Impo_vat_tax,
+				(Impo_total_tax-(Impo_gwan_tax+Impo_vat_tax)) AS 'Impo_etc_tax', impo_segwan, 'ncustoms_pj' as 'defaultDb'
+		from ncustoms_pj.kcba.Impo1
+		where Impo_key in (
+		select Impum_key from ncustoms_pj.kcba.Impo3
+		where (Impum_jajae_code = #{mmodelCode} or Impum_gukyk1 = #{mmodelCode}))
+		and Impo_napse_saup = #{mcoCom}
+		union all
+		select Impo_key, Impo_receive_result, Impo_cs, Impo_napse_sangho, Impo_bl_no, Impo_mbl_no, Impo_singo_no,
+				Impo_iphang_date, Impo_banip_date, Impo_singo_date, Impo_Ok_date, Impo_jubsu_date,
+				Impo_file_no1, Impo_gonggub_sangho, Impo_jukchl_name, Impo_hanggu_name, Impo_jangch_name,
+				Impo_pojang_su, Impo_total_jung, Impo_Forwarder_sangho, impo_singo_gubun,
+				Impo_Gyelje_Input, Impo_total_tax, Impo_fre_won, Impo_cif_total_won, Impo_cif_total_usd, Impo_gwan_tax, Impo_vat_tax,
+				(Impo_total_tax-(Impo_gwan_tax+Impo_vat_tax)) AS 'Impo_etc_tax', impo_segwan, 'ncustoms_pt' as 'defaultDb'
+		from ncustoms_pt.kcba.Impo1
+		where Impo_key in (
+		select Impum_key from ncustoms_pt.kcba.Impo3
+		where (Impum_jajae_code = #{mmodelCode} or Impum_gukyk1 = #{mmodelCode}))
+		and Impo_napse_saup = #{mcoCom}
+		union all
+		select Impo_key, Impo_receive_result, Impo_cs, Impo_napse_sangho, Impo_bl_no, Impo_mbl_no, Impo_singo_no,
+				Impo_iphang_date, Impo_banip_date, Impo_singo_date, Impo_Ok_date, Impo_jubsu_date,
+				Impo_file_no1, Impo_gonggub_sangho, Impo_jukchl_name, Impo_hanggu_name, Impo_jangch_name,
+				Impo_pojang_su, Impo_total_jung, Impo_Forwarder_sangho, impo_singo_gubun,
+				Impo_Gyelje_Input, Impo_total_tax, Impo_fre_won, Impo_cif_total_won, Impo_cif_total_usd, Impo_gwan_tax, Impo_vat_tax,
+				(Impo_total_tax-(Impo_gwan_tax+Impo_vat_tax)) AS 'Impo_etc_tax', impo_segwan, 'ncustoms_sel4' as 'defaultDb'
+		from ncustoms_sel4.kcba.Impo1
+		where Impo_key in (
+		select Impum_key from ncustoms_sel4.kcba.Impo3
+		where (Impum_jajae_code = #{mmodelCode} or Impum_gukyk1 = #{mmodelCode}))
+		and Impo_napse_saup = #{mcoCom}
+		union all
+		select Impo_key, Impo_receive_result, Impo_cs, Impo_napse_sangho, Impo_bl_no, Impo_mbl_no, Impo_singo_no,
+				Impo_iphang_date, Impo_banip_date, Impo_singo_date, Impo_Ok_date, Impo_jubsu_date,
+				Impo_file_no1, Impo_gonggub_sangho, Impo_jukchl_name, Impo_hanggu_name, Impo_jangch_name,
+				Impo_pojang_su, Impo_total_jung, Impo_Forwarder_sangho, impo_singo_gubun,
+				Impo_Gyelje_Input, Impo_total_tax, Impo_fre_won, Impo_cif_total_won, Impo_cif_total_usd, Impo_gwan_tax, Impo_vat_tax,
+				(Impo_total_tax-(Impo_gwan_tax+Impo_vat_tax)) AS 'Impo_etc_tax', impo_segwan, 'ncustoms_sn' as 'defaultDb'
+		from ncustoms_sn.kcba.Impo1
+		where Impo_key in (
+		select Impum_key from ncustoms_sn.kcba.Impo3
+		where (Impum_jajae_code = #{mmodelCode} or Impum_gukyk1 = #{mmodelCode}))
+		and Impo_napse_saup = #{mcoCom}
+		union all
+		select Impo_key, Impo_receive_result, Impo_cs, Impo_napse_sangho, Impo_bl_no, Impo_mbl_no, Impo_singo_no,
+				Impo_iphang_date, Impo_banip_date, Impo_singo_date, Impo_Ok_date, Impo_jubsu_date,
+				Impo_file_no1, Impo_gonggub_sangho, Impo_jukchl_name, Impo_hanggu_name, Impo_jangch_name,
+				Impo_pojang_su, Impo_total_jung, Impo_Forwarder_sangho, impo_singo_gubun,
+				Impo_Gyelje_Input, Impo_total_tax, Impo_fre_won, Impo_cif_total_won, Impo_cif_total_usd, Impo_gwan_tax, Impo_vat_tax,
+				(Impo_total_tax-(Impo_gwan_tax+Impo_vat_tax)) AS 'Impo_etc_tax', impo_segwan, 'ncustoms_us' as 'defaultDb'
+		from ncustoms_us.kcba.Impo1
+		where Impo_key in (
+		select Impum_key from ncustoms_us.kcba.Impo3
+		where (Impum_jajae_code = #{mmodelCode} or Impum_gukyk1 = #{mmodelCode}))
+		and Impo_napse_saup = #{mcoCom}
+		union all
+		select Impo_key, Impo_receive_result, Impo_cs, Impo_napse_sangho, Impo_bl_no, Impo_mbl_no, Impo_singo_no,
+				Impo_iphang_date, Impo_banip_date, Impo_singo_date, Impo_Ok_date, Impo_jubsu_date,
+				Impo_file_no1, Impo_gonggub_sangho, Impo_jukchl_name, Impo_hanggu_name, Impo_jangch_name,
+				Impo_pojang_su, Impo_total_jung, Impo_Forwarder_sangho, impo_singo_gubun,
+				Impo_Gyelje_Input, Impo_total_tax, Impo_fre_won, Impo_cif_total_won, Impo_cif_total_usd, Impo_gwan_tax, Impo_vat_tax,
+				(Impo_total_tax-(Impo_gwan_tax+Impo_vat_tax)) AS 'Impo_etc_tax', impo_segwan, 'ncustoms_yj' as 'defaultDb'
+		from ncustoms_yj.kcba.Impo1
+		where Impo_key in (
+		select Impum_key from ncustoms_yj.kcba.Impo3
+		where (Impum_jajae_code = #{mmodelCode} or Impum_gukyk1 = #{mmodelCode}))
+		and Impo_napse_saup = #{mcoCom}
+		union all
+		select Impo_key, Impo_receive_result, Impo_cs, Impo_napse_sangho, Impo_bl_no, Impo_mbl_no, Impo_singo_no,
+				Impo_iphang_date, Impo_banip_date, Impo_singo_date, Impo_Ok_date, Impo_jubsu_date,
+				Impo_file_no1, Impo_gonggub_sangho, Impo_jukchl_name, Impo_hanggu_name, Impo_jangch_name,
+				Impo_pojang_su, Impo_total_jung, Impo_Forwarder_sangho, impo_singo_gubun,
+				Impo_Gyelje_Input, Impo_total_tax, Impo_fre_won, Impo_cif_total_won, Impo_cif_total_usd, Impo_gwan_tax, Impo_vat_tax,
+				(Impo_total_tax-(Impo_gwan_tax+Impo_vat_tax)) AS 'Impo_etc_tax', impo_segwan, 'ncustoms_ys' as 'defaultDb'
+		from ncustoms_ys.kcba.Impo1
+		where Impo_key in (
+		select Impum_key from ncustoms_ys.kcba.Impo3
+		where (Impum_jajae_code = #{mmodelCode} or Impum_gukyk1 = #{mmodelCode}))
+		and Impo_napse_saup = #{mcoCom}
+		) datas
+		order by datas.Impo_iphang_date desc
+	</select>
+
+	<select id="selectTradeDemoList" resultType="map">
+		/* 자재코드 통관내역 Demo*/
+		SELECT datas.*
+		FROM (
+		select Impo_key, Impo_receive_result, Impo_cs, Impo_napse_sangho, Impo_bl_no, Impo_mbl_no, Impo_singo_no,
+				Impo_iphang_date, Impo_banip_date, Impo_singo_date, Impo_Ok_date, Impo_jubsu_date,
+				Impo_file_no1, Impo_gonggub_sangho, Impo_jukchl_name, Impo_hanggu_name, Impo_jangch_name,
+				Impo_pojang_su, Impo_total_jung, Impo_Forwarder_sangho, impo_singo_gubun,
+				Impo_Gyelje_Input, Impo_total_tax, Impo_fre_won, Impo_cif_total_won, Impo_cif_total_usd, Impo_gwan_tax, Impo_vat_tax,
+				(Impo_total_tax-(Impo_gwan_tax+Impo_vat_tax)) AS 'Impo_etc_tax', impo_segwan
+		from demoNcustomsPt.kcba.Impo1
+		where Impo_key in (
+		select Impum_key from demoNcustomsPt.kcba.Impo3
+		where Impum_jajae_code = #{mmodelCode})
+		and Impo_napse_saup = #{mcoCom}
+		) datas
+		order by datas.Impo_iphang_date desc
+	</select>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	<update id="updateItemConfirmStatus">
+		/* 자재 마스터 수정*/
+		UPDATE ${_defaultRmsDb}.[dbo].[MAAA100]
+		SET EditUserNm = #{_userId}
+		, EditDtm = REPLACE(CONVERT(VARCHAR(8), GETDATE(), 112)+CONVERT(VARCHAR(8), GETDATE(), 114), ':','')
+		<if test='myogFlag != null'>, Myog_flag = #{myogFlag}</if>
+		<if test='mremark2 != null'>, Mremark2 = #{mremark2}</if>
+		<if test='mconfirmFlag != null'>, Mconfirm_flag = #{mconfirmFlag}</if>
+		<if test='mconfirmFlag != null'>, Mconfirm_date = CONVERT(VARCHAR(8), GETDATE(), 112)</if>
+		<if test='mconfirmFlag != null'>, Mconfirm_user = #{_userId}</if>
+		WHERE Mcount_no = #{mcountNo}
+	</update>
+
+	<select id="findItemMCountNoForDemoList" resultType="map">
+		/* 시연용 자재(단가이력 있는 것) */
+		SELECT TOP 2000 a.upv_MCount_no AS 'mCountNo'
+		FROM ${_defaultRmsDb}.[dbo].[ktbl_upv_Master] a WITH (NOLOCK)
+		WHERE EXISTS (SELECT * FROM ${_defaultRmsDb}.[dbo].[ktbl_upv_Details] b WITH (NOLOCK) WHERE a.upv_key = b.upvd_key)
+		AND a.upv_singo_date BETWEEN CONVERT(VARCHAR(8), DATEADD(YEAR, -1, GETDATE()), 112) AND CONVERT(VARCHAR(8), GETDATE(), 112)
+		GROUP BY a.upv_MCount_no
+	</select>
+
+	<select id="findItemHistoryList" resultType="map">
+		/* 자재통관이력 조회 */
+		<if test='_Auth == "admin"'>
+			SELECT datas.*
+		</if>
+		<if test='_Auth != "admin"'>
+			SELECT datas.Impo_singo_no, datas.Impo_ok_date,
+			datas.Imlan_hs, datas.Imlan_seyul_gubun, datas.Imlan_gwan_seyula,
+			datas.Impum_jajae_code, datas.Impum_gukyk1, datas.Impum_gukyk2, datas.Impum_gukyk3,
+			datas.Impo_jukchl_code, datas.Impo_jukchl_name, datas.Imlan_wonsanji_code, datas.Imlan_wonsanji_name, datas.Impo_gele_gubun, datas.Impo_gyelje_money
+		</if>
+		FROM (
+		SELECT ROW_NUMBER() OVER (ORDER BY a.impo_singo_no) AS 'rownum',
+		a.Impo_singo_no, a.Impo_ok_date,
+		b.Imlan_hs, b.Imlan_seyul_gubun, b.Imlan_gwan_seyula,
+		c.Impum_jajae_code, c.Impum_gukyk1, c.Impum_gukyk2, c.Impum_gukyk3,
+		c.Impum_su, c.Impum_danga, c.Impum_amt,
+		a.Impo_jukchl_code, a.Impo_jukchl_name, b.Imlan_wonsanji_code, b.Imlan_wonsanji_name, a.Impo_gele_gubun, a.Impo_gyelje_money
+		FROM ${_defaultDB}.[kcba].[impo1] a WITH (NOLOCK)
+		INNER JOIN ${_defaultDB}.[kcba].[impo2] b WITH (NOLOCK)
+		ON a.Impo_key = b.Imlan_key
+		AND a.Impo_ok_date BETWEEN CONVERT(VARCHAR(8), DATEADD(YEAR, -1, GETDATE()), 112) AND CONVERT(VARCHAR(8), GETDATE(), 112)
+		AND a.Impo_napse_saup IN ( SELECT EntrepreneurNo FROM [soo].[dbo].[UFN_공통_할당사업자번호](#{_userId}, #{_Auth}, 'ALL') ) /* 사업자번호function */
+		INNER JOIN ${_defaultDB}.[kcba].[impo3] c WITH (NOLOCK)
+		ON b.Imlan_key = c.Impum_key
+		AND b.Imlan_jechl_lan = c.Impum_lan
+		<if test='mmodelCode != "" '>AND c.Impum_jajae_code = #{mmodelCode}</if>
+		) datas
+		<if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+			WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+		</if>
+	</select>
+
+
+
+
+
+	<update id="updateItemUnitPrice">
+		/* 자재마스터 단가 수정 */
+		UPDATE ${_defaultRmsDb}.[dbo].[MAAA100]
+		SET EditUserNm = #{_userId}
+		, EditDtm = REPLACE(CONVERT(VARCHAR(8), GETDATE(), 112)+CONVERT(VARCHAR(8), GETDATE(), 114), ':','')
+		<if test='munitpriceCurrent != ""'>, Munitprice_current = #{munitpriceCurrent}</if>
+		<if test='munitprice != ""'>, Munitprice = #{munitprice}</if>
+		<if test='munitprice == ""'>, Munitprice = 0</if>
+		<if test='mindoCode != ""'>, Mindo_code = #{mindoCode}</if>
+		WHERE Mcount_no = #{mcountNo}
+	</update>
+
+
+
+	<insert id="insertItemAmdMaster">
+	    /* 자재마스터 변경 이력 마스터 입력 */
+		INSERT INTO ${_defaultRmsDb}.[dbo].[MAAB100M]
+	           ([Mcount_No]
+	           ,[Amd_SEQ]
+	           ,[AmdDtm]
+	           ,[AmdNm]
+	           ,[AmdTxt1]
+	           ,[AmdTxt2]
+	           ,[AmdFlag]
+	           ,[JiCd]
+	           ,[JiNm]
+	           ,[LastIp]
+	           ,[EditDtm]
+	           ,[EditUserNm]
+	           ,[UseYn]
+	           ,[AddUserKey]
+	           ,[AddUserNm]
+	           ,[AddDtm])
+		VALUES
+	           (#{mcountNo}
+	           ,#{amdSeq}
+	           ,REPLACE(CONVERT(VARCHAR(8), GETDATE(), 112)+CONVERT(VARCHAR(8), GETDATE(), 114), ':','')
+	           ,#{_userNm}
+	           ,#{amdTxt1}
+	           ,#{amdTxt2}
+	           ,'자재변경검토요망'
+	           ,''
+	           ,LEFT(#{_userDefaultDb}, 10)
+	           ,''
+	           ,REPLACE(CONVERT(VARCHAR(8), GETDATE(), 112)+CONVERT(VARCHAR(8), GETDATE(), 114), ':','')
+	           ,#{_userId}
+	           ,#{UseYn}
+	           ,#{_userId}
+	           ,#{_userNm}
+	           ,REPLACE(CONVERT(VARCHAR(8), GETDATE(), 112)+CONVERT(VARCHAR(8), GETDATE(), 114), ':',''))
+	</insert>
+
+	<insert id="insertItemAmdDetail">
+		/* 자재마스터 변경 이력 디테일 입력 */
+	    INSERT INTO ${_defaultRmsDb}.[dbo].[MAAB100D]
+	           ([Mcount_No]
+	           ,[Amd_SEQ]
+	           ,[Amd_Sub_SEQ]
+	           ,[AmdItemId]
+	           ,[AmdItemNm]
+	           ,[AmdBf]
+	           ,[AmdAf]
+	           ,[UseYn]
+	           ,[AddUserKey]
+	           ,[AddUserNm]
+	           ,[AddDtm])
+     	VALUES
+	           (#{mcountNo}
+	           ,#{amdSeq}
+	           ,#{amdSubSeq}
+	           ,#{amdItemId}
+	           ,#{amdItemNm}
+	           ,#{amdBf}
+	           ,#{amdAf}
+	           ,#{UseYn}
+	           ,#{_userId}
+	           ,#{_userNm}
+	           ,REPLACE(CONVERT(VARCHAR(8), GETDATE(), 112)+CONVERT(VARCHAR(8), GETDATE(), 114), ':',''))
+	</insert>
+
+
+
+
+
+
+
+
+
+	<select id="findItemAmdDetailHistoryList" resultType="map">
+		/* 자재마스터 변경 이력 변동 추이 */
+		SELECT datas.*
+		FROM (
+		SELECT ROW_NUMBER() OVER (ORDER BY aa.Mcount_No, aa.Amd_SEQ, aa.Amd_Sub_SEQ) AS 'rownum',
+		aa.Mcount_No, aa.Amd_SEQ, aa.Amd_Sub_SEQ, aa.value,
+		LEFT(cc.AmdDtm, 8) AS 'AmdDtm', LEFT(bb.First_date, 8) AS 'First_date', LEFT(bb.last_date, 8) AS 'last_date'
+		FROM (
+		SELECT a.Mcount_No, a.Amd_SEQ, a.Amd_Sub_SEQ, a.AmdBf AS 'value'
+		FROM ${_defaultRmsDb}.[dbo].[MAAB100D] a WITH (NOLOCK)
+		INNER JOIN (
+		SELECT MIN(a1.Mcount_No) AS 'Mcount_No', MIN(a1.Amd_SEQ) AS 'Amd_SEQ', MIN(a1.Amd_Sub_SEQ) AS 'Amd_Sub_SEQ'
+		FROM ${_defaultRmsDb}.[dbo].[MAAB100D] a1 WITH (NOLOCK)
+		WHERE a1.Mcount_No = #{mcountNo}
+		and a1.UseYn='Y'
+		AND a1.AmdItemId = #{amdItemId} ) b
+		ON a.Mcount_No = b.Mcount_No
+		AND a.Amd_SEQ = b.Amd_SEQ
+		AND a.Amd_Sub_SEQ = b.Amd_Sub_SEQ
+		WHERE a.Mcount_No = #{mcountNo}
+		AND a.AmdItemId = #{amdItemId}
+		and a.UseYn='Y'
+
+		UNION ALL
+
+		SELECT a.Mcount_No, a.Amd_SEQ, a.Amd_Sub_SEQ, a.AmdAf AS 'value'
+		FROM ${_defaultRmsDb}.[dbo].[MAAB100D] a WITH (NOLOCK)
+		INNER JOIN (
+		SELECT MIN(a1.Mcount_No) AS 'Mcount_No', MIN(a1.Amd_SEQ) AS 'Amd_SEQ', MIN(a1.Amd_Sub_SEQ) AS 'Amd_Sub_SEQ'
+		FROM ${_defaultRmsDb}.[dbo].[MAAB100D] a1 WITH (NOLOCK)
+		WHERE a1.Mcount_No = #{mcountNo}
+		AND a1.AmdItemId = #{amdItemId}
+		and a1.UseYn='Y' ) b
+		ON a.Mcount_No = b.Mcount_No
+		AND a.Amd_SEQ = b.Amd_SEQ
+		AND a.Amd_Sub_SEQ = b.Amd_Sub_SEQ
+		WHERE a.Mcount_No = #{mcountNo}
+		AND a.AmdItemId = #{amdItemId}
+		and a.UseYn='Y'
+
+		UNION ALL
+
+		SELECT a.Mcount_No, a.Amd_SEQ, a.Amd_Sub_SEQ, a.AmdAf AS 'value'
+		FROM ${_defaultRmsDb}.[dbo].[MAAB100D] a WITH (NOLOCK)
+		INNER JOIN (
+		SELECT MIN(a1.Mcount_No) AS 'Mcount_No', MIN(a1.Amd_SEQ) AS 'Amd_SEQ', MIN(a1.Amd_Sub_SEQ) AS 'Amd_Sub_SEQ'
+		FROM ${_defaultRmsDb}.[dbo].[MAAB100D] a1 WITH (NOLOCK)
+		WHERE a1.Mcount_No = #{mcountNo}
+		AND a1.AmdItemId = #{amdItemId}
+		and a1.UseYn='Y') b
+		ON a.Mcount_No = b.Mcount_No
+		AND a.Amd_SEQ != b.Amd_SEQ
+		WHERE a.Mcount_No = #{mcountNo}
+		AND a.AmdItemId = #{amdItemId}
+		and a.UseYn='Y'
+
+		UNION ALL
+
+		SELECT a.Mcount_no as 'Mcount_No', '', '', ${amdItemId} AS 'value'
+		FROM ${_defaultRmsDb}.[dbo].[MAAA100] a WITH (NOLOCK)
+		WHERE a.Mcount_no = #{mcountNo}
+		) aa
+		INNER JOIN ${_defaultRmsDb}.[dbo].[MAAA100] bb WITH (NOLOCK)
+		ON aa.Mcount_No = bb.Mcount_no
+		LEFT OUTER JOIN ${_defaultRmsDb}.[dbo].[MAAB100M] cc WITH (NOLOCK)
+		ON aa.Mcount_No = cc.Mcount_No
+		AND aa.Amd_SEQ = cc.Amd_SEQ
+		and aa.UseYn='Y'
+		and cc.UseYn='Y'
+		) datas
+		<if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+			WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+		</if>
+	</select>
+
+
+
+	<select id="findSooMstItemHistoryList" resultType="map">
+		/* 자재통관이력 조회(soo) */
+		<if test='_Auth == "admin"'>
+			SELECT datas.*
+		</if>
+		<if test='_Auth != "admin"'>
+			SELECT datas.impoSingoNo, datas.impoOkDate,
+			datas.imlanHs, datas.imlanSeyulGubun, datas.imlanGwanSeyulc,
+			datas.impumJajaeCode, datas.impumGukyk1, datas.impumGukyk2, datas.impumGukyk3,
+			datas.impoJukchlCode, datas.impoJukchlName, datas.imlanWonsanjiCode, datas.impoGeleGubun, datas.impoGyeljeMoney
+		</if>
+		FROM (
+		SELECT ROW_NUMBER() OVER (ORDER BY a.impoSingoNo) AS 'rownum',
+		a.impoSingoNo, a.impoOkDate,
+		c.imlanHs, c.imlanSeyulGubun, c.imlanGwanSeyulc,
+		d.impumJajaeCode, d.impumGukyk1, d.impumGukyk2, d.impumGukyk3,
+		d.impumSu, d.impumDanga, d.impumAmt,
+		a.impoJukchlCode, a.impoJukchlName, c.imlanWonsanjiCode, b.impoGeleGubun, a.impoGyeljeMoney
+		FROM [soo].[dbo].[TBR_Impo_Master] a WITH (NOLOCK)
+		INNER JOIN [soo].[dbo].[TBR_Impo_Master_Sub] b WITH (NOLOCK)
+		ON a.importSeq = b.importSeq
+		INNER JOIN [soo].[dbo].[TBR_Impo_Master_Lan] c WITH (NOLOCK)
+		ON a.importSeq = c.importSeq
+		INNER JOIN [soo].[dbo].[TBR_Impo_Master_Pum] d WITH (NOLOCK)
+		ON c.importLanSeq = d.importLanSeq
+		WHERE a.impoOkDate BETWEEN CONVERT(VARCHAR(8), DATEADD(YEAR, -1, GETDATE()), 112) AND CONVERT(VARCHAR(8), GETDATE(), 112)
+		AND a.impoNapseSaup IN ( SELECT EntrepreneurNo FROM [soo].[dbo].[UFN_공통_할당사업자번호](#{_userId}, #{_Auth}, 'ALL') ) /* 사업자번호function */
+		<if test='impumJajaeCode != null and impumJajaeCode != ""'>AND d.impumJajaeCode = #{impumJajaeCode}</if>
+		) datas
+		<if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+			WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER,
+			#{_pageRow}))
+		</if>
+	</select>
+
+	<select id="findItemResultImportUnitPriceList" resultType="map">
+		/* 통관 단가 조회(5년치) */
+		SELECT datas.*
+		FROM (
+		SELECT ROW_NUMBER() OVER (ORDER BY a.yyyymmdd DESC) AS 'rownum',
+		a.yyyymmdd, a.db,
+		a.itemKey, a.itemMcountNo, a.itemMmodelCode,
+		a.itemUnitPrice
+		FROM [soo].[dbo].[TBR_RESULT_ETL_Import_UnitPrice] a WITH (NOLOCK)
+		<where>
+			AND a.Impo_napse_saup = #{impoNapseSaup}
+			<if test='db != null and db != ""'>AND a.db = #{db}</if>
+			<if test='itemKey != null and itemKey != ""'>AND a.itemKey = #{itemKey}</if>
+			<if test='itemMcountNo != null and itemMcountNo != ""'>AND a.itemMcountNo = #{itemMcountNo}</if>
+			<if test='itemMmodelCode != null and itemMmodelCode != ""'>AND a.itemMmodelCode = #{itemMmodelCode}</if>
+			<if test='_dateType != null and _dateType != "ALL" and (startDay != null and startDay != "") and (endDay != null and endDay != "")'>
+				<choose>
+					<when test='_dateType == "yyyymmdd"'>AND a.yyyymmdd BETWEEN #{startDay} AND #{endDay} /* yyyymmdd */</when>
+				</choose>
+			</if>
+		</where>
+		GROUP BY a.yyyymmdd, a.db,
+		a.itemKey, a.itemMcountNo, a.itemMmodelCode,
+		a.itemUnitPrice
+		) datas
+		<if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+			WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+		</if>
+	</select>
+
+	<select id="findItemResultImportUnitPriceSameDeletedList" resultType="map">
+		/* 통관 단가 조회(중복 단가 제거) */
+		SELECT datas.*
+		FROM (
+		SELECT ROW_NUMBER() OVER (ORDER BY MAX(a.yyyymmdd) DESC) AS 'rownum',
+		MAX(a.yyyymmdd) AS 'yyyymmdd', a.db,
+		a.itemKey, a.itemMcountNo, a.itemMmodelCode,
+		a.itemUnitPrice
+		FROM [soo].[dbo].[TBR_RESULT_ETL_Import_UnitPrice] a WITH (NOLOCK)
+		<where>
+			AND a.Impo_napse_saup = #{impoNapseSaup}
+			<if test='db != null and db != ""'>AND a.db = #{db}</if>
+			<if test='itemKey != null and itemKey != ""'>AND a.itemKey = #{itemKey}</if>
+			<if test='itemMcountNo != null and itemMcountNo != ""'>AND a.itemMcountNo = #{itemMcountNo}</if>
+			<if test='itemMmodelCode != null and itemMmodelCode != ""'>AND a.itemMmodelCode = #{itemMmodelCode}</if>
+			<if test='_dateType != null and _dateType != "ALL" and (startDay != null and startDay != "") and (endDay != null and endDay != "")'>
+				<choose>
+					<when test='_dateType == "yyyymmdd"'>AND a.yyyymmdd BETWEEN #{startDay} AND #{endDay} /* yyyymmdd */</when>
+				</choose>
+			</if>
+		</where>
+		GROUP BY a.db,
+		a.itemKey, a.itemMcountNo, a.itemMmodelCode,
+		a.itemUnitPrice
+		) datas
+		<if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+			WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+		</if>
+	</select>
+
+
+
+	<select id="findMaxSeqRmsItemNotYog" resultType="map">
+		/* 자재마스터 요건관리 maxseq 조회 */
+		SELECT ISNULL(MAX(SEQ), 0) + 1 AS 'maxNotYogSeq'
+		FROM ${_defaultRmsDb}.[dbo].[MAAC100] WITH (NOLOCK)
+		WHERE Mcount_No = #{mcountNo}
+	</select>
+
+
+
+
+
+
+
+	<select id="findItemSettingList" resultType="map">
+		/* 자재마스터 자재별 수량 및 Rule */
+		select a.Mmodel_code, a.Mdivision_code, b.ItemSu, b.ItemRule
+		from CPS.[dbo].[MAAA100] a
+		left outer join CPS_WEB.[dbo].[CUAA140] b
+		on a.Mmodel_code = b.Mmodelcode
+		and b.UseYn = 'Y'
+		where a.Mco_com = #{taxNum}
+		and a.useYn = 'Y'
+		<if test='mmodelCode != null and mmodelCode != ""'>AND a.Mmodel_code like '%' + #{mmodelCode} + '%'</if>
+		<if test='mdivisionCode != null and mdivisionCode != ""'>AND a.Mdivision_code like '%' + #{mdivisionCode} + '%'</if>
+	</select>
+
+	<delete id="deleteItemCount">
+	    /* 알콘 count 및 Rule 삭제 */
+		update CPS_WEB.[dbo].[CUAA140]
+		set UseYn = 'N'
+	</delete>
+
+	<insert id="insertItemCount">
+	    /* 알콘 count 및 Rule 입력 */
+		INSERT INTO CPS_WEB.[dbo].[CUAA140]
+	           ([Mmodelcode]
+	           ,[ItemSu]
+	           ,[ItemRule]
+	           ,[UseYn]
+	           ,[AddUserKey]
+	           ,[AddUserNm]
+	           ,[AddDtm])
+		VALUES
+	           (#{mmodelCode}
+	           ,#{itemSu}
+	           ,#{itemRule}
+	           ,'Y'
+	           ,#{addUserId}
+	           ,#{addUserId}
+	           ,#{addDtm})
+	</insert>
+
+	<select id="findPlCodeList" resultType="map">
+		/* 수입아이템별 비용 */
+		select d.Mdivision_code,
+		       SUM(e.SUP_EK) as '공급가', SUM(e.TAX_EK) as '부가세', SUM(e.SUM_EK) as '합계'
+		from [ncustoms].[kcba].[impo1] a
+		left outer join [ncustoms].[kcba].[impo1_mDtl] b
+		on a.Impo_key = b.impo_key
+		left outer join [ncustoms].[kcba].[impo3] c
+		on a.Impo_key = c.impum_key
+		left outer join CPS.[dbo].[MAAA100] d
+		on c.Impum_jajae_code = d.Mmodel_code
+		left outer join [ncustoms].[kcba].[impo3_mDtl] e
+		on c.impum_key = e.impum_key
+		and c.Impum_lan = e.Impum_lan
+		and c.Impum_heang = e.Impum_heang
+		and b.KEY_impo1_mDtl = e.KEY_impo1_mDtl
+		where a.Impo_napse_saup = #{saup}
+		<if test='strAccDt != null and strAccDt != ""'>AND b.acc_dt = #{strAccDt}</if>
+		<if test='strVendor != null and strVendor != ""'>AND b.acc_nm like '%' + #{strVendor} + '%'</if>
+		<if test='strPlCode != null and strPlCode != ""'>AND d.Mdivision_code like '%' + #{strPlCode} + '%'</if>
+		GROUP BY d.Mdivision_code
+		order by d.Mdivision_code
+	</select>
+
+	<select id="findPlCodeDetailList" resultType="map">
+		/* 수입아이템별 상세비용 */
+		select d.Mdivision_code, b.impo_singo_no,
+		       SUM(e.SUP_EK) as '공급가', SUM(e.TAX_EK) as '부가세', SUM(e.SUM_EK) as '합계'
+		from [ncustoms].[kcba].[impo1] a
+		left outer join [ncustoms].[kcba].[impo1_mDtl] b
+		on a.Impo_key = b.impo_key
+		left outer join [ncustoms].[kcba].[impo3] c
+		on a.Impo_key = c.impum_key
+		left outer join CPS.[dbo].[MAAA100] d
+		on c.Impum_jajae_code = d.Mmodel_code
+		left outer join [ncustoms].[kcba].[impo3_mDtl] e
+		on c.impum_key = e.impum_key
+		and c.Impum_lan = e.Impum_lan
+		and c.Impum_heang = e.Impum_heang
+		and b.KEY_impo1_mDtl = e.KEY_impo1_mDtl
+		where a.Impo_napse_saup = #{saup}
+		<if test='strAccDt != null and strAccDt != ""'>AND b.acc_dt = #{strAccDt}</if>
+		<if test='strVendor != null and strVendor != ""'>AND b.acc_nm like '%' + #{strVendor} + '%'</if>
+		<if test='strPlCode != null'>AND d.Mdivision_code = #{strPlCode}</if>
+		GROUP BY d.Mdivision_code, b.impo_singo_no
+		order by d.Mdivision_code, b.impo_singo_no
+	</select>
+
+	<select id="findPlCodeExcelList" resultType="map">
+		/* 수입아이템별 Excel비용 */
+		select d.Mdivision_code, b.impo_singo_no,
+		       SUM(e.SUP_EK) as '공급가', SUM(e.TAX_EK) as '부가세', SUM(e.SUM_EK) as '합계'
+		from [ncustoms].[kcba].[impo1] a
+		left outer join [ncustoms].[kcba].[impo1_mDtl] b
+		on a.Impo_key = b.impo_key
+		left outer join [ncustoms].[kcba].[impo3] c
+		on a.Impo_key = c.impum_key
+		left outer join CPS.[dbo].[MAAA100] d
+		on c.Impum_jajae_code = d.Mmodel_code
+		left outer join [ncustoms].[kcba].[impo3_mDtl] e
+		on c.impum_key = e.impum_key
+		and c.Impum_lan = e.Impum_lan
+		and c.Impum_heang = e.Impum_heang
+		and b.KEY_impo1_mDtl = e.KEY_impo1_mDtl
+		where a.Impo_napse_saup = #{saup}
+		<if test='strAccDt != null and strAccDt != ""'>AND b.acc_dt = #{strAccDt}</if>
+		<if test='strVendor != null and strVendor != ""'>AND b.acc_nm like '%' + #{strVendor} + '%'</if>
+		<if test='strPlCode != null and strPlCode != ""'>AND d.Mdivision_code like '%' + #{strPlCode} + '%'</if>
+		GROUP BY d.Mdivision_code, b.impo_singo_no
+		order by d.Mdivision_code, b.impo_singo_no
+	</select>
+
+	<select id="selectImportManagement" resultType="map">
+        /* 수입management현황(recv_impo1) */
+        SELECT datas.*
+        FROM (
+        SELECT ROW_NUMBER() OVER (ORDER BY a.key_no DESC) AS 'rownum',
+		c.key_no,
+		case when ISNULL(a.impo_iphang_date,'') = '' then '' else substring(a.impo_iphang_date,0,5)+'-'+substring(a.impo_iphang_date,5,2)+'-'+substring(a.impo_iphang_date,7,2) end as 'impo_iphang_date',
+		a.impo_bl_no,
+		a.impo_singo_no,
+		substring(a.impo_singo_no,0,6)+'-'+substring(a.impo_singo_no,6,2)+'-'+substring(a.impo_singo_no,8,7) as 'impo_singo_no1',
+		case when ISNULL(a.impo_ok_date,'') = '' then '' else substring(a.impo_ok_date,0,5)+'-'+substring(a.impo_ok_date,5,2)+'-'+substring(a.impo_ok_date,7,2) end as 'impo_ok_date',
+		case when ISNULL(c.invoice_no,'') = '' then ''
+		when CHARINDEX('/',c.invoice_no) = 0 then ''
+		else rms.dbo.fn_Get_Split_Index(c.invoice_no,'/',2) end as 'DN',
+		case when ISNULL(c.invoice_no,'') = '' then ''
+		when CHARINDEX('/',c.invoice_no) = 0 then c.invoice_no
+		when CHARINDEX('_',c.invoice_no) > 0 then rms.dbo.fn_Get_Split_Index(c.invoice_no,'_',1)
+		else rms.dbo.fn_Get_Split_Index(c.invoice_no,'/',1) end as 'invoice_no',
+		case when ISNULL(c.invoice_no,'') = '' then ''
+		when CHARINDEX('/',c.invoice_no) = 0 then ''
+		when CHARINDEX('_',c.invoice_no) = 0 then ''
+		else rms.dbo.fn_Get_Split_Index(rms.dbo.fn_Get_Split_Index(c.invoice_no,'_',2),'/',1) end as 'unique_no',
+		case when ISNULL(c.invoice_dt,'') = '' then '' else substring(c.invoice_dt,0,5)+'-'+substring(c.invoice_dt,5,2)+'-'+substring(c.invoice_dt,7,2) end as 'invoice_dt',
+		ISNULL(c.Impum_sungbun1,'') as 'Impum_sungbun1',
+		ISNULL(b.Imlan_wonsanji_code,'') as 'Imlan_wonsanji_code',
+		case when ISNULL(e.Mdivision_code,'') = '' then ''
+		when CHARINDEX('/',e.Mdivision_code) = 0 then e.Mdivision_code
+		else rms.dbo.fn_Get_Split_Index(e.Mdivision_code,'/',1) end as 'Mdivision_code',
+		ISNULL(c.Impum_jajae_code,'') as 'Impum_jajae_code',
+		ISNULL(e.Mattached4,'') as 'Mattached4',
+		ISNULL(c.Impum_gukyk2,'')+' '+ISNULL(c.Impum_gukyk3,'') as Impum_gukyk,
+		ISNULL(c.Impum_sungbun2,'') as 'Impum_sungbun2',
+		case when ISNULL(c.Impum_sungbun3,'') = '' then '' else substring(c.Impum_sungbun3,0,8) end as 'Impum_sungbun3',
+		ISNULL(c.Impum_su,'') as 'Impum_su',
+		ISNULL(c.Impum_su_danwi,'') as 'Impum_su_danwi',
+		ISNULL(c.Impum_danga,'') as 'Impum_danga',
+		ISNULL(c.Impum_amt,'') as 'Impum_amt',
+		ISNULL(c.Munitprice_current,'') as 'Munitprice_current',
+		ISNULL(c.Mhs_kind,'') as 'Mhs_kind',
+		ISNULL(c.Mhs_rate,'') as 'Mhs_rate',
+		ISNULL(c.Mhs_code,'') as 'Mhs_code',
+		ISNULL(e.Myog_flag,'') as 'Myog_flag',
+		ISNULL(e.Myog_ok_no,'') as 'Myog_ok_no',
+		ISNULL(e.Mattached5,'') as 'Mattached5',
+		ISNULL(d.Suipyogun_no,'') as 'Suipyogun_no',
+		ISNULL(c.Impum_lan,'') as 'Impum_lan',
+		ISNULL(c.Impum_heang,'') as 'Impum_heang',
+		ISNULL(c.TransCom,'') as 'TransCom',
+		ISNULL(c.TransDt,'') as 'TransDt',
+		ISNULL(c.TransChsu,'') as 'TransChsu'
+		from rms.dbo.recv_impo1 a WITH (NOLOCK)
+		LEFT OUTER JOIN ncustoms.kcba.impo2 b WITH (NOLOCK)
+		on a.Impo_key=b.Imlan_key
+		LEFT OUTER JOIN rms.dbo.recv_impo3 c WITH (NOLOCK)
+		on a.key_no=c.key_no
+		and b.Imlan_jechl_lan=c.impum_lan
+		LEFT OUTER JOIN ncustoms.kcba.impo41 d WITH (NOLOCK)
+		on a.Impo_key=d.SUIPYOGUN_KEY
+		and c.Impum_lan=d.Suipyogun_lan
+		and c.Impum_heang=d.Suipyogun_heang
+		LEFT OUTER JOIN CPS.[dbo].[MAAA100] e WITH (NOLOCK)
+		on c.Impum_jajae_code=e.Mmodel_code
+		and e.mco_com = #{taxNum}
+		LEFT OUTER JOIN rms.dbo.TBR_Alcon_ItemCount f WITH (NOLOCK)
+		on c.Impum_jajae_code=f.mmodel_code
+        where a.Impo_napse_saup = #{taxNum}
+        <if test='impoBlNo != null and impoBlNo != ""'>AND a.impo_bl_no LIKE '%' + #{impoBlNo} + '%' /* BL번호 */</if>
+        <if test='impoSingoNo != null and impoSingoNo != ""'>AND a.impo_singo_no LIKE '%' + #{impoSingoNo} + '%' /* 신고번호 */</if>
+        <if test='impumIvNo != null and impumIvNo != ""'>AND c.invoice_no LIKE '%' + #{impumIvNo} + '%' /* I/V NO */</if>
+        <if test='mdivisionCode != null and mdivisionCode != ""'>AND e.Mdivision_code LIKE '%' + #{mdivisionCode} + '%' /* 사업부코드 */</if>
+        <if test='impumJajaeCode != null and impumJajaeCode != ""'>AND c.Impum_jajae_code LIKE '%' + #{impumJajaeCode} + '%' /* 자재코드 */</if>
+        <if test='_DateType != null and _DateType != "ALL" and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+            <choose>
+                <when test='_DateType == "Impo_singo_date"'>AND a.impo_singo_date BETWEEN #{strFromDate} AND #{strToDate} /* 통관신고일 */</when>
+                <when test='_DateType == "Impo_ok_date"'>AND a.impo_ok_date BETWEEN #{strFromDate} AND #{strToDate} /* 통관수리일 */</when>
+                <when test='_DateType == "TransDt"'>AND c.TransDt BETWEEN #{strFromDate} AND #{strToDate} /* DKSH 배송일 */</when>
+                <when test='_DateType == "InDt"'>AND c.InDt BETWEEN #{strFromDate} AND #{strToDate} /* DKSH 입고일 */</when>
+                <when test='_DateType == "AddDt"'>AND substring(a.AddDtTime,0,9) BETWEEN #{strFromDate} AND #{strToDate} /* 등록일 */</when>
+            </choose>
+        </if>
+        ) datas
+    </select>
+
+	<select id="selectImportManagement_back" resultType="map">
+        /* 수입management현황(recv_impo1) */
+        SELECT datas.*
+        FROM (
+        SELECT ROW_NUMBER() OVER (ORDER BY a.key_no DESC) AS 'rownum',
+		a.key_no,a.impo_iphang_date,a.gu_object_cd, a.impo_bl_no,a.impo_singo_no,
+		ISNULL(a.impo_singo_date,'') as 'impo_singo_date', substring(ISNULL(a.impo_ok_date,''),0,9) as impo_ok_date,
+		ISNULL(c.invoice_no,'') as invoice_no, ISNULL(c.invoice_dt,'') as 'invoice_dt',
+		ISNULL(c.Impum_sungbun1,'') as 'Impum_sungbun1',
+		ISNULL(b.Imlan_wonsanji_code,'') as 'Imlan_wonsanji_code',
+		ISNULL(e.Mdivision_code,'') as 'Mdivision_code',
+		ISNULL(c.Impum_jajae_code,'') as 'Impum_jajae_code',
+		ISNULL(c.Impum_gukyk2,'')+' '+ISNULL(c.Impum_gukyk3,'') as Impum_gukyk,
+		ISNULL(c.Impum_sungbun2,'') as 'Impum_sungbun2',
+		ISNULL(c.Impum_sungbun3,'') as 'Impum_sungbun3',
+		ISNULL(c.Impum_su,'') as 'Impum_su',
+		ISNULL(c.Impum_su_danwi,'') as 'Impum_su_danwi',
+		ISNULL(c.Impum_danga,'') as 'Impum_danga',
+		ISNULL(c.Impum_amt,'') as 'Impum_amt',
+		ISNULL(c.Munitprice_current,'') as 'Munitprice_current',
+		ISNULL(c.Mhs_kind,'') as 'Mhs_kind',
+		ISNULL(c.Mhs_rate,'') as 'Mhs_rate',
+		ISNULL(c.Mhs_code,'') as 'Mhs_code',
+		ISNULL(e.Myog_flag,'') as 'Myog_flag',
+		ISNULL(e.Myog_ok_no,'') as 'Myog_ok_no',
+		ISNULL(d.Suipyogun_no,'') as 'Suipyogun_no',
+		ISNULL(c.Impum_lan,'') as 'Impum_lan',
+		ISNULL(c.Impum_heang,'') as 'Impum_heang',
+		ISNULL(c.TransDt,'') as 'TransDt',
+		ISNULL(c.TransChsu,'') as 'TransChsu',
+		ISNULL(c.InDt,'') as 'InDt',
+		ISNULL(c.Remark1,'') as 'Remark1',
+		ISNULL(c.TransCom,'') as 'TransCom',
+		CASE WHEN ISNULL(f.itemSu,'')='' THEN 0 ELSE (c.Impum_su*f.itemSu) END AS 'qty'
+		from rms.dbo.recv_impo1 a WITH (NOLOCK)
+		LEFT OUTER JOIN rms.dbo.recv_impo2 b WITH (NOLOCK)
+		on a.key_no=b.key_no
+		LEFT OUTER JOIN rms.dbo.recv_impo3 c WITH (NOLOCK)
+		on a.key_no=c.key_no
+		and b.Imlan_jechl_lan=c.impum_lan
+		LEFT OUTER JOIN rms.dbo.recv_impo41 d WITH (NOLOCK)
+		on c.key_no=d.key_no
+		and c.Impum_lan=d.Suipyogun_lan
+		and c.Impum_heang=d.Suipyogun_heang
+		LEFT OUTER JOIN CPS.[dbo].[MAAA100] e WITH (NOLOCK)
+		on c.Impum_jajae_code=e.Mmodel_code
+		and e.mco_com = #{taxNum}
+		LEFT OUTER JOIN rms.dbo.TBR_Alcon_ItemCount f WITH (NOLOCK)
+		on c.Impum_jajae_code=f.mmodel_code
+        where a.Impo_napse_saup = #{taxNum}
+        <if test='impoBlNo != null and impoBlNo != ""'>AND a.impo_bl_no LIKE '%' + #{impoBlNo} + '%' /* BL번호 */</if>
+        <if test='impoSingoNo != null and impoSingoNo != ""'>AND a.impo_singo_no LIKE '%' + #{impoSingoNo} + '%' /* 신고번호 */</if>
+        <if test='impumIvNo != null and impumIvNo != ""'>AND c.invoice_no LIKE '%' + #{impumIvNo} + '%' /* I/V NO */</if>
+        <if test='mdivisionCode != null and mdivisionCode != ""'>AND e.Mdivision_code LIKE '%' + #{mdivisionCode} + '%' /* 사업부코드 */</if>
+        <if test='impumJajaeCode != null and impumJajaeCode != ""'>AND c.Impum_jajae_code LIKE '%' + #{impumJajaeCode} + '%' /* 자재코드 */</if>
+        <if test='_DateType != null and _DateType != "ALL" and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+            <choose>
+                <when test='_DateType == "Impo_singo_date"'>AND a.impo_singo_date BETWEEN #{strFromDate} AND #{strToDate} /* 통관신고일 */</when>
+                <when test='_DateType == "Impo_ok_date"'>AND a.impo_ok_date BETWEEN #{strFromDate} AND #{strToDate} /* 통관수리일 */</when>
+                <when test='_DateType == "TransDt"'>AND c.TransDt BETWEEN #{strFromDate} AND #{strToDate} /* DKSH 배송일 */</when>
+                <when test='_DateType == "InDt"'>AND c.InDt BETWEEN #{strFromDate} AND #{strToDate} /* DKSH 입고일 */</when>
+                <when test='_DateType == "AddDt"'>AND substring(a.AddDtTime,0,9) BETWEEN #{strFromDate} AND #{strToDate} /* 등록일 */</when>
+            </choose>
+        </if>
+        ) datas
+    </select>
+
+	<update id="updateRecvImpo3">
+		/* Import Management 수기입력 */
+		UPDATE	[rms].[dbo].[recv_Impo3]
+		<trim prefix="SET" suffixOverrides=",">
+			<if test='TransDt != null'>TransDt = #{TransDt} ,</if>
+			<if test='TransChsu != null'>TransChsu = #{TransChsu} ,</if>
+			<if test='TransCom != null'>TransCom = #{TransCom} ,</if>
+			<if test='InDt != null'>InDt = #{InDt} ,</if>
+			<if test='Remark1 != null'>Remark1 = #{Remark1} ,</if>
+		</trim>
+		WHERE key_no = #{key_no}
+		  and Impum_lan = #{Impum_lan}
+		  and Impum_heang = #{Impum_heang}
+	</update>
+
+	<select id="selectFtaManagementVendorList" resultType="map">
+		/* 세브 FTA Vendor별 리스트 조회 */
+		SELECT	ROW_NUMBER() OVER (ORDER BY a.RELATEDFTA) AS 'rownum',
+				a.RELATEDFTA, a.FTAAPPLICATION, SUM(a.IMPUM_AMT * a.IMPO_EXCH_YUL) AS 'ImportValue',
+				SUM(a.PAIDDUTY) AS 'PAIDDUTY', SUM(a.DUTYSAVINGS) AS 'DUTYSAVINGS'
+		FROM	[rms].[dbo].[FTA_Master] a WITH (NOLOCK)
+		<where>
+			<if test='taxNum != null and taxNum != ""'>AND a.impo_napse_saup = #{taxNum}</if>
+			<if test='(strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+			  AND a.IMPO_OK_DATE BETWEEN #{strFromDate} AND #{strToDate}
+		    </if>
+			<if test='FTAAPPLICATION != null and FTAAPPLICATION != ""'>AND a.FTAAPPLICATION LIKE #{FTAAPPLICATION} + '%'	/* FTA적용유무 */</if>
+			<if test='RELATEDFTA != null and RELATEDFTA != ""'>AND a.RELATEDFTA LIKE #{RELATEDFTA} + '%'	/* FTA 대상명칭 */</if>
+			<if test='IMPO_GONGGUB_SANGHO != null and IMPO_GONGGUB_SANGHO != ""'>AND a.IMPO_GONGGUB_SANGHO LIKE '%' + #{IMPO_GONGGUB_SANGHO} + '%'	/* Vendor(IMPO_GONGGUB_SANGHO) */</if>
+			<if test='IMLAN_WONSANJI_CODE != null and IMLAN_WONSANJI_CODE != ""'>AND a.IMLAN_WONSANJI_CODE LIKE #{IMLAN_WONSANJI_CODE} + '%'	/* 원산지국가부호 */</if>
+			<if test='BU_ACTIVITY != "ALL" and BU_ACTIVITY != null'>
+				<choose>
+					<when test='BU_ACTIVITY == "Y"'>AND (a.BU != '' OR a.ACTIVITY != '') /* 미분류여부(Y) */</when>
+					<when test='BU_ACTIVITY == "N"'>AND (a.BU = '' OR a.ACTIVITY = '') /* 미분류여부(N) */</when>
+				</choose>
+			</if>
+		</where>
+		GROUP BY a.RELATEDFTA, a.FTAAPPLICATION
+	</select>
+
+	<select id="selectFtaManagementList" resultType="map">
+		/* 세브  FTA 종합관리 리스트 조회 */
+		SELECT	ROW_NUMBER() OVER (ORDER BY a.IMPO_OK_DATE) AS 'rownum',
+				a.*
+		FROM	[rms].[dbo].[FTA_Master] a WITH (NOLOCK)
+		<where>
+			<if test='taxNum != null and taxNum != ""'>AND a.impo_napse_saup = #{taxNum}</if>
+			<if test='FTAKEY != null and FTAKEY != ""'>AND a.FTAKEY = #{FTAKEY}	/* FTAKEY(PK) */</if>
+			<if test='(strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+			  AND a.IMPO_OK_DATE BETWEEN #{strFromDate} AND #{strToDate}
+		    </if>
+			<if test='FTAAPPLICATION != null and FTAAPPLICATION != ""'>AND a.FTAAPPLICATION LIKE #{FTAAPPLICATION} + '%'	/* FTA적용유무 */</if>
+			<if test='BU != null and BU != ""'>AND a.BU LIKE #{BU} + '%'	/* BU */</if>
+			<if test='ACTIVITY != null and ACTIVITY != ""'>AND a.ACTIVITY LIKE #{ACTIVITY} + '%'	/* Activity */</if>
+			<if test='RELATEDFTA != null and RELATEDFTA != ""'>AND a.RELATEDFTA LIKE #{RELATEDFTA} + '%'	/* FTA 대상명칭 */</if>
+			<if test='IMPO_FILE_NO2 != null and IMPO_FILE_NO2 != ""'>AND a.IMPO_FILE_NO2 LIKE #{IMPO_FILE_NO2} + '%'	/* IMPO_FILE_NO2 */</if>
+			<if test='IMPO_GONGGUB_SANGHO != null and IMPO_GONGGUB_SANGHO != ""'>AND a.IMPO_GONGGUB_SANGHO LIKE '%' + #{IMPO_GONGGUB_SANGHO} + '%'	/* Vendor(IMPO_GONGGUB_SANGHO) */</if>
+			<if test='IMLAN_WONSANJI_CODE != null and IMLAN_WONSANJI_CODE != ""'>AND a.IMLAN_WONSANJI_CODE LIKE #{IMLAN_WONSANJI_CODE} + '%'	/* 원산지국가부호 */</if>
+			<if test='BU_ACTIVITY != "ALL" and BU_ACTIVITY != null'>
+				<choose>
+					<when test='BU_ACTIVITY == "Y"'>AND (a.BU != '' OR a.ACTIVITY != '')	/* 미분류여부(Y) */	</when>
+					<when test='BU_ACTIVITY == "N"'>AND (a.BU = '' OR a.ACTIVITY = '')	/* 미분류여부(N) */	</when>
+				</choose>
+			</if>
+		</where>
+	</select>
+
+	<select id="selectItemSebList" resultType="map" fetchSize="100">
+		/* 세브 자재 마스터 조회 */
+		select
+		a.Mcount_no,
+		a.Mmodel_code,
+		a.AddDtm as 'RegDtm',
+		SUBSTRING(a.AddDtm,1, 4) + '-' + SUBSTRING(a.AddDtm,5,2) + '-' + SUBSTRING(a.AddDtm,7,2) AS 'RegDtm1',
+		a.Mco_com,
+		a.Mhs_code,
+		a.CusFirstDt,
+		case when a.CusFirstDt != '' then SUBSTRING(a.CusFirstDt,1, 4) + '-' + SUBSTRING(a.CusFirstDt,5,2) + '-' + SUBSTRING(a.CusFirstDt,7,2) else '' end AS 'CusFirstDt1',
+		a.Mstd_goods,
+		a.Mger_goods,
+		a.Mmodel_1,
+		a.Mmodel_2,
+		a.Mmodel_3,
+		a.Mingredient_1,
+		a.Mingredient_2,
+		a.Mingredient_3,
+		a.Mprovisional,
+		a.Mprovisional_rate,
+		a.Mprovisional_remark,
+		a.Mspecial_remark1 + a.Mspecial_remark2 AS 'Mspecial_remark',
+		a.Mremark1,
+		a.Mremark2,
+		case when (b.Status is null and a.CusFirstDt = '') or (b.Status is null and a.Mconfirm_flag in ('N','Z') and a.CusFirstDt != '') then '1'
+		when ((b.Status is null and a.Mconfirm_flag in ('C','D','F','Y') and a.CusFirstDt != '') or b.Status ='4') then '4'
+		else b.Status end as 'StatusNow',
+		b.*,
+		case when b.Status = 6 then '부품'
+		when b.Status = 2 then '수입 정보'
+		when b.Status = 3 then '인증 정보'
+		when ((b.Status is null and a.Mconfirm_flag = 'Y' and a.CusFirstDt != '') or b.Status ='4') then '최초 수입'
+		when b.Status = 5 then '단종'
+		else '코드 생성' end as 'StatusNm',
+		case when (select count(*) from CPS.[dbo].[ENAC100] c where c.FTableNm='CUAA130' and c.UseYn='Y' and c.FKeyMngNo = a.Mcount_no) > 0 then 'Y' else 'N' end as 'FileCnt'
+		from CPS.[dbo].[MAAA100] a left outer join CPS_WEB.[dbo].[CUAA130] b
+		on a.Mcount_no = b.McountNo
+		and a.useYn = 'Y'
+		and b.UseYn = 'Y'
+		<where>
+		  	and a.Mco_com = '2208146671'
+		  	and a.useYn = 'Y'
+		  	<if test='Status != "1" and Status != "4" and Status != "" and Status != null'>AND b.Status = #{Status}</if>
+		  	<if test='Status == "1"'>AND ((b.Status is null and a.CusFirstDt = '') or (b.Status is null and a.Mconfirm_flag in ('N','Z') and a.CusFirstDt != ''))</if>
+		  	<if test='Status == "4"'>AND ((b.Status is null and a.Mconfirm_flag in ('C','D','F','Y') and a.CusFirstDt != '') or b.Status ='4')</if>
+		  	<if test='(strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+				AND left(a.AddDtm,8) BETWEEN #{strFromDate} AND #{strToDate}
+			</if>
+			<if test='CommercialCode != null and CommercialCode != ""'>AND b.CommercialCode like '%'+ #{CommercialCode} +'%'</if>
+			<if test='FamilyLevel1 != null and FamilyLevel1 != ""'>AND b.FamilyLevel1 like '%'+ #{FamilyLevel1} +'%'</if>
+			<if test='FamilyLevel2 != null and FamilyLevel2 != ""'>AND b.FamilyLevel2 like '%'+ #{FamilyLevel2} +'%'</if>
+			<if test='DescriptionKr != null and DescriptionKr != ""'>AND b.DescriptionKr like '%'+ #{DescriptionKr} +'%'</if>
+			<if test='DescriptionEn != null and DescriptionEn != ""'>AND b.DescriptionEn like '%'+ #{DescriptionEn} +'%'</if>
+			<if test='OverseaCustomer != null and OverseaCustomer != ""'>AND b.OverseaCustomer like '%'+ #{OverseaCustomer} +'%'</if>
+			<if test='Manufacturer != null and Manufacturer != ""'>AND b.Manufacturer like '%'+ #{Manufacturer} +'%'</if>
+			<if test='Fta != null and Fta != ""'>AND b.Fta like '%'+ #{Fta} +'%'</if>
+			<if test='HsCode != null and HsCode != ""'>AND b.HsCode like #{HsCode} +'%'</if>
+			<if test='Mmodel_code != null and Mmodel_code != ""'>AND a.Mmodel_code like '%'+ #{Mmodel_code} +'%'</if>
+			<if test='mmodelCodeList != null and mmodelCodeList != ""'>AND a.Mmodel_code in ${mmodelCodeList}</if>
+			<if test='Mcount_no != null and Mcount_no != ""'>AND a.Mcount_no = #{Mcount_no}</if>
+			<if test='CMMFCode != null and CMMFCode != ""'>AND a.Mmodel_code = #{CMMFCode}</if>
+		</where>
+		order by a.AddDtm desc
+	</select>
+
+	<insert id="insertCUAA130">
+		/* 세브 자재 입력 */
+		INSERT INTO CPS_WEB.[dbo].[CUAA130]
+		([Status]
+		,[McountNo]
+		,[CommercialCode]
+		,[DescriptionKr]
+		,[DescriptionEn]
+		,[FamilyLevel1]
+		,[FamilyLevel2]
+		,[OverseaCustomer]
+		,[Currency]
+		,[Danga]
+		,[Incoterms]
+		,[Fta]
+		,[HsCode]
+		,[Seyul]
+		,[Wonsanji]
+		,[WonMarkType]
+		,[WonMarkLoc]
+		,[Manufacturer]
+		,[ManufacturerAddr]
+		,[ElecBasicModel1]
+		,[ElecCertiNo1]
+		,[ElecRating1]
+		,[ElecCertiDept1]
+		,[ElecBasicModel2]
+		,[ElecCertiNo2]
+		,[ElecRating2]
+		,[ElecCertiDept2]
+		,[RadioBasicModel1]
+		,[RadioCertiNo1]
+		,[RadioBasicModel2]
+		,[RadioCertiNo2]
+		,[IdNo]
+		,[DetailDtm]
+		,[ReceiptNo]
+		,[ExamType]
+		,[MatarialType]
+		,[ManufacturerCode]
+		,[Memo]
+		,[ResultRank]
+		,[Ldpe]
+		,[Eps]
+		,[Epe]
+		,[Pet]
+		,[Pp]
+		,[Pe]
+		,[Complex]
+		,[PlasticWeight]
+		,[EcoAsCode]
+		,[EcoAsDtm]
+		,[NetWt]
+		,[RoHsReport]
+		,[RoHsModel]
+		,[AllSize]
+		,[Weight]
+		,[Volume]
+		,[UseYn]
+		,[AddUserKey]
+		,[AddUserNm]
+		,[AddDtm])
+		VALUES
+		(#{Status}
+		,#{McountNo}
+		,#{CommercialCode}
+		,#{DescriptionKr}
+		,#{DescriptionEn}
+		,#{FamilyLevel1}
+		,#{FamilyLevel2}
+		,#{OverseaCustomer}
+		,#{Currency}
+		,#{Danga}
+		,#{Incoterms}
+		,#{Fta}
+		,#{HsCode}
+		,#{Seyul}
+		,#{Wonsanji}
+		,#{WonMarkType}
+		,#{WonMarkLoc}
+		,#{Manufacturer}
+		,#{ManufacturerAddr}
+		,#{ElecBasicModel1}
+		,#{ElecCertiNo1}
+		,#{ElecRating1}
+		,#{ElecCertiDept1}
+		,#{ElecBasicModel2}
+		,#{ElecCertiNo2}
+		,#{ElecRating2}
+		,#{ElecCertiDept2}
+		,#{RadioBasicModel1}
+		,#{RadioCertiNo1}
+		,#{RadioBasicModel2}
+		,#{RadioCertiNo2}
+		,#{IdNo}
+		,#{DetailDtm}
+		,#{ReceiptNo}
+		,#{ExamType}
+		,#{MatarialType}
+		,#{ManufacturerCode}
+		,#{Memo}
+		,#{ResultRank}
+		,#{Ldpe}
+		,#{Eps}
+		,#{Epe}
+		,#{Pet}
+		,#{Pp}
+		,#{Pe}
+		,#{Complex}
+		,#{PlasticWeight}
+		,#{EcoAsCode}
+		,#{EcoAsDtm}
+		,#{NetWt}
+		,#{RoHsReport}
+		,#{RoHsModel}
+		,#{AllSize}
+		,#{Weight}
+		,#{Volume}
+		,'Y'
+		,#{_userId}
+		,#{_userNm}
+		,#{_currentDatetime})
+	</insert>
+
+	<update id="updateStatus4">
+		/* 세브 자재 수정*/
+		UPDATE CPS_WEB.[dbo].[CUAA130]
+		set Status='4'
+		where McountNo in (select a.McountNo from CPS_WEB.[dbo].[CUAA130] a, CPS.[dbo].[MAAA100] b
+		where a.Status in ('2','3')
+		and a.UseYn='Y'
+		and b.useYn='Y'
+		and b.CusFirstDt != ''
+		and b.Mconfirm_flag in ('C','D','F','Y')
+		and a.McountNo = b.Mcount_no)
+		and UseYn='Y'
+	</update>
+
+	<update id="updateCUAA130">
+		/* 세브 자재 수정*/
+		UPDATE CPS_WEB.[dbo].[CUAA130]
+		<trim prefix="SET" suffixOverrides=",">
+		    <if test='Status != null and Status != ""'>Status = #{Status} ,</if>
+		    <if test='CommercialCode != null and CommercialCode != ""'>CommercialCode = #{CommercialCode} ,</if>
+		    <if test='DescriptionKr != null and DescriptionKr != ""'>DescriptionKr = #{DescriptionKr} ,</if>
+		    <if test='DescriptionEn != null and DescriptionEn != ""'>DescriptionEn = #{DescriptionEn} ,</if>
+		    <if test='FamilyLevel1 != null and FamilyLevel1 != ""'>FamilyLevel1 = #{FamilyLevel1} ,</if>
+		    <if test='FamilyLevel2 != null and FamilyLevel2 != ""'>FamilyLevel2 = #{FamilyLevel2} ,</if>
+		    <if test='OverseaCustomer != null and OverseaCustomer != ""'>OverseaCustomer = #{OverseaCustomer} ,</if>
+		    <if test='Currency != null and Currency != ""'>Currency = #{Currency} ,</if>
+		    <if test='Danga != null and Danga != ""'>Danga = #{Danga} ,</if>
+		    <if test='Incoterms != null and Incoterms != ""'>Incoterms = #{Incoterms} ,</if>
+		    <if test='Fta != null and Fta != ""'>Fta = #{Fta} ,</if>
+		    <if test='HsCode != null and HsCode != ""'>HsCode = #{HsCode} ,</if>
+		    <if test='Seyul != null and Seyul != ""'>Seyul = #{Seyul} ,</if>
+		    <if test='Wonsanji != null and Wonsanji != ""'>Wonsanji = #{Wonsanji} ,</if>
+		    <if test='WonMarkType != null and WonMarkType != ""'>WonMarkType = #{WonMarkType} ,</if>
+		    <if test='WonMarkLoc != null and WonMarkLoc != ""'>WonMarkLoc = #{WonMarkLoc} ,</if>
+		    <if test='Manufacturer != null and Manufacturer != ""'>Manufacturer = #{Manufacturer} ,</if>
+		    <if test='ManufacturerAddr != null and ManufacturerAddr != ""'>ManufacturerAddr = #{ManufacturerAddr} ,</if>
+		    <if test='ElecBasicModel1 != null and ElecBasicModel1 != ""'>ElecBasicModel1 = #{ElecBasicModel1} ,</if>
+		    <if test='ElecCertiNo1 != null and ElecCertiNo1 != ""'>ElecCertiNo1 = #{ElecCertiNo1} ,</if>
+		    <if test='ElecRating1 != null and ElecRating1 != ""'>ElecRating1 = #{ElecRating1} ,</if>
+		    <if test='ElecCertiDept1 != null and ElecCertiDept1 != ""'>ElecCertiDept1 = #{ElecCertiDept1} ,</if>
+		    <if test='ElecBasicModel2 != null and ElecBasicModel2 != ""'>ElecBasicModel2 = #{ElecBasicModel2} ,</if>
+		    <if test='ElecCertiNo2 != null and ElecCertiNo2 != ""'>ElecCertiNo2 = #{ElecCertiNo2} ,</if>
+		    <if test='ElecRating2 != null and ElecRating2 != ""'>ElecRating2 = #{ElecRating2} ,</if>
+		    <if test='ElecCertiDept2 != null and ElecCertiDept2 != ""'>ElecCertiDept2 = #{ElecCertiDept2} ,</if>
+		    <if test='RadioBasicModel1 != null and RadioBasicModel1 != ""'>RadioBasicModel1 = #{RadioBasicModel1} ,</if>
+		    <if test='RadioCertiNo1 != null and RadioCertiNo1 != ""'>RadioCertiNo1 = #{RadioCertiNo1} ,</if>
+		    <if test='RadioBasicModel2 != null and RadioBasicModel2 != ""'>RadioBasicModel2 = #{RadioBasicModel2} ,</if>
+		    <if test='RadioCertiNo2 != null and RadioCertiNo2 != ""'>RadioCertiNo2 = #{RadioCertiNo2} ,</if>
+		    <if test='IdNo != null and IdNo != ""'>IdNo = #{IdNo} ,</if>
+		    <if test='DetailDtm != null and DetailDtm != ""'>DetailDtm = #{DetailDtm} ,</if>
+		    <if test='ReceiptNo != null and ReceiptNo != ""'>ReceiptNo = #{ReceiptNo} ,</if>
+		    <if test='ExamType != null and ExamType != ""'>ExamType = #{ExamType} ,</if>
+		    <if test='MatarialType != null and MatarialType != ""'>MatarialType = #{MatarialType} ,</if>
+		    <if test='ManufacturerCode != null and ManufacturerCode != ""'>ManufacturerCode = #{ManufacturerCode} ,</if>
+		    <if test='Memo != null and Memo != ""'>Memo = #{Memo} ,</if>
+		    <if test='ResultRank != null and ResultRank != ""'>ResultRank = #{ResultRank} ,</if>
+		    <if test='Ldpe != null and Ldpe != ""'>Ldpe = #{Ldpe} ,</if>
+		    <if test='Eps != null and Eps != ""'>Eps = #{Eps} ,</if>
+		    <if test='Epe != null and Epe != ""'>Epe = #{Epe} ,</if>
+		    <if test='Pet != null and Pet != ""'>Pet = #{Pet} ,</if>
+		    <if test='Pp != null and Pp != ""'>Pp = #{Pp} ,</if>
+		    <if test='Pe != null and Pe != ""'>Pe = #{Pe} ,</if>
+		    <if test='Complex != null and Complex != ""'>Complex = #{Complex} ,</if>
+		    <if test='PlasticWeight != null and PlasticWeight != ""'>PlasticWeight = #{PlasticWeight} ,</if>
+		    <if test='EcoAsCode != null and EcoAsCode != ""'>EcoAsCode = #{EcoAsCode} ,</if>
+		    <if test='EcoAsDtm != null and EcoAsDtm != ""'>EcoAsDtm = #{EcoAsDtm} ,</if>
+		    <if test='NetWt != null and NetWt != ""'>NetWt = #{NetWt} ,</if>
+		    <if test='RoHsReport != null and RoHsReport != ""'>RoHsReport = #{RoHsReport} ,</if>
+		    <if test='RoHsModel != null and RoHsModel != ""'>RoHsModel = #{RoHsModel} ,</if>
+		    <if test='AllSize != null and AllSize != ""'>AllSize = #{AllSize} ,</if>
+		    <if test='Weight != null and Weight != ""'>Weight = #{Weight} ,</if>
+		    <if test='Volume != null and Volume != ""'>Volume = #{Volume} ,</if>
+		    <if test='_userId != null and _userId != ""'>EditUserKey = #{_userId} ,</if>
+		    <if test='_userNm != null and _userNm != ""'>EditUserNm = #{_userNm} ,</if>
+		    <if test='_currentDatetime != null and _currentDatetime != ""'>EditDtm = #{_currentDatetime} ,</if>
+		</trim>
+		WHERE CUAA130Key = #{CUAA130Key}
+	</update>
+
+	<select id="selectCUAA130" resultType="map">
+		/* 세브 자재 마스터 조회 */
+		select
+		*
+		from CPS_WEB.[dbo].[CUAA130]
+		<where>
+		    and UseYn = 'Y'
+			<if test='CMMFCode != null and CMMFCode != ""'>AND McountNo in (select Mcount_no from CPS.[dbo].[MAAA100] where Mco_com = '2208146671' and useYn='Y' and Mmodel_code = #{CMMFCode}) </if>
+		</where>
+	</select>
+
+	<select id="selectImpoPlCodeList" resultType="map">
+		/* 수입아이템별 비용 */
+		select d.Mdivision_code,
+		       SUM(e.SUP_EK) as '공급가', SUM(e.TAX_EK) as '부가세', SUM(e.SUM_EK) as '합계'
+		from [ncustoms].[kcba].[impo1] a
+		left outer join [ncustoms].[kcba].[impo1_mDtl] b
+		on a.Impo_key = b.impo_key
+		left outer join [ncustoms].[kcba].[impo3] c
+		on a.Impo_key = c.impum_key
+		left outer join CPS.[dbo].[MAAA100] d
+		on c.Impum_jajae_code = d.Mmodel_code
+		left outer join [ncustoms].[kcba].[impo3_mDtl] e
+		on c.impum_key = e.impum_key
+		and c.Impum_lan = e.Impum_lan
+		and c.Impum_heang = e.Impum_heang
+		and b.KEY_impo1_mDtl = e.KEY_impo1_mDtl
+		where a.Impo_napse_saup = #{saup}
+		<if test='strAccDt != null and strAccDt != ""'>AND b.acc_dt = #{strAccDt}</if>
+		<if test='strVendor != null and strVendor != ""'>AND b.acc_nm like #{strVendor} + '%'</if>
+		<if test='strPlCode != null and strPlCode != ""'>AND d.Mdivision_code like #{strPlCode} + '%'</if>
+		GROUP BY d.Mdivision_code
+		order by d.Mdivision_code
+	</select>
+
+	<select id="selectImpoPlCodeDetailList" resultType="map">
+		/* 수입아이템별 상세비용 */
+		select d.Mdivision_code, b.impo_singo_no,
+		       SUM(e.SUP_EK) as '공급가', SUM(e.TAX_EK) as '부가세', SUM(e.SUM_EK) as '합계'
+		from [ncustoms].[kcba].[impo1] a
+		left outer join [ncustoms].[kcba].[impo1_mDtl] b
+		on a.Impo_key = b.impo_key
+		left outer join [ncustoms].[kcba].[impo3] c
+		on a.Impo_key = c.impum_key
+		left outer join CPS.[dbo].[MAAA100] d
+		on c.Impum_jajae_code = d.Mmodel_code
+		left outer join [ncustoms].[kcba].[impo3_mDtl] e
+		on c.impum_key = e.impum_key
+		and c.Impum_lan = e.Impum_lan
+		and c.Impum_heang = e.Impum_heang
+		and b.KEY_impo1_mDtl = e.KEY_impo1_mDtl
+		where a.Impo_napse_saup = #{saup}
+		<if test='strAccDt != null and strAccDt != ""'>AND b.acc_dt = #{strAccDt}</if>
+		<if test='strVendor != null and strVendor != ""'>AND b.acc_nm like #{strVendor} + '%'</if>
+		<if test='strPlCode != null'>AND d.Mdivision_code = #{strPlCode}</if>
+		GROUP BY d.Mdivision_code, b.impo_singo_no
+		order by d.Mdivision_code, b.impo_singo_no
+	</select>
+
+	<select id="selectImpoPlCodeExcelList" resultType="map">
+		/* 수입아이템별 Excel비용 */
+		select d.Mdivision_code, b.impo_singo_no,
+		       SUM(e.SUP_EK) as '공급가', SUM(e.TAX_EK) as '부가세', SUM(e.SUM_EK) as '합계'
+		from [ncustoms].[kcba].[impo1] a
+		left outer join [ncustoms].[kcba].[impo1_mDtl] b
+		on a.Impo_key = b.impo_key
+		left outer join [ncustoms].[kcba].[impo3] c
+		on a.Impo_key = c.impum_key
+		left outer join CPS.[dbo].[MAAA100] d
+		on c.Impum_jajae_code = d.Mmodel_code
+		left outer join [ncustoms].[kcba].[impo3_mDtl] e
+		on c.impum_key = e.impum_key
+		and c.Impum_lan = e.Impum_lan
+		and c.Impum_heang = e.Impum_heang
+		and b.KEY_impo1_mDtl = e.KEY_impo1_mDtl
+		where a.Impo_napse_saup = #{saup}
+		<if test='strAccDt != null and strAccDt != ""'>AND b.acc_dt = #{strAccDt}</if>
+		<if test='strVendor != null and strVendor != ""'>AND b.acc_nm like #{strVendor} + '%'</if>
+		<if test='strPlCode != null and strPlCode != ""'>AND d.Mdivision_code like #{strPlCode} + '%'</if>
+		GROUP BY d.Mdivision_code, b.impo_singo_no
+		order by d.Mdivision_code, b.impo_singo_no
+	</select>
+</mapper>

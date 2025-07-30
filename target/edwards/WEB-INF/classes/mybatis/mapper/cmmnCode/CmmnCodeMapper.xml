@@ -1,0 +1,397 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.edwards.biz.codeManagement.CmmnCodeMapper">
+    <select id="selectStandardExchangeRate" resultType="map">
+		select a.* from
+		(select top 1 USD, round(USD - LEAD(USD, 1, NULL) OVER (ORDER BY AhStDt desc),2) as 'USDgap',
+		JPY, round(JPY - LEAD(JPY, 1, NULL) OVER (ORDER BY AhStDt desc),4) as 'JPYgap',
+		EUR, round(EUR - LEAD(EUR, 1, NULL) OVER (ORDER BY AhStDt desc),2) as 'EURgap',
+		CNY, round(CNY - LEAD(CNY, 1, NULL) OVER (ORDER BY AhStDt desc),2) as 'CNYgap',
+		GBP, round(GBP - LEAD(GBP, 1, NULL) OVER (ORDER BY AhStDt desc),2) as 'GBPgap'
+		from CPS.dbo.BSAH100
+		where AhFlag='IM'
+		and UseYn='Y'
+		<if test='exchDate != null and exchDate != ""'> AND AhStDt in ${exchDate}</if>
+		order by AhStDt desc) a
+		union all
+		select a.* from
+		(select top 1 USD, round(USD - LEAD(USD, 1, NULL) OVER (ORDER BY AhStDt desc),2) as 'USDgap',
+		JPY, round(JPY - LEAD(JPY, 1, NULL) OVER (ORDER BY AhStDt desc),4) as 'JPYgap',
+		EUR, round(EUR - LEAD(EUR, 1, NULL) OVER (ORDER BY AhStDt desc),2) as 'EURgap',
+		CNY, round(CNY - LEAD(CNY, 1, NULL) OVER (ORDER BY AhStDt desc),2) as 'CNYgap',
+		GBP, round(GBP - LEAD(GBP, 1, NULL) OVER (ORDER BY AhStDt desc),2) as 'GBPgap'
+		from CPS.dbo.BSAH100
+		where AhFlag='EX'
+		and UseYn='Y'
+		<if test='exchDate != null and exchDate != ""'> AND AhStDt in ${exchDate}</if>
+		order by AhStDt desc) a
+	</select>
+
+    <select id="selectGucciBuList" resultType="map">
+		select CD_ABB_ENG
+        from soo_MST.dbo.TBR_SYS_CD_STD
+        where MCD = 'D_GUCCI_ACC_CD'
+        <if test='userKey != ""'>
+             <choose>
+                <when test='userKey == "266"'>
+                    and CD_DESC_ENG in ('25','27')
+                </when>
+                <when test='userKey == "267"'>
+                    and CD_DESC_ENG in ('35')
+                </when>
+                <when test='userKey == "268"'>
+                    and CD_DESC_ENG in ('65')
+                </when>
+                <when test='userKey == "269"'>
+                    and CD_DESC_ENG in ('86')
+                </when>
+                <when test='userKey == "270"'>
+                    and CD_DESC_ENG in ('31')
+                </when>
+                <when test='userKey == "604"'>
+                    and CD_DESC_ENG in ('55')
+                </when>
+                <when test='userKey == "271"'>
+                    and CD_DESC_ENG in ('86','31','65','35','55')
+                </when>
+              </choose>
+        </if>
+        group by CD_ABB_ENG
+	</select>
+
+    <select id="selectGucciObjectList" resultType="map">
+		select CD, CD_DESC
+        from soo_MST.dbo.TBR_SYS_CD_STD
+        where MCD = 'D_GUCCI_ACC_CD'
+        <if test='userKey != ""'>
+             <choose>
+                <when test='userKey == "266"'>
+                    and CD_DESC_ENG in ('25','27')
+                </when>
+                <when test='userKey == "267"'>
+                    and CD_DESC_ENG in ('35')
+                </when>
+                <when test='userKey == "268"'>
+                    and CD_DESC_ENG in ('65')
+                </when>
+                <when test='userKey == "269"'>
+                    and CD_DESC_ENG in ('86')
+                </when>
+                <when test='userKey == "270"'>
+                    and CD_DESC_ENG in ('31')
+                </when>
+                <when test='userKey == "604"'>
+                    and CD_DESC_ENG in ('55')
+                </when>
+                <when test='userKey == "271"'>
+                    and CD_DESC_ENG in ('86','31','65','35','55')
+                </when>
+              </choose>
+        </if>
+        order by CD, CD_ABB_ENG
+	</select>
+
+    <select id="selectGucciBrandList" resultType="map">
+		select CD_DESC
+        from soo_MST.dbo.TBR_SYS_CD_STD
+        where MCD = 'D_GUCCI_COM_CD'
+        <if test='userKey != ""'>
+             <choose>
+                <when test='userKey == "266"'>
+                    and CD in ('25','27')
+                </when>
+                <when test='userKey == "267"'>
+                    and CD in ('35')
+                </when>
+                <when test='userKey == "268"'>
+                    and CD in ('65')
+                </when>
+                <when test='userKey == "269"'>
+                    and CD in ('86','31','65','35','55')
+                </when>
+                <when test='userKey == "270"'>
+                    and CD in ('31')
+                </when>
+                <when test='userKey == "604"'>
+                    and CD in ('55')
+                </when>
+                <when test='userKey == "271"'>
+                    and CD in ('86','31','65','35','55')
+                </when>
+              </choose>
+        </if>
+        order by CD_DESC
+	</select>
+
+    <select id="selectSegwanList" resultType="map">
+		select a.Segwan_code,a.segwan_name from
+		(
+		select  Segwan_code,segwan_name from ncustoms.[kcba].Bsegwan
+		group by Segwan_code,segwan_name
+		union all
+		select  Segwan_code,segwan_name from ncustoms.[kcba].Bsegwan
+		group by Segwan_code,segwan_name
+		union all
+		select  Segwan_code,segwan_name from ncustoms_ay.[kcba].Bsegwan
+		group by Segwan_code,segwan_name
+		union all
+		select  Segwan_code,segwan_name from ncustoms_bs.[kcba].Bsegwan
+		group by Segwan_code,segwan_name
+		union all
+		select  Segwan_code,segwan_name from ncustoms_ca.[kcba].Bsegwan
+		group by Segwan_code,segwan_name
+		union all
+		select  Segwan_code,segwan_name from ncustoms_cw.[kcba].Bsegwan
+		group by Segwan_code,segwan_name
+		union all
+		select  Segwan_code,segwan_name from ncustoms_dj.[kcba].Bsegwan
+		group by Segwan_code,segwan_name
+		union all
+		select  Segwan_code,segwan_name from ncustoms_gm.[kcba].Bsegwan
+		group by Segwan_code,segwan_name
+		union all
+		select  Segwan_code,segwan_name from ncustoms_ic.[kcba].Bsegwan
+		group by Segwan_code,segwan_name
+		union all
+		select  Segwan_code,segwan_name from ncustoms_jj.[kcba].Bsegwan
+		group by Segwan_code,segwan_name
+		union all
+		select  Segwan_code,segwan_name from ncustoms_pj.[kcba].Bsegwan
+		group by Segwan_code,segwan_name
+		union all
+		select  Segwan_code,segwan_name from ncustoms_pt.[kcba].Bsegwan
+		group by Segwan_code,segwan_name
+		union all
+		select  Segwan_code,segwan_name from ncustoms_sel_040.[kcba].Bsegwan
+		group by Segwan_code,segwan_name
+		union all
+		select  Segwan_code,segwan_name from ncustoms_sn.[kcba].Bsegwan
+		group by Segwan_code,segwan_name
+		union all
+		select  Segwan_code,segwan_name from ncustoms_us.[kcba].Bsegwan
+		group by Segwan_code,segwan_name
+		union all
+		select  Segwan_code,segwan_name from ncustoms_yj.[kcba].Bsegwan
+		group by Segwan_code,segwan_name
+		union all
+		select  Segwan_code,segwan_name from ncustoms_ys.[kcba].Bsegwan
+		group by Segwan_code,segwan_name
+		) a
+		where a.segwan_name is not null
+		and a.Segwan_code > '008'
+		group by a.Segwan_code,a.segwan_name
+	</select>
+
+    <select id="selectNcomCodeList" resultType="map">
+		select *
+        from ${_defaultDB}.kcba.${_DB}
+        where 1 = 1
+        <if test='segwanCode != null and segwanCode != ""'> AND Segwan_code = #{segwanCode} </if>
+        <if test='gwaCode != null and gwaCode != ""'> AND Gwa_code = #{gwaCode} </if>
+        <if test='dealCode != null and dealCode != ""'> AND Deal_code = #{dealCode} </if>
+        <if test='dealSangho != null and dealSangho != ""'> AND Deal_sangho LIKE '%' + #{dealSangho} + '%' </if>
+        <if test='dealSaup != null and dealSaup != ""'> AND Deal_saup LIKE '%' + #{dealSaup} + '%' </if>
+        <if test='daeCode != null and daeCode != ""'> AND Dae_code = #{daeCode} </if>
+        <if test='daeSangho != null and daeSangho != ""'> AND Dae_sangho LIKE '%' + #{daeSangho} + '%' </if>
+        <if test='daeSaup != null and daeSaup != ""'> AND Dae_saup LIKE '%' + #{daeSaup} + '%' </if>
+        <if test='gongCode != null and gongCode != ""'> AND Gonggub_Code LIKE '%' + #{gongCode} + '%' </if>
+        <if test='gongSangho != null and gongSangho != ""'> AND Gonggub_sangho LIKE '%' + #{gongSangho} + '%' </if>
+        <if test='hsbuhoCode != null and hsbuhoCode != ""'> AND Hsbuho_code LIKE '%' +#{hsbuhoCode} + '%' </if>
+        <if test='hsbuhoGbn != null and hsbuhoGbn != ""'> AND Hsbuho_gwanse_gbn LIKE '%' +#{hsbuhoGbn} + '%' </if>
+	</select>
+
+    <select id="selectBSAA100MList" resultType="map">
+		select ComSaupNo
+        from CPS_STD.[dbo].[BSAA100M]
+        where UseYn = 'Y'
+        and ComGbn = '0'
+        and ComSaupNo != ''
+        and BSAAMKey > 123309
+	</select>
+
+    <update id="updateBSAA100MList">
+		update CPS_STD.[dbo].[BSAA100M]
+		set ComHnm = #{ComHnm},
+		ComCustomNo = #{ComCustomNo}
+        where ComSaupNo = #{ComSaupNo}
+        and UseYn = 'Y'
+	</update>
+
+    <select id="selectBSAJ100List" resultType="map">
+		select AjCd
+        from CPS.dbo.BSAJ100
+        where AjCd > 'XXXX'
+	</select>
+
+    <update id="updateBSAJ100List">
+		update CPS.dbo.BSAJ100
+		set AjTelNo = #{telno},
+		AjFaxNo = #{faxNo}
+        where AjCd = #{frwrSgn}
+	</update>
+
+
+
+
+
+
+
+
+
+
+
+
+	<select id="findCmmnCodeList" resultType="map">
+	    SELECT CODE, NAME
+		FROM [soo].[dbo].[TBR_CD_MASTER] WITH (NOLOCK)
+		WHERE M_CODE = [soo].[dbo].[UFN_공통_replaceSc](#{mCode})
+		AND USEYN = 'Y'
+		<if test='geCode != null and geCode != ""'> AND CODE <![CDATA[>=]]> #{geCode} </if>
+		ORDER BY SORT_ORDER
+	</select>
+
+	<select id="findCustomerList" resultType="map">
+		SELECT a.customerKey AS 'KEYS', a.customerCode AS 'CODE', a.customerTaxNum AS 'TAXNUM', a.customerName AS 'NAME'
+		FROM [soo_MST].[dbo].[TBR_MST_Customer] a WITH (NOLOCK)
+		WHERE a.customerDB = [soo].[dbo].[UFN_공통_replaceSc](#{_defaultDB})
+		<if test='KEYS != null and KEYS != ""'> AND a.customerKey = [soo].[dbo].[UFN_공통_replaceSc](#{KEYS})</if>
+		<if test='CODE != null and CODE != ""'> AND a.customerCode LIKE [soo].[dbo].[UFN_공통_replaceSc](#{CODE}) + '%'</if>
+		<if test='NAME != null and NAME != ""'> AND a.customerName LIKE [soo].[dbo].[UFN_공통_replaceSc](#{NAME}) + '%'</if>
+		<if test='TAXNUM != null and TAXNUM != ""'> AND a.customerTaxNum LIKE [soo].[dbo].[UFN_공통_replaceSc](#{TAXNUM}) + '%'</if>
+		ORDER BY a.customerCode
+	</select>
+
+	<select id="findExGeleList" resultType="map">
+		SELECT Exgele_code AS 'CODE', Exgele_abb AS 'NAME', Exgele_content AS 'NAMEDESC'
+		FROM ${_defaultDB}.[kcba].[bExGele] WITH (NOLOCK)
+		<where>
+		<if test='CODE != null and CODE != ""'> AND Exgele_code LIKE [soo].[dbo].[UFN_공통_replaceSc](#{CODE}) + '%'</if>
+		<if test='NAME != null and NAME != ""'> AND Exgele_abb LIKE [soo].[dbo].[UFN_공통_replaceSc](#{NAME}) + '%'</if>
+		<if test='NAMEDESC != null and NAMEDESC != ""'> AND Exgele_content LIKE [soo].[dbo].[UFN_공통_replaceSc](#{NAMEDESC}) + '%'</if>
+		</where>
+		ORDER BY Exgele_code
+	</select>
+
+	<select id="findExJongList" resultType="map">
+		SELECT Exjong_code AS 'CODE', Exjong_abb AS 'NAME', Exjong_content AS 'NAMEDESC'
+		FROM ${_defaultDB}.[kcba].[Bexjong] WITH (NOLOCK)
+		<where>
+		<if test='CODE != null and CODE != ""'> AND Exjong_code LIKE [soo].[dbo].[UFN_공통_replaceSc](#{CODE}) + '%'</if>
+		<if test='NAME != null and NAME != ""'> AND Exjong_abb LIKE [soo].[dbo].[UFN_공통_replaceSc](#{NAME}) + '%'</if>
+		<if test='NAMEDESC != null and NAMEDESC != ""'> AND Exjong_content LIKE [soo].[dbo].[UFN_공통_replaceSc](#{NAMEDESC}) + '%'</if>
+		</where>
+		ORDER BY Exjong_code
+	</select>
+
+	<select id="findExUnsongList" resultType="map">
+		SELECT Unsong_code AS 'CODE', Unsong_content AS 'NAME'
+		FROM ${_defaultDB}.[kcba].[Bunsong] WITH (NOLOCK)
+		<where>
+		<if test='CODE != null and CODE != ""'> AND Unsong_code LIKE [soo].[dbo].[UFN_공통_replaceSc](#{CODE}) + '%'</if>
+		<if test='NAME != null and NAME != ""'> AND Unsong_content LIKE [soo].[dbo].[UFN_공통_replaceSc](#{NAME}) + '%'</if>
+		</where>
+		ORDER BY Unsong_code
+	</select>
+
+	<select id="findIndojogunList" resultType="map">
+		SELECT Indojo_code AS 'CODE'
+		FROM ${_defaultDB}.[kcba].[Bindojo] WITH (NOLOCK)
+		WHERE Indojo_code IS NOT NULL
+		<if test='CODE != null and CODE != ""'> AND Indojo_code LIKE [soo].[dbo].[UFN_공통_replaceSc](#{CODE}) + '%'</if>
+		ORDER BY Indojo_code
+	</select>
+
+	<select id="findMoneyList" resultType="map">
+		SELECT Money_code AS 'CODE', Money_content AS 'NAME'
+		FROM  ${_defaultDB}.[kcba].[Bmoney] WITH (NOLOCK)
+		<where>
+		<if test='CODE != null and CODE != ""'> AND Money_code LIKE [soo].[dbo].[UFN_공통_replaceSc](#{CODE}) + '%'</if>
+		<if test='NAME != null and NAME != ""'> AND Money_content LIKE [soo].[dbo].[UFN_공통_replaceSc](#{NAME}) + '%'</if>
+		</where>
+		ORDER BY Money_code
+	</select>
+
+	<select id="findCountryList" resultType="map">
+		SELECT Country_code AS 'CODE', Country_yaku AS 'NAME', Country_name AS 'NAMEDESC'
+		FROM ${_defaultDB}.[kcba].[Bcountry] WITH (NOLOCK)
+		<where>
+		<if test='CODE != null and CODE != ""'> AND Country_code LIKE [soo].[dbo].[UFN_공통_replaceSc](#{CODE}) + '%'</if>
+		<if test='NAME != null and NAME != ""'> AND Country_yaku LIKE [soo].[dbo].[UFN_공통_replaceSc](#{NAME}) + '%'</if>
+		<if test='NAMEDESC != null and NAMEDESC != ""'> AND Country_name LIKE [soo].[dbo].[UFN_공통_replaceSc](#{NAMEDESC}) + '%'</if>
+		</where>
+		ORDER BY Country_code
+	</select>
+
+	<select id="findForwarderList" resultType="map">
+		SELECT FORWARDER_Code AS 'CODE', FORWARDER_sangho AS 'NAME'
+		FROM ${_defaultDB}.[kcba].[dFORWARDER] WITH (NOLOCK)
+		WHERE Forwarder_useGbn = 'Y'
+		<if test='CODE != null and CODE != ""'> AND FORWARDER_Code LIKE [soo].[dbo].[UFN_공통_replaceSc](#{CODE}) + '%'</if>
+		<if test='NAME != null and NAME != ""'> AND FORWARDER_sangho LIKE [soo].[dbo].[UFN_공통_replaceSc](#{NAME}) + '%'</if>
+		ORDER BY FORWARDER_Code
+	</select>
+
+	<select id="findPortList" resultType="map">
+		SELECT Port_code AS 'CODE', Port_name AS 'NAME'
+		FROM ${_defaultDB}.[kcba].[BportNew2] WITH (NOLOCK)
+		<where>
+		<if test='CODE != null and CODE != ""'> AND Port_code LIKE [soo].[dbo].[UFN_공통_replaceSc](#{CODE}) + '%'</if>
+		<if test='NAME != null and NAME != ""'> AND Port_name LIKE [soo].[dbo].[UFN_공통_replaceSc](#{NAME}) + '%'</if>
+		</where>
+		ORDER BY Port_code
+	</select>
+
+	<select id="findCodeList" resultType="map">
+	    SELECT a.M_CODE, a.CODE, a.NAME, a.SORT_ORDER, a.USEYN, a.addUserId, a.addDate, a.editUserId, a.editDate, COUNT(b.CODE) AS 'checkDetailCount'
+	    FROM [soo].[dbo].[TBR_CD_MASTER] a WITH (NOLOCK)
+	    		LEFT OUTER JOIN [soo].[dbo].[TBR_CD_MASTER] b WITH (NOLOCK)
+	    		ON a.CODE = b.M_CODE
+	    WHERE a.M_CODE = [soo].[dbo].[UFN_공통_replaceSc](#{M_CODE})
+		<if test='CODE != null and CODE != ""'>AND a.CODE = [soo].[dbo].[UFN_공통_replaceSc](#{CODE})</if>
+		GROUP BY a.M_CODE, a.CODE, a.NAME, a.SORT_ORDER, a.USEYN, a.addUserId, a.addDate, a.editUserId, a.editDate
+		ORDER BY a.SORT_ORDER, a.CODE
+	</select>
+
+	<select id="findStandardExchangeRateByProcedure" statementType="CALLABLE" resultType="map">
+		select top 1 USD, JPY, EUR, CNY from ncustoms.kcba.Di_exch
+		where I_exch_jukyong_date = (select MAX(I_exch_jukyong_date) from ncustoms.kcba.Di_exch)
+		UNION ALL
+		select top 1 USD, JPY, EUR, CNY from ncustoms.kcba.De_exch
+		where E_exch_jukyong_date = (select MAX(E_exch_jukyong_date) from ncustoms.kcba.De_exch)
+	</select>
+
+
+
+	<insert id="insertCodeInfo">
+	    INSERT INTO [soo].[dbo].[TBR_CD_MASTER]
+				(M_CODE
+				,CODE
+				,NAME
+				,SORT_ORDER
+				,USEYN
+				,addUserId
+				,addDate)
+	     VALUES
+				( #{mCode}
+				,#{CODE}
+				,#{NAME}
+				,#{sortOrder}
+				,#{USEYN}
+				,#{_userId}
+				,GETDATE() )
+	</insert>
+
+	<update id="updateCodeInfo">
+		UPDATE [soo].[dbo].[TBR_CD_MASTER]
+		SET editUserId = #{_userId}
+			,editDate = getdate()
+			<if test='mCode != null'>, M_CODE = #{mCode}</if>
+			<if test='CODE != null'>, CODE = #{CODE}</if>
+			<if test='NAME != null'>, NAME = #{NAME}</if>
+			<if test='sortOrder != null'>, SORT_ORDER = #{sortOrder}</if>
+			<if test='USEYN != null'>, USEYN = #{USEYN}</if>
+		WHERE M_CODE = #{mCode}
+		AND	CODE = #{OLDCODE}
+	</update>
+</mapper>

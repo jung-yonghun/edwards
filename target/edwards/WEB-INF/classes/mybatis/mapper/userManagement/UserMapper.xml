@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.edwards.biz.userManagement.UserInfoMapper">
+    <select id="selectBSAA110List" resultType="map">
+        select
+          a.*,
+          (select b.ComLogo from CPS_STD.[dbo].[BSAA100M] b where b.UseYn='Y' and b.BSAAMngNo = a.BSAAMngNo ) as 'ComLogo',
+          (select b.ComHnm from CPS_STD.[dbo].[BSAA100M] b where b.UseYn='Y' and b.BSAAMngNo = a.BSAAMngNo ) as 'ComHnm',
+          (select b.ComSaupNo from CPS_STD.[dbo].[BSAA100M] b where b.UseYn='Y' and b.BSAAMngNo = a.BSAAMngNo ) as 'ComSaupNo',
+          (select b.GrpSaupNo from CPS_STD.[dbo].[BSAA100M] b where b.UseYn='Y' and b.BSAAMngNo = a.BSAAMngNo ) as 'GrpSaupNo',
+          (select ISNULL(b.ComMngEmail,'') from CPS_STD.[dbo].[BSAA100M] b where b.UseYn='Y' and b.BSAAMngNo = a.BSAAMngNo ) as 'ComMngEmail',
+          (select case when c.ComJisa='SZ' then 'ncustoms_sel4'
+          		when c.ComJisa='SE' then 'ncustoms_sel_040'
+          		when c.ComJisa='AY' then 'ncustoms_ay'
+          		when c.ComJisa='BS' then 'ncustoms_bs'
+          		when c.ComJisa='CA' then 'ncustoms_ca'
+          		when c.ComJisa='CJ' then 'ncustoms_cj'
+          		when c.ComJisa='CW' then 'ncustoms_cw'
+          		when c.ComJisa='DJ' then 'ncustoms_dj'
+          		when c.ComJisa='GM' then 'ncustoms_gm'
+          		when c.ComJisa='IC' then 'ncustoms_ic'
+          		when c.ComJisa='JJ' then 'ncustoms_jj'
+          		when c.ComJisa='PJ' then 'ncustoms_pj'
+          		when c.ComJisa='PT' then 'ncustoms_pt'
+          		when c.ComJisa='SN' then 'ncustoms_sn'
+          		when c.ComJisa='US' then 'ncustoms_us'
+          		when c.ComJisa='YJ' then 'ncustoms_yj'
+          		when c.ComJisa='YS' then 'ncustoms_ys'
+          		else 'ncustoms' end as 'ComJisa'
+          from CPS_STD.[dbo].[BSAA100D] c where c.UseYn='Y' and c.BSAADMngNo = a.BSAADMngNo ) as 'ComJisa',
+          case when a.ComRemark = 'D' then
+          (select AjCd from CPS_STD.[dbo].[BSAA100M] b, CPS.[dbo].[BSAJ100] c where b.BSAAMngNo = a.BSAAMngNo and b.UseYn='Y' and c.UseYn='Y' and b.ComSaupNo = c.AjComNo)
+          else '' end as 'ForwarderCode'
+        from CPS_STD.[dbo].[BSAA110] a
+        <where>
+            AND a.CPSW = 'O'
+            <if test='BSAAUKey != null and BSAAUKey != "" and BSAAUKey != "null"'>AND a.BSAAUKey = #{BSAAUKey}</if>
+            <if test='userEmail != null and userEmail != "" and userEmail != "null"'>AND a.ComUserCmail = #{userEmail}</if>
+            <if test='useYnChk != null and useYnChk != "" and useYnChk != "null"'>AND a.UseYn in ('Y','Z')</if>
+            <if test='userName != null and userName != "" and userName != "null"'>AND a.ComUserHnm = #{userName}</if>
+            <if test='userMobile != null and userMobile != "" and userMobile != "null"'>AND REPLACE(REPLACE(a.ComUserHphone,'-',''), ' ','') = #{userMobile}</if>
+            <if test='userSaup != null and userSaup != "" and userSaup != "null"'>AND a.BSAAMngNo = (select b.BSAAMngNo from CPS_STD.[dbo].[BSAA100M] b where b.UseYn='Y' and b.BSAAMngNo = a.BSAAMngNo and b.ComSaupNo = #{userSaup})</if>
+            <if test='userPw != null and userPw != "" and userPw != "null"'>AND a.ComUserPw = #{userPw}</if>
+            <if test='useYn != null and useYn != "" and useYn != "null"'>AND a.UseYn = 'Y'</if>
+        </where>
+        order by a.BSAAUKey desc
+    </select>
+
+    <select id="findUserInfoList" resultType="map">
+        SELECT datas.*
+        FROM (
+        SELECT ROW_NUMBER() OVER (ORDER BY a.userKey DESC) AS 'rownum',
+        a.*,
+        ISNULL((SELECT name FROM [soo].[dbo].[CPS_CdMaster] WITH (NOLOCK) WHERE code = a.userGradeA AND mcode = 'Y00001' AND useYn = 'Y'), '') AS 'userGradeAName',
+        ISNULL((SELECT name FROM [soo].[dbo].[CPS_CdMaster] WITH (NOLOCK) WHERE code = a.userGradeB AND mcode = 'Y00003' AND useYn = 'Y'), '') AS 'userGradeBName'
+        FROM [soo].[dbo].[CPS_UserInfo] a WITH (NOLOCK)
+        ) datas
+        <if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+            WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+        </if>
+    </select>
+
+    <update id="updateCpsUserMenu">
+		/* 무료사용자 메뉴권한 축소 */
+		UPDATE	soo.dbo.CPS_User_Menu
+		set useYn = 'N'
+		where userKey = #{userKey}
+		  and sortOrder not in (
+			  select sortOrder from soo.dbo.CPS_SYS_Menu
+			  where menuBasic='Y'
+		  )
+	</update>
+
+    <select id="findMsgUserInfoList" resultType="map">
+        select a.user_id, b.msg_stat, c.logon_cd, c.user_nm_kr
+		from [122.99.247.2].[NeoBizboxS2].[BX].[TCMH_USERLOGIN] a,
+		[122.99.247.2].NeoBizboxS2.BX.TMSG_USER b,
+		[122.99.247.2].NeoBizboxS2.BX.TCMG_USER c
+        where a.user_id = b.user_id
+		  and a.user_id = c.user_id
+		  and c.logon_cd = #{userId}
+		  and a.login_ip = #{ip}
+		  and a.yyyymmdd = #{yyyymmdd}
+		  and a.co_id = 0
+		  and b.msg_stat > 0
+    </select>
+
+    <select id="selectZeissUser" resultType="map">
+        select userKey
+		from soo.[dbo].[CPS_UserInfo]
+        where useYn='Y'
+        <if test='userSaup != null and userSaup != ""'>AND userSaup in ${userSaup}</if>
+    </select>
+</mapper>

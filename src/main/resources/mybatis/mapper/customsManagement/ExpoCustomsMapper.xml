@@ -1,0 +1,3442 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) SEIN
+  ~ All rights reserved.
+  ~ This software is the confidential and proprietary information of SEIN. ("Confidential Information").
+  -->
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.edwards.biz.customsManagement.ExpoCustomsMapper">
+    <select id="selectExportStatusList" resultType="map">
+        /* 수출 통관정보 상태조회 */
+        SELECT
+        Expo_key, Expo_iv_no, Expo_res_result, Expo_gurae_gbn, Expo_jong,
+        Expo_singo_no, Expo_singo_date, Expo_ok_date, UserNM, Expo_unsong_type,
+        forward_sangho, Expo_gumaeja_sangho, Expo_mokjuk_name, Expo_hanggu_name,
+        Expo_indojo, Expo_gyelje_money, Expo_gyelje_input, Expo_pojang_su, Expo_total_jung,
+        Expo_sunjuk_date, expo_Loaded_YN, expo_LoadedDt, Expo_SuchulSaupNo,
+        Expo_geyak_no1, Expo_geyak_no2, Expo_segwan, Expo_gwa, Expo_total_usd, Expo_total_won,
+        Expo_suchulja_sangho, Expo_whaju_sangho,
+        ISNULL((SELECT Exlan_egukyk FROM ${_defaultDB}.[kcba].[Expo2] WITH (NOLOCK) WHERE Expo_key = Exlan_key AND Exlan_lan = '001'), '') AS 'exlanEgukyk',
+        #{_defaultDB} as 'defaultDB'
+        FROM ${_defaultDB}.[kcba].[Expo1] WITH (NOLOCK)
+        WHERE 1 = 1
+        <if test='taxNum != null and taxNum != ""'>
+            <choose>
+                <when test='taxNum == "all"'>AND (Expo_SuchulSaupNo IN (select userSaup from soo.dbo.CPS_SaveCustomer where userKey = #{ID} and useYn='Y') or Expo_whaju_saup IN (select userSaup from soo.dbo.CPS_SaveCustomer where userKey = #{ID} and useYn='Y'))</when>
+                <otherwise>AND (Expo_SuchulSaupNo = #{taxNum} or Expo_whaju_saup = #{taxNum})</otherwise>
+            </choose>
+        </if>
+        <if test='expoIvNo != null and expoIvNo != ""'>AND Expo_iv_no LIKE '%' + #{expoIvNo} + '%' /* 인보이스 */</if>
+        <if test='expoSingoNo != null and expoSingoNo != ""'>AND Expo_singo_no LIKE '%' + #{expoSingoNo} + '%' /* 수출신고번호 */</if>
+        <if test='expoGumaejaSangho != null and expoGumaejaSangho != ""'>AND Expo_gumaeja_sangho LIKE '%' + #{expoGumaejaSangho} + '%' /* 구매자상호 */</if>
+        <if test='_DateType != null and _DateType != "ALL" and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+            <choose>
+                <when test='_DateType == "Expo_singo_date_Day"'>AND Expo_singo_date BETWEEN #{strFromDate} AND #{strToDate} /* 신고일 */</when>
+                <when test='_DateType == "Expo_ok_date_Day"'>AND Expo_ok_date BETWEEN #{strFromDate} AND #{strToDate} /* 수리일 */</when>
+                <when test='_DateType == "expo_LoadedDt_Day"'>AND expo_LoadedDt BETWEEN #{strFromDate} AND #{strToDate} /* 선적일 */</when>
+                <when test='_DateType == "bfloaddt_Day"'>AND BFLOADDT BETWEEN #{strFromDate} AND #{strToDate} /* 출항일자 */</when>
+                <when test='_DateType == "expoSunjukDate_Day"'>AND Expo_sunjuk_date BETWEEN #{strFromDate} AND #{strToDate} /* 적재의무기한 */</when>
+            </choose>
+        </if>
+        <if test='expoLoadedYn != null and expoLoadedYn != ""'>AND expo_Loaded_YN LIKE '%' + #{expoLoadedYn} + '%'</if>
+        <if test='expoGeyakNo1 != null and expoGeyakNo1 != ""'>AND (Expo_geyak_no1 LIKE '%' + #{expoGeyakNo1} + '%' or Expo_geyak_no2 LIKE '%' + #{expoGeyakNo1} + '%')</if>
+        <if test='expoGeyakNo2 != null and expoGeyakNo2 != ""'>AND Expo_geyak_no2 LIKE '%' + #{expoGeyakNo2} + '%'</if>
+        <if test='expoSegwan != null and expoSegwan != ""'>AND Expo_segwan = #{expoSegwan}</if>
+        <if test='expoGroupSegwan != null and expoGroupSegwan != ""'>
+            <choose>
+                <when test='expoGroupSegwan == "경기"'>AND Expo_segwan in (012,014,021,131)</when>
+                <when test='expoGroupSegwan == "구미"'>AND Expo_segwan in (120,121)</when>
+                <when test='expoGroupSegwan == "대전"'>AND Expo_segwan in (080,081,082,150)</when>
+                <when test='expoGroupSegwan == "부산"'>AND Expo_segwan in (030,033,037,039,051,054,140)</when>
+                <when test='expoGroupSegwan == "서울"'>AND Expo_segwan in (010,011,090,100,101,102,103,130)</when>
+                <when test='expoGroupSegwan == "여수"'>AND Expo_segwan in (060,062,070,071)</when>
+                <when test='expoGroupSegwan == "울산"'>AND Expo_segwan in (110,122)</when>
+                <when test='expoGroupSegwan == "인천"'>AND Expo_segwan in (013,020,023,040,041)</when>
+                <when test='expoGroupSegwan == "창원"'>AND Expo_segwan in (050,052,053,056)</when>
+                <when test='expoGroupSegwan == "천안"'>AND Expo_segwan in (152)</when>
+                <when test='expoGroupSegwan == "청주"'>AND Expo_segwan in (151,153)</when>
+                <when test='expoGroupSegwan == "파주"'>AND Expo_segwan in (017)</when>
+                <when test='expoGroupSegwan == "평택"'>AND Expo_segwan in (016,154)</when>
+            </choose>
+        </if>
+        <if test='expoGwa != null and expoGwa != ""'>AND Expo_gwa LIKE '%' + #{expoGwa} + '%'</if>
+        <if test='expoChamjoNo != null and expoChamjoNo != ""'>AND Expo_chamjo_no LIKE '%' + #{expoChamjoNo} + '%'</if>
+        <if test='expoSuchuljaSangho != null and expoSuchuljaSangho != ""'>AND Expo_suchulja_sangho LIKE '%' + #{expoSuchuljaSangho} + '%'</if>
+        <if test='expoSuchuljaCode != null and expoSuchuljaCode != ""'>AND Expo_suchulja_code LIKE '%' + #{expoSuchuljaCode} + '%'</if>
+        <if test='expoSuchulSaupNo != null and expoSuchulSaupNo != ""'>AND Expo_SuchulSaupNo LIKE '%' + #{expoSuchulSaupNo} + '%'</if>
+        <if test='expoWhajuSangho != null and expoWhajuSangho != ""'>AND Expo_whaju_sangho LIKE '%' + #{expoWhajuSangho} + '%'</if>
+        <if test='expoWhajuCode != null and expoWhajuCode != ""'>AND Expo_whaju_code LIKE '%' + #{expoWhajuCode} + '%'</if>
+        <if test='expoWhajuSaup != null and expoWhajuSaup != ""'>AND Expo_whaju_saup LIKE '%' + #{expoWhajuSaup} + '%'</if>
+        <if test='expoTrustSangho != null and expoTrustSangho != ""'>AND Expo_trust_sangho LIKE '%' + #{expoTrustSangho} + '%'</if>
+        <if test='expoTrustCode != null and expoTrustCode != ""'>AND Expo_trust_code LIKE '%' + #{expoTrustCode} + '%'</if>
+        <if test='expoTrustSaup != null and expoTrustSaup != ""'>AND Expo_trust_saup LIKE '%' + #{expoTrustSaup} + '%'</if>
+        <if test='expumJepumCode != null and expumJepumCode != ""'>AND Expo_key in (select Expum_key FROM ${_defaultDB}.[kcba].[expo3] where Expum_jepum_code LIKE '%' + #{expumJepumCode} + '%')</if>
+        <if test='expumPum != null and expumPum != ""'>AND Expo_key in (select Expum_key FROM ${_defaultDB}.[kcba].[expo3] where Expum_pum_a+Expum_pum_b+Expum_pum_c+Expum_pum_d+Expum_pum_e+Expum_pum_f+Expum_pum_g+Expum_pum_h LIKE '%' + #{expumPum} + '%')</if>
+        <if test='expumSungbun != null and expumSungbun != ""'>AND Expo_key in (select Expum_key FROM ${_defaultDB}.[kcba].[expo3] where Expum_sungbun_a+Expum_sungbun_b LIKE '%' + #{expumSungbun} + '%')</if>
+        order by Expo_singo_date desc
+    </select>
+
+    <select id="selectExportDeclarationDetailList" resultType="map">
+        /* 수출 통관정보 Declaration 디테일 조회 */
+        SELECT datas.*
+        FROM (
+        SELECT ROW_NUMBER() OVER (ORDER BY a.Exlan_key, a.Exlan_lan) AS 'rownum',
+        a.Exlan_key, a.Exlan_lan, a.Exlan_hs, a.Exlan_egukyk, a.Exlan_whan_jepum,
+        a.Exlan_gyelje_gum, a.Exlan_pojang_su, a.Exlan_pojang_danwi, a.Exlan_jung,
+        a.Exlan_fob_usd, a.Exlan_fob_won
+        FROM ${_defaultDB}.[kcba].[Expo2] a WITH (NOLOCK)
+        WHERE a.Exlan_key = #{exlanKey} /* Exlan_key(PK) */
+        <if test='exlanLan != null and exlanLan != ""'>AND a.Exlan_lan = #{expoKey} /* Exlan_lan(PK) */</if>
+        ) datas
+        <if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+            WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+        </if>
+    </select>
+
+    <select id="selectExportDeclarationSubDetailList" resultType="map">
+        /* 수출 통관정보 Declaration 서브디테일 조회 */
+        SELECT datas.*
+        FROM (
+        SELECT ROW_NUMBER() OVER (ORDER BY a.Expum_key, a.Expum_lan, a.Expum_haeng) AS 'rownum',
+        a.Expum_key, a.Expum_lan, a.Expum_haeng, a.Expum_pum_a, a.Expum_su, a.Expum_su_danwi,
+        a.Expum_danga, a.Expum_gyelje_gum, a.Expum_pum_b, a.Expum_pum_c, a.Expum_pum_d, a.Expum_pum_e,
+        a.Expum_pum_f, a.Expum_pum_g, a.Expum_pum_h, a.Expum_sungbun_a, a.Expum_sungbun_b, a.Expum_jepum_code
+        FROM ${_defaultDB}.[kcba].[Expo3] a WITH (NOLOCK)
+        WHERE a.Expum_key = #{expumKey} /* Expum_key(PK) */
+        <if test='expumLan != null and expumLan != ""'>AND a.Expum_lan = #{expumLan} /* Expum_lan(PK) */</if>
+        <if test='expumHaeng != null and expumHaeng != ""'>AND a.Expum_haeng = #{expumHaeng} /* Expum_haeng(PK) */</if>
+        ) datas
+        <if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+            WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+        </if>
+    </select>
+
+    <select id="selectZeissExportStatusDetail" resultType="map">
+        /* 칼자이스 수출통관현황 (export Status) 자재코드+규격+성분 칼자이스+칼자이스비전 통합*/
+        SELECT datas.*
+        FROM (
+        SELECT
+		Expum_jepum_code,
+		Expum_pum_a+Expum_pum_b+Expum_pum_c+Expum_pum_d+Expum_pum_e+Expum_pum_f+Expum_pum_g+Expum_pum_h as 'Expum_pum',
+		Expum_sungbun_a+Expum_sungbun_b as 'Expum_sungbun'
+		FROM ncustoms_sel_040.[kcba].[Expo3]
+        WHERE Expum_key in (SELECT
+		Expo_key
+		FROM ncustoms_sel_040.[kcba].[Expo1]
+		where (Expo_SuchulSaupNo = '2038151510' or Expo_whaju_saup = '2038151510')
+		and Expo_singoja_sangho ='세인관세법인')
+        <if test='expumJepumCode != null and expumJepumCode != ""'>AND Expum_jepum_code LIKE '%' + #{expumJepumCode} + '%'</if>
+        <if test='expumPum != null and expumPum != ""'>AND Expum_pum_a+Expum_pum_b+Expum_pum_c+Expum_pum_d+Expum_pum_e+Expum_pum_f+Expum_pum_g+Expum_pum_h LIKE '%' + #{expumPum} + '%'</if>
+        <if test='expumSungbun != null and expumSungbun != ""'>AND Expum_sungbun_a+Expum_sungbun_b LIKE '%' + #{expumSungbun} + '%'</if>
+        union all
+        SELECT
+		Expum_jepum_code,
+		Expum_pum_a+Expum_pum_b+Expum_pum_c+Expum_pum_d+Expum_pum_e+Expum_pum_f+Expum_pum_g+Expum_pum_h as 'Expum_pum',
+		Expum_sungbun_a+Expum_sungbun_b as 'Expum_sungbun'
+		FROM ncustoms_yj.[kcba].[Expo3]
+        WHERE Expum_key in (SELECT
+		Expo_key
+		FROM ncustoms_yj.[kcba].[Expo1]
+		where (Expo_SuchulSaupNo = '1058677021' or Expo_whaju_saup = '1058677021')
+		and Expo_singoja_sangho ='세인관세법인')
+        <if test='expumJepumCode != null and expumJepumCode != ""'>AND Expum_jepum_code LIKE '%' + #{expumJepumCode} + '%'</if>
+        <if test='expumPum != null and expumPum != ""'>AND Expum_pum_a+Expum_pum_b+Expum_pum_c+Expum_pum_d+Expum_pum_e+Expum_pum_f+Expum_pum_g+Expum_pum_h LIKE '%' + #{expumPum} + '%'</if>
+        <if test='expumSungbun != null and expumSungbun != ""'>AND Expum_sungbun_a+Expum_sungbun_b LIKE '%' + #{expumSungbun} + '%'</if>
+        ) datas
+    </select>
+
+    <select id="selectZeissExportStatusDetail1" resultType="map">
+        /* 칼자이스 수출통관현황 (export Status) 자재코드+규격+성분 칼자이스 단독*/
+        SELECT datas.*
+        FROM (
+        SELECT
+		Expum_jepum_code,
+		Expum_pum_a+Expum_pum_b+Expum_pum_c+Expum_pum_d+Expum_pum_e+Expum_pum_f+Expum_pum_g+Expum_pum_h as 'Expum_pum',
+		Expum_sungbun_a+Expum_sungbun_b as 'Expum_sungbun'
+		FROM ncustoms_sel_040.[kcba].[Expo3]
+        WHERE Expum_key in (SELECT
+		Expo_key
+		FROM ncustoms_sel_040.[kcba].[Expo1]
+		where (Expo_SuchulSaupNo = '2038151510' or Expo_whaju_saup = '2038151510')
+		and Expo_singoja_sangho ='세인관세법인')
+        <if test='expumJepumCode != null and expumJepumCode != ""'>AND Expum_jepum_code LIKE '%' + #{expumJepumCode} + '%'</if>
+        <if test='expumPum != null and expumPum != ""'>AND Expum_pum_a+Expum_pum_b+Expum_pum_c+Expum_pum_d+Expum_pum_e+Expum_pum_f+Expum_pum_g+Expum_pum_h LIKE '%' + #{expumPum} + '%'</if>
+        <if test='expumSungbun != null and expumSungbun != ""'>AND Expum_sungbun_a+Expum_sungbun_b LIKE '%' + #{expumSungbun} + '%'</if>
+        ) datas
+    </select>
+
+    <select id="selectZeissExportStatusDetail2" resultType="map">
+        /* 칼자이스 수출통관현황 (export Status) 자재코드+규격+성분 칼자이스비전 단독*/
+        SELECT datas.*
+        FROM (
+        SELECT
+		Expum_jepum_code,
+		Expum_pum_a+Expum_pum_b+Expum_pum_c+Expum_pum_d+Expum_pum_e+Expum_pum_f+Expum_pum_g+Expum_pum_h as 'Expum_pum',
+		Expum_sungbun_a+Expum_sungbun_b as 'Expum_sungbun'
+		FROM ncustoms_yj.[kcba].[Expo3]
+        WHERE Expum_key in (SELECT
+		Expo_key
+		FROM ncustoms_yj.[kcba].[Expo1]
+		where (Expo_SuchulSaupNo = '1058677021' or Expo_whaju_saup = '1058677021')
+		and Expo_singoja_sangho ='세인관세법인')
+        <if test='expumJepumCode != null and expumJepumCode != ""'>AND Expum_jepum_code LIKE '%' + #{expumJepumCode} + '%'</if>
+        <if test='expumPum != null and expumPum != ""'>AND Expum_pum_a+Expum_pum_b+Expum_pum_c+Expum_pum_d+Expum_pum_e+Expum_pum_f+Expum_pum_g+Expum_pum_h LIKE '%' + #{expumPum} + '%'</if>
+        <if test='expumSungbun != null and expumSungbun != ""'>AND Expum_sungbun_a+Expum_sungbun_b LIKE '%' + #{expumSungbun} + '%'</if>
+        ) datas
+    </select>
+
+    <select id="selectExportAllStatusList" resultType="map">
+        /* 전체수출통관현황 (Export Status) */
+        select * from
+		(
+		SELECT
+		Expo_key, Expo_iv_no, Expo_res_result, Expo_gurae_gbn, Expo_jong,
+		Expo_singo_no, Expo_singo_date, Expo_ok_date, UserNM, Expo_unsong_type,
+		forward_sangho, Expo_gumaeja_sangho, Expo_mokjuk_name, Expo_hanggu_name,
+		Expo_indojo, Expo_gyelje_money, Expo_gyelje_input, Expo_pojang_su, Expo_total_jung,
+		Expo_sunjuk_date, expo_Loaded_YN, expo_LoadedDt, Expo_SuchulSaupNo,
+		Expo_geyak_no1, Expo_geyak_no2, Expo_segwan, Expo_gwa, Expo_total_usd, Expo_total_won,
+		Expo_suchulja_sangho, Expo_whaju_sangho,
+		ISNULL((SELECT Exlan_egukyk FROM ncustoms_sel_040.[kcba].[Expo2] WITH (NOLOCK) WHERE Expo_key = Exlan_key AND Exlan_lan = '001'), '') AS 'exlanEgukyk'
+		FROM ncustoms_sel_040.[kcba].[Expo1] WITH (NOLOCK)
+		union all
+		SELECT
+		Expo_key, Expo_iv_no, Expo_res_result, Expo_gurae_gbn, Expo_jong,
+		Expo_singo_no, Expo_singo_date, Expo_ok_date, UserNM, Expo_unsong_type,
+		forward_sangho, Expo_gumaeja_sangho, Expo_mokjuk_name, Expo_hanggu_name,
+		Expo_indojo, Expo_gyelje_money, Expo_gyelje_input, Expo_pojang_su, Expo_total_jung,
+		Expo_sunjuk_date, expo_Loaded_YN, expo_LoadedDt, Expo_SuchulSaupNo,
+		Expo_geyak_no1, Expo_geyak_no2, Expo_segwan, Expo_gwa, Expo_total_usd, Expo_total_won,
+		Expo_suchulja_sangho, Expo_whaju_sangho,
+		ISNULL((SELECT Exlan_egukyk FROM ncustoms_ay.[kcba].[Expo2] WITH (NOLOCK) WHERE Expo_key = Exlan_key AND Exlan_lan = '001'), '') AS 'exlanEgukyk'
+		FROM ncustoms_ay.[kcba].[Expo1] WITH (NOLOCK)
+		union all
+		SELECT
+		Expo_key, Expo_iv_no, Expo_res_result, Expo_gurae_gbn, Expo_jong,
+		Expo_singo_no, Expo_singo_date, Expo_ok_date, UserNM, Expo_unsong_type,
+		forward_sangho, Expo_gumaeja_sangho, Expo_mokjuk_name, Expo_hanggu_name,
+		Expo_indojo, Expo_gyelje_money, Expo_gyelje_input, Expo_pojang_su, Expo_total_jung,
+		Expo_sunjuk_date, expo_Loaded_YN, expo_LoadedDt, Expo_SuchulSaupNo,
+		Expo_geyak_no1, Expo_geyak_no2, Expo_segwan, Expo_gwa, Expo_total_usd, Expo_total_won,
+		Expo_suchulja_sangho, Expo_whaju_sangho,
+		ISNULL((SELECT Exlan_egukyk FROM ncustoms_bs.[kcba].[Expo2] WITH (NOLOCK) WHERE Expo_key = Exlan_key AND Exlan_lan = '001'), '') AS 'exlanEgukyk'
+		FROM ncustoms_bs.[kcba].[Expo1] WITH (NOLOCK)
+		union all
+		SELECT
+		Expo_key, Expo_iv_no, Expo_res_result, Expo_gurae_gbn, Expo_jong,
+		Expo_singo_no, Expo_singo_date, Expo_ok_date, UserNM, Expo_unsong_type,
+		forward_sangho, Expo_gumaeja_sangho, Expo_mokjuk_name, Expo_hanggu_name,
+		Expo_indojo, Expo_gyelje_money, Expo_gyelje_input, Expo_pojang_su, Expo_total_jung,
+		Expo_sunjuk_date, expo_Loaded_YN, expo_LoadedDt, Expo_SuchulSaupNo,
+		Expo_geyak_no1, Expo_geyak_no2, Expo_segwan, Expo_gwa, Expo_total_usd, Expo_total_won,
+		Expo_suchulja_sangho, Expo_whaju_sangho,
+		ISNULL((SELECT Exlan_egukyk FROM ncustoms_ca.[kcba].[Expo2] WITH (NOLOCK) WHERE Expo_key = Exlan_key AND Exlan_lan = '001'), '') AS 'exlanEgukyk'
+		FROM ncustoms_ca.[kcba].[Expo1] WITH (NOLOCK)
+		union all
+		SELECT
+		Expo_key, Expo_iv_no, Expo_res_result, Expo_gurae_gbn, Expo_jong,
+		Expo_singo_no, Expo_singo_date, Expo_ok_date, UserNM, Expo_unsong_type,
+		forward_sangho, Expo_gumaeja_sangho, Expo_mokjuk_name, Expo_hanggu_name,
+		Expo_indojo, Expo_gyelje_money, Expo_gyelje_input, Expo_pojang_su, Expo_total_jung,
+		Expo_sunjuk_date, expo_Loaded_YN, expo_LoadedDt, Expo_SuchulSaupNo,
+		Expo_geyak_no1, Expo_geyak_no2, Expo_segwan, Expo_gwa, Expo_total_usd, Expo_total_won,
+		Expo_suchulja_sangho, Expo_whaju_sangho,
+		ISNULL((SELECT Exlan_egukyk FROM ncustoms_cj.[kcba].[Expo2] WITH (NOLOCK) WHERE Expo_key = Exlan_key AND Exlan_lan = '001'), '') AS 'exlanEgukyk'
+		FROM ncustoms_cj.[kcba].[Expo1] WITH (NOLOCK)
+		union all
+		SELECT
+		Expo_key, Expo_iv_no, Expo_res_result, Expo_gurae_gbn, Expo_jong,
+		Expo_singo_no, Expo_singo_date, Expo_ok_date, UserNM, Expo_unsong_type,
+		forward_sangho, Expo_gumaeja_sangho, Expo_mokjuk_name, Expo_hanggu_name,
+		Expo_indojo, Expo_gyelje_money, Expo_gyelje_input, Expo_pojang_su, Expo_total_jung,
+		Expo_sunjuk_date, expo_Loaded_YN, expo_LoadedDt, Expo_SuchulSaupNo,
+		Expo_geyak_no1, Expo_geyak_no2, Expo_segwan, Expo_gwa, Expo_total_usd, Expo_total_won,
+		Expo_suchulja_sangho, Expo_whaju_sangho,
+		ISNULL((SELECT Exlan_egukyk FROM ncustoms_cw.[kcba].[Expo2] WITH (NOLOCK) WHERE Expo_key = Exlan_key AND Exlan_lan = '001'), '') AS 'exlanEgukyk'
+		FROM ncustoms_cw.[kcba].[Expo1] WITH (NOLOCK)
+		union all
+		SELECT
+		Expo_key, Expo_iv_no, Expo_res_result, Expo_gurae_gbn, Expo_jong,
+		Expo_singo_no, Expo_singo_date, Expo_ok_date, UserNM, Expo_unsong_type,
+		forward_sangho, Expo_gumaeja_sangho, Expo_mokjuk_name, Expo_hanggu_name,
+		Expo_indojo, Expo_gyelje_money, Expo_gyelje_input, Expo_pojang_su, Expo_total_jung,
+		Expo_sunjuk_date, expo_Loaded_YN, expo_LoadedDt, Expo_SuchulSaupNo,
+		Expo_geyak_no1, Expo_geyak_no2, Expo_segwan, Expo_gwa, Expo_total_usd, Expo_total_won,
+		Expo_suchulja_sangho, Expo_whaju_sangho,
+		ISNULL((SELECT Exlan_egukyk FROM ncustoms_dj.[kcba].[Expo2] WITH (NOLOCK) WHERE Expo_key = Exlan_key AND Exlan_lan = '001'), '') AS 'exlanEgukyk'
+		FROM ncustoms_dj.[kcba].[Expo1] WITH (NOLOCK)
+		union all
+		SELECT
+		Expo_key, Expo_iv_no, Expo_res_result, Expo_gurae_gbn, Expo_jong,
+		Expo_singo_no, Expo_singo_date, Expo_ok_date, UserNM, Expo_unsong_type,
+		forward_sangho, Expo_gumaeja_sangho, Expo_mokjuk_name, Expo_hanggu_name,
+		Expo_indojo, Expo_gyelje_money, Expo_gyelje_input, Expo_pojang_su, Expo_total_jung,
+		Expo_sunjuk_date, expo_Loaded_YN, expo_LoadedDt, Expo_SuchulSaupNo,
+		Expo_geyak_no1, Expo_geyak_no2, Expo_segwan, Expo_gwa, Expo_total_usd, Expo_total_won,
+		Expo_suchulja_sangho, Expo_whaju_sangho,
+		ISNULL((SELECT Exlan_egukyk FROM ncustoms_gm.[kcba].[Expo2] WITH (NOLOCK) WHERE Expo_key = Exlan_key AND Exlan_lan = '001'), '') AS 'exlanEgukyk'
+		FROM ncustoms_gm.[kcba].[Expo1] WITH (NOLOCK)
+		union all
+		SELECT
+		Expo_key, Expo_iv_no, Expo_res_result, Expo_gurae_gbn, Expo_jong,
+		Expo_singo_no, Expo_singo_date, Expo_ok_date, UserNM, Expo_unsong_type,
+		forward_sangho, Expo_gumaeja_sangho, Expo_mokjuk_name, Expo_hanggu_name,
+		Expo_indojo, Expo_gyelje_money, Expo_gyelje_input, Expo_pojang_su, Expo_total_jung,
+		Expo_sunjuk_date, expo_Loaded_YN, expo_LoadedDt, Expo_SuchulSaupNo,
+		Expo_geyak_no1, Expo_geyak_no2, Expo_segwan, Expo_gwa, Expo_total_usd, Expo_total_won,
+		Expo_suchulja_sangho, Expo_whaju_sangho,
+		ISNULL((SELECT Exlan_egukyk FROM ncustoms_ic.[kcba].[Expo2] WITH (NOLOCK) WHERE Expo_key = Exlan_key AND Exlan_lan = '001'), '') AS 'exlanEgukyk'
+		FROM ncustoms_ic.[kcba].[Expo1] WITH (NOLOCK)
+		union all
+		SELECT
+		Expo_key, Expo_iv_no, Expo_res_result, Expo_gurae_gbn, Expo_jong,
+		Expo_singo_no, Expo_singo_date, Expo_ok_date, UserNM, Expo_unsong_type,
+		forward_sangho, Expo_gumaeja_sangho, Expo_mokjuk_name, Expo_hanggu_name,
+		Expo_indojo, Expo_gyelje_money, Expo_gyelje_input, Expo_pojang_su, Expo_total_jung,
+		Expo_sunjuk_date, expo_Loaded_YN, expo_LoadedDt, Expo_SuchulSaupNo,
+		Expo_geyak_no1, Expo_geyak_no2, Expo_segwan, Expo_gwa, Expo_total_usd, Expo_total_won,
+		Expo_suchulja_sangho, Expo_whaju_sangho,
+		ISNULL((SELECT Exlan_egukyk FROM ncustoms_jj.[kcba].[Expo2] WITH (NOLOCK) WHERE Expo_key = Exlan_key AND Exlan_lan = '001'), '') AS 'exlanEgukyk'
+		FROM ncustoms_jj.[kcba].[Expo1] WITH (NOLOCK)
+		union all
+		SELECT
+		Expo_key, Expo_iv_no, Expo_res_result, Expo_gurae_gbn, Expo_jong,
+		Expo_singo_no, Expo_singo_date, Expo_ok_date, UserNM, Expo_unsong_type,
+		forward_sangho, Expo_gumaeja_sangho, Expo_mokjuk_name, Expo_hanggu_name,
+		Expo_indojo, Expo_gyelje_money, Expo_gyelje_input, Expo_pojang_su, Expo_total_jung,
+		Expo_sunjuk_date, expo_Loaded_YN, expo_LoadedDt, Expo_SuchulSaupNo,
+		Expo_geyak_no1, Expo_geyak_no2, Expo_segwan, Expo_gwa, Expo_total_usd, Expo_total_won,
+		Expo_suchulja_sangho, Expo_whaju_sangho,
+		ISNULL((SELECT Exlan_egukyk FROM ncustoms_pj.[kcba].[Expo2] WITH (NOLOCK) WHERE Expo_key = Exlan_key AND Exlan_lan = '001'), '') AS 'exlanEgukyk'
+		FROM ncustoms_pj.[kcba].[Expo1] WITH (NOLOCK)
+		union all
+		SELECT
+		Expo_key, Expo_iv_no, Expo_res_result, Expo_gurae_gbn, Expo_jong,
+		Expo_singo_no, Expo_singo_date, Expo_ok_date, UserNM, Expo_unsong_type,
+		forward_sangho, Expo_gumaeja_sangho, Expo_mokjuk_name, Expo_hanggu_name,
+		Expo_indojo, Expo_gyelje_money, Expo_gyelje_input, Expo_pojang_su, Expo_total_jung,
+		Expo_sunjuk_date, expo_Loaded_YN, expo_LoadedDt, Expo_SuchulSaupNo,
+		Expo_geyak_no1, Expo_geyak_no2, Expo_segwan, Expo_gwa, Expo_total_usd, Expo_total_won,
+		Expo_suchulja_sangho, Expo_whaju_sangho,
+		ISNULL((SELECT Exlan_egukyk FROM ncustoms_pt.[kcba].[Expo2] WITH (NOLOCK) WHERE Expo_key = Exlan_key AND Exlan_lan = '001'), '') AS 'exlanEgukyk'
+		FROM ncustoms_pt.[kcba].[Expo1] WITH (NOLOCK)
+		union all
+		SELECT
+		Expo_key, Expo_iv_no, Expo_res_result, Expo_gurae_gbn, Expo_jong,
+		Expo_singo_no, Expo_singo_date, Expo_ok_date, UserNM, Expo_unsong_type,
+		forward_sangho, Expo_gumaeja_sangho, Expo_mokjuk_name, Expo_hanggu_name,
+		Expo_indojo, Expo_gyelje_money, Expo_gyelje_input, Expo_pojang_su, Expo_total_jung,
+		Expo_sunjuk_date, expo_Loaded_YN, expo_LoadedDt, Expo_SuchulSaupNo,
+		Expo_geyak_no1, Expo_geyak_no2, Expo_segwan, Expo_gwa, Expo_total_usd, Expo_total_won,
+		Expo_suchulja_sangho, Expo_whaju_sangho,
+		ISNULL((SELECT Exlan_egukyk FROM ncustoms_sel4.[kcba].[Expo2] WITH (NOLOCK) WHERE Expo_key = Exlan_key AND Exlan_lan = '001'), '') AS 'exlanEgukyk'
+		FROM ncustoms_sel4.[kcba].[Expo1] WITH (NOLOCK)
+		union all
+		SELECT
+		Expo_key, Expo_iv_no, Expo_res_result, Expo_gurae_gbn, Expo_jong,
+		Expo_singo_no, Expo_singo_date, Expo_ok_date, UserNM, Expo_unsong_type,
+		forward_sangho, Expo_gumaeja_sangho, Expo_mokjuk_name, Expo_hanggu_name,
+		Expo_indojo, Expo_gyelje_money, Expo_gyelje_input, Expo_pojang_su, Expo_total_jung,
+		Expo_sunjuk_date, expo_Loaded_YN, expo_LoadedDt, Expo_SuchulSaupNo,
+		Expo_geyak_no1, Expo_geyak_no2, Expo_segwan, Expo_gwa, Expo_total_usd, Expo_total_won,
+		Expo_suchulja_sangho, Expo_whaju_sangho,
+		ISNULL((SELECT Exlan_egukyk FROM ncustoms_sn.[kcba].[Expo2] WITH (NOLOCK) WHERE Expo_key = Exlan_key AND Exlan_lan = '001'), '') AS 'exlanEgukyk'
+		FROM ncustoms_sn.[kcba].[Expo1] WITH (NOLOCK)
+		union all
+		SELECT
+		Expo_key, Expo_iv_no, Expo_res_result, Expo_gurae_gbn, Expo_jong,
+		Expo_singo_no, Expo_singo_date, Expo_ok_date, UserNM, Expo_unsong_type,
+		forward_sangho, Expo_gumaeja_sangho, Expo_mokjuk_name, Expo_hanggu_name,
+		Expo_indojo, Expo_gyelje_money, Expo_gyelje_input, Expo_pojang_su, Expo_total_jung,
+		Expo_sunjuk_date, expo_Loaded_YN, expo_LoadedDt, Expo_SuchulSaupNo,
+		Expo_geyak_no1, Expo_geyak_no2, Expo_segwan, Expo_gwa, Expo_total_usd, Expo_total_won,
+		Expo_suchulja_sangho, Expo_whaju_sangho,
+		ISNULL((SELECT Exlan_egukyk FROM ncustoms_us.[kcba].[Expo2] WITH (NOLOCK) WHERE Expo_key = Exlan_key AND Exlan_lan = '001'), '') AS 'exlanEgukyk'
+		FROM ncustoms_us.[kcba].[Expo1] WITH (NOLOCK)
+		union all
+		SELECT
+		Expo_key, Expo_iv_no, Expo_res_result, Expo_gurae_gbn, Expo_jong,
+		Expo_singo_no, Expo_singo_date, Expo_ok_date, UserNM, Expo_unsong_type,
+		forward_sangho, Expo_gumaeja_sangho, Expo_mokjuk_name, Expo_hanggu_name,
+		Expo_indojo, Expo_gyelje_money, Expo_gyelje_input, Expo_pojang_su, Expo_total_jung,
+		Expo_sunjuk_date, expo_Loaded_YN, expo_LoadedDt, Expo_SuchulSaupNo,
+		Expo_geyak_no1, Expo_geyak_no2, Expo_segwan, Expo_gwa, Expo_total_usd, Expo_total_won,
+		Expo_suchulja_sangho, Expo_whaju_sangho,
+		ISNULL((SELECT Exlan_egukyk FROM ncustoms_yj.[kcba].[Expo2] WITH (NOLOCK) WHERE Expo_key = Exlan_key AND Exlan_lan = '001'), '') AS 'exlanEgukyk'
+		FROM ncustoms_yj.[kcba].[Expo1] WITH (NOLOCK)
+		union all
+		SELECT
+		Expo_key, Expo_iv_no, Expo_res_result, Expo_gurae_gbn, Expo_jong,
+		Expo_singo_no, Expo_singo_date, Expo_ok_date, UserNM, Expo_unsong_type,
+		forward_sangho, Expo_gumaeja_sangho, Expo_mokjuk_name, Expo_hanggu_name,
+		Expo_indojo, Expo_gyelje_money, Expo_gyelje_input, Expo_pojang_su, Expo_total_jung,
+		Expo_sunjuk_date, expo_Loaded_YN, expo_LoadedDt, Expo_SuchulSaupNo,
+		Expo_geyak_no1, Expo_geyak_no2, Expo_segwan, Expo_gwa, Expo_total_usd, Expo_total_won,
+		Expo_suchulja_sangho, Expo_whaju_sangho,
+		ISNULL((SELECT Exlan_egukyk FROM ncustoms_ys.[kcba].[Expo2] WITH (NOLOCK) WHERE Expo_key = Exlan_key AND Exlan_lan = '001'), '') AS 'exlanEgukyk'
+		FROM ncustoms_ys.[kcba].[Expo1] WITH (NOLOCK)
+		) a
+        WHERE 1 = 1
+        <if test='taxNum != null and taxNum != ""'>
+            <choose>
+                <when test='taxNum == "all"'>AND (a.Expo_SuchulSaupNo IN (select userSaup from soo.dbo.CPS_SaveCustomer where userKey = #{ID} and useYn='Y') or a.Expo_whaju_saup IN (select userSaup from soo.dbo.CPS_SaveCustomer where userKey = #{ID} and useYn='Y'))</when>
+                <otherwise>AND (a.Expo_SuchulSaupNo = #{taxNum} or a.Expo_whaju_saup = #{taxNum})</otherwise>
+            </choose>
+        </if>
+        <if test='expoIvNo != null and expoIvNo != ""'>AND a.Expo_iv_no LIKE '%' + #{expoIvNo} + '%' /* 인보이스 */</if>
+        <if test='expoSingoNo != null and expoSingoNo != ""'>AND a.Expo_singo_no LIKE '%' + #{expoSingoNo} + '%' /* 수출신고번호 */</if>
+        <if test='expoGumaejaSangho != null and expoGumaejaSangho != ""'>AND a.Expo_gumaeja_sangho LIKE '%' + #{expoGumaejaSangho} + '%' /* 구매자상호 */</if>
+        <if test='_DateType != null and _DateType != "ALL" and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+            <choose>
+                <when test='_DateType == "Expo_singo_date_Day"'>AND a.Expo_singo_date BETWEEN #{strFromDate} AND #{strToDate} /* 신고일 */</when>
+                <when test='_DateType == "Expo_ok_date_Day"'>AND a.Expo_ok_date BETWEEN #{strFromDate} AND #{strToDate} /* 수리일 */</when>
+                <when test='_DateType == "expo_LoadedDt_Day"'>AND a.expo_LoadedDt BETWEEN #{strFromDate} AND #{strToDate} /* 선적일 */</when>
+                <when test='_DateType == "bfloaddt_Day"'>AND a.BFLOADDT BETWEEN #{strFromDate} AND #{strToDate} /* 출항일자 */</when>
+                <when test='_DateType == "expoSunjukDate_Day"'>AND a.Expo_sunjuk_date BETWEEN #{strFromDate} AND #{strToDate} /* 적재의무기한 */</when>
+            </choose>
+        </if>
+        <if test='expoLoadedYn != null and expoLoadedYn != ""'>AND a.expo_Loaded_YN LIKE '%' + #{expoLoadedYn} + '%'</if>
+        <if test='expoGeyakNo1 != null and expoGeyakNo1 != ""'>AND a.Expo_geyak_no1 LIKE '%' + #{expoGeyakNo1} + '%'</if>
+        <if test='expoGeyakNo2 != null and expoGeyakNo2 != ""'>AND a.Expo_geyak_no2 LIKE '%' + #{expoGeyakNo2} + '%'</if>
+        <if test='expoSegwan != null and expoSegwan != ""'>AND a.Expo_segwan = #{expoSegwan}</if>
+        <if test='expoGroupSegwan != null and expoGroupSegwan != ""'>
+            <choose>
+                <when test='expoGroupSegwan == "경기"'>AND a.Expo_segwan in (012,014,021,131)</when>
+                <when test='expoGroupSegwan == "구미"'>AND a.Expo_segwan in (120,121)</when>
+                <when test='expoGroupSegwan == "대전"'>AND a.Expo_segwan in (080,081,082,150)</when>
+                <when test='expoGroupSegwan == "부산"'>AND a.Expo_segwan in (030,033,037,039,051,054,140)</when>
+                <when test='expoGroupSegwan == "서울"'>AND a.Expo_segwan in (010,011,090,100,101,102,103,130)</when>
+                <when test='expoGroupSegwan == "여수"'>AND a.Expo_segwan in (060,062,070,071)</when>
+                <when test='expoGroupSegwan == "울산"'>AND a.Expo_segwan in (110,122)</when>
+                <when test='expoGroupSegwan == "인천"'>AND a.Expo_segwan in (013,020,023,040,041)</when>
+                <when test='expoGroupSegwan == "창원"'>AND a.Expo_segwan in (050,052,053,056)</when>
+                <when test='expoGroupSegwan == "천안"'>AND a.Expo_segwan in (152)</when>
+                <when test='expoGroupSegwan == "청주"'>AND a.Expo_segwan in (151,153)</when>
+                <when test='expoGroupSegwan == "파주"'>AND a.Expo_segwan in (017)</when>
+                <when test='expoGroupSegwan == "평택"'>AND a.Expo_segwan in (016,154)</when>
+            </choose>
+        </if>
+        <if test='expoGwa != null and expoGwa != ""'>AND a.Expo_gwa LIKE '%' + #{expoGwa} + '%'</if>
+        <if test='expoChamjoNo != null and expoChamjoNo != ""'>AND a.Expo_chamjo_no LIKE '%' + #{expoChamjoNo} + '%'</if>
+        <if test='expoSuchuljaSangho != null and expoSuchuljaSangho != ""'>AND a.Expo_suchulja_sangho LIKE '%' + #{expoSuchuljaSangho} + '%'</if>
+        <if test='expoSuchuljaCode != null and expoSuchuljaCode != ""'>AND a.Expo_suchulja_code LIKE '%' + #{expoSuchuljaCode} + '%'</if>
+        <if test='expoSuchulSaupNo != null and expoSuchulSaupNo != ""'>AND a.Expo_SuchulSaupNo LIKE '%' + #{expoSuchulSaupNo} + '%'</if>
+        <if test='expoWhajuSangho != null and expoWhajuSangho != ""'>AND a.Expo_whaju_sangho LIKE '%' + #{expoWhajuSangho} + '%'</if>
+        <if test='expoWhajuCode != null and expoWhajuCode != ""'>AND a.Expo_whaju_code LIKE '%' + #{expoWhajuCode} + '%'</if>
+        <if test='expoWhajuSaup != null and expoWhajuSaup != ""'>AND a.Expo_whaju_saup LIKE '%' + #{expoWhajuSaup} + '%'</if>
+        <if test='expoTrustSangho != null and expoTrustSangho != ""'>AND a.Expo_trust_sangho LIKE '%' + #{expoTrustSangho} + '%'</if>
+        <if test='expoTrustCode != null and expoTrustCode != ""'>AND a.Expo_trust_code LIKE '%' + #{expoTrustCode} + '%'</if>
+        <if test='expoTrustSaup != null and expoTrustSaup != ""'>AND a.Expo_trust_saup LIKE '%' + #{expoTrustSaup} + '%'</if>
+    </select>
+
+    <select id="selectExportStatusFtpList" resultType="map">
+        /* 수출 통관정보 상태조회 + FTP현황*/
+        SELECT datas.*
+        FROM (
+        SELECT ROW_NUMBER() OVER (ORDER BY a.Expo_key) AS 'rownum',
+        a.Expo_key, a.Expo_iv_no, a.Expo_res_result, a.Expo_gurae_gbn, a.Expo_jong,
+        a.Expo_singo_no, a.Expo_singo_date, a.Expo_ok_date, a.UserNM, a.Expo_unsong_type,
+        a.forward_sangho, a.Expo_gumaeja_sangho, a.Expo_mokjuk_name, a.Expo_hanggu_name,
+        a.Expo_indojo, a.Expo_gyelje_money, a.Expo_gyelje_input, a.Expo_pojang_su, a.Expo_total_jung,
+        a.Expo_sunjuk_date, a.expo_Loaded_YN, a.expo_LoadedDt, a.Expo_SuchulSaupNo,
+        a.Expo_geyak_no1, a.Expo_geyak_no2, a.Expo_segwan, a.Expo_gwa, a.Expo_total_usd, a.Expo_total_won,
+        ISNULL((SELECT Exlan_egukyk FROM ${_defaultDB}.[kcba].[Expo2] WITH (NOLOCK) WHERE a.Expo_key = Exlan_key AND Exlan_lan = '001'), '') AS 'exlanEgukyk',
+        ISNULL((SELECT count(count) FROM soo.dbo.TBR_Ftp_Send_Log WITH (NOLOCK) WHERE a.Expo_singo_no = singoNum), 0) AS 'ftpCount'
+        FROM ${_defaultDB}.[kcba].[Expo1] a WITH (NOLOCK)
+        WHERE 1 = 1
+        <if test='taxNum != null and taxNum != ""'>
+            <choose>
+                <when test='taxNum == "all"'>AND (a.Expo_SuchulSaupNo IN (select userSaup from soo.dbo.CPS_SaveCustomer where userKey = #{ID} and useYn='Y') or a.Expo_whaju_saup IN (select userSaup from soo.dbo.CPS_SaveCustomer where userKey = #{ID} and useYn='Y'))</when>
+                <when test='taxNum == "7158400024"'>AND (a.Expo_SuchulSaupNo in ('7158400024','1028141887') or a.Expo_whaju_saup in ('7158400024','1028141887'))</when>
+                <otherwise>AND (a.Expo_SuchulSaupNo = #{taxNum} or a.Expo_whaju_saup = #{taxNum})</otherwise>
+            </choose>
+        </if>
+        <if test='expoIvNo != null and expoIvNo != ""'>AND a.Expo_iv_no LIKE '%' + #{expoIvNo} + '%' /* 인보이스 */</if>
+        <if test='expoSingoNo != null and expoSingoNo != ""'>AND a.Expo_singo_no LIKE '%' + #{expoSingoNo} + '%' /* 수출신고번호 */</if>
+        <if test='expoGumaejaSangho != null and expoGumaejaSangho != ""'>AND a.Expo_gumaeja_sangho LIKE '%' + #{expoGumaejaSangho} + '%' /* 구매자상호 */</if>
+        <if test='_DateType != null and _DateType != "ALL" and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+            <choose>
+                <when test='_DateType == "Expo_singo_date_Day"'>AND a.Expo_singo_date BETWEEN #{strFromDate} AND #{strToDate} /* 신고일 */</when>
+                <when test='_DateType == "Expo_ok_date_Day"'>AND a.Expo_ok_date BETWEEN #{strFromDate} AND #{strToDate} /* 수리일 */</when>
+                <when test='_DateType == "expo_LoadedDt_Day"'>AND a.expo_LoadedDt BETWEEN #{strFromDate} AND #{strToDate} /* 선적일 */</when>
+                <when test='_DateType == "bfloaddt_Day"'>AND a.BFLOADDT BETWEEN #{strFromDate} AND #{strToDate} /* 출항일자 */</when>
+                <when test='_DateType == "expoSunjukDate_Day"'>AND a.Expo_sunjuk_date BETWEEN #{strFromDate} AND #{strToDate} /* 적재의무기한 */</when>
+            </choose>
+        </if>
+        <if test='expoLoadedYn != null and expoLoadedYn != ""'>AND a.expo_Loaded_YN LIKE '%' + #{expoLoadedYn} + '%'</if>
+        <if test='expoGeyakNo1 != null and expoGeyakNo1 != ""'>AND a.Expo_geyak_no1 LIKE '%' + #{expoGeyakNo1} + '%'</if>
+        <if test='expoGeyakNo2 != null and expoGeyakNo2 != ""'>AND a.Expo_geyak_no2 LIKE '%' + #{expoGeyakNo2} + '%'</if>
+        <if test='expoSegwan != null and expoSegwan != ""'>AND a.Expo_segwan LIKE '%' + #{expoSegwan} + '%'</if>
+        <if test='expoGwa != null and expoGwa != ""'>AND a.Expo_gwa LIKE '%' + #{expoGwa} + '%'</if>
+        <if test='expoChamjoNo != null and expoChamjoNo != ""'>AND a.Expo_chamjo_no LIKE '%' + #{expoChamjoNo} + '%'</if>
+        <if test='expoSuchuljaSangho != null and expoSuchuljaSangho != ""'>AND a.Expo_suchulja_sangho LIKE '%' + #{expoSuchuljaSangho} + '%'</if>
+        <if test='expoSuchuljaCode != null and expoSuchuljaCode != ""'>AND a.Expo_suchulja_code LIKE '%' + #{expoSuchuljaCode} + '%'</if>
+        <if test='expoSuchulSaupNo != null and expoSuchulSaupNo != ""'>AND a.Expo_SuchulSaupNo LIKE '%' + #{expoSuchulSaupNo} + '%'</if>
+        <if test='expoWhajuSangho != null and expoWhajuSangho != ""'>AND a.Expo_whaju_sangho LIKE '%' + #{expoWhajuSangho} + '%'</if>
+        <if test='expoWhajuCode != null and expoWhajuCode != ""'>AND a.Expo_whaju_code LIKE '%' + #{expoWhajuCode} + '%'</if>
+        <if test='expoWhajuSaup != null and expoWhajuSaup != ""'>AND a.Expo_whaju_saup LIKE '%' + #{expoWhajuSaup} + '%'</if>
+        <if test='expoTrustSangho != null and expoTrustSangho != ""'>AND a.Expo_trust_sangho LIKE '%' + #{expoTrustSangho} + '%'</if>
+        <if test='expoTrustCode != null and expoTrustCode != ""'>AND a.Expo_trust_code LIKE '%' + #{expoTrustCode} + '%'</if>
+        <if test='expoTrustSaup != null and expoTrustSaup != ""'>AND a.Expo_trust_saup LIKE '%' + #{expoTrustSaup} + '%'</if>
+        ) datas
+        <if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+            WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+        </if>
+    </select>
+
+
+    <select id="selectExportRequestList" resultType="map">
+        /* 수출 Request 조회 */
+        SELECT datas.*
+        FROM (
+        SELECT ROW_NUMBER() OVER (ORDER BY a.startKey DESC) AS 'rownum',
+        a.startKey, a.startJisaCode, a.startTaxpayerTradeName, a.startTaxpayerNum,
+        a.startNum, a.startReferenceNo1, a.startReferenceNo2, a.startIssueContent, a.startPoNo, a.startNote,
+        a.startCompensationYn, a.startLocation, a.addDtm as 'addDay',
+        expo.Expo_Key, expo.Expo_res_result, expo.Expo_singo_no,
+        ISNULL((SELECT count(EdmsNo) FROM CPS.[dbo].[SDAA100] WITH (NOLOCK) WHERE a.startNum = EdmsNo and ISNULL(expo.Expo_singo_no,'')=EdmsSingoNo and UseYn='Y'), 0) AS 'fileCnt'
+        FROM [soo].[dbo].[CPS_StartInfo] a WITH (NOLOCK)
+        LEFT OUTER JOIN ${_defaultDB}.[kcba].[Expo1] expo WITH (NOLOCK)
+        ON expo.Expo_iv_no = a.startNum
+        AND expo.Expo_SuchulSaupNo = a.startTaxpayerNum
+        where a.useYn = 'Y'
+        and a.startGubun = #{startGubun}
+        <if test='_DateType != null and _DateType != "ALL" and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+            <choose>
+                <when test='_DateType == "add_Day"'>AND SUBSTRING(a.addDtm,0,9) BETWEEN #{strFromDate} AND #{strToDate} /* 등록일 */</when>
+            </choose>
+        </if>
+        <if test='taxNum != null and taxNum != ""'>
+            <choose>
+                <when test='taxNum == "all"'>AND a.startTaxpayerNum IN (select userSaup from soo.dbo.CPS_SaveCustomer where userKey = #{ID} and useYn='Y')</when>
+                <when test='taxNum != "all"'>AND a.startTaxpayerNum = #{taxNum}</when>
+            </choose>
+        </if>
+        <if test='tradeName != null and tradeName != ""'>AND a.startTaxpayerTradeName like '%' + #{tradeName} + '%'</if>
+        <if test='startNum != null and startNum != ""'>AND a.startNum like '%' + #{startNum} + '%'</if>
+        <if test='referenceNo1 != null and referenceNo1 != ""'>AND (a.startReferenceNo1 LIKE #{referenceNo1} + '%' or a.startReferenceNo2 LIKE #{referenceNo1} + '%')</if>
+        <if test='compensationYn != null and compensationYn != ""'>AND a.startCompensationYn = #{compensationYn}</if>
+        <if test='location != null and location != ""'>AND a.startLocation like '%' + #{location} + '%'</if>
+        <if test='addUserNm != null and addUserNm != ""'>AND a.addUserNm like '%' + #{addUserNm} + '%'</if>
+        <if test='USERGRADEB != null and USERGRADEB == "D"'>AND a.addUserId = #{ID}</if>
+        ) datas
+        <if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+            WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber}) + 1 - 1) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+        </if>
+    </select>
+
+    <select id="selectExportAllRequestList" resultType="map">
+        /* 수출 Request 전체조회 */
+        select * from
+		(
+		SELECT
+		a.startKey, a.startTaxpayerTradeName, a.startTaxpayerNum,
+		a.startNum, a.startReferenceNo1, a.startReferenceNo2, a.startIssueContent, a.startPoNo, a.startNote, SUBSTRING(a.addDtm,0,9) as 'addDay', a.addDtm, a.addUserId,
+		a.startCompensationYn, a.startLocation,
+		expo.Expo_Key, expo.Expo_res_result, expo.Expo_singo_no,
+		ISNULL((SELECT count(EdmsNo) FROM CPS.[dbo].[SDAA100] WITH (NOLOCK) WHERE a.startNum = EdmsNo and ISNULL(expo.Expo_singo_no,'')=EdmsSingoNo and UseYn='Y'), 0) AS 'fileCnt'
+		FROM [soo].[dbo].[CPS_StartInfo] a WITH (NOLOCK)
+		LEFT OUTER JOIN ncustoms_sel_040.[kcba].[Expo1] expo WITH (NOLOCK)
+		ON expo.Expo_iv_no = a.startNum
+		AND expo.Expo_SuchulSaupNo = a.startTaxpayerNum
+		where a.useYn = 'Y'
+		and a.startGubun = 'EXPORT'
+		and a.startJisaCode = 'ncustoms_sel_040'
+		union all
+		SELECT
+		a.startKey, a.startTaxpayerTradeName, a.startTaxpayerNum,
+		a.startNum, a.startReferenceNo1, a.startReferenceNo2, a.startIssueContent, a.startPoNo, a.startNote, SUBSTRING(a.addDtm,0,9) as 'addDay', a.addDtm, a.addUserId,
+		a.startCompensationYn, a.startLocation,
+		expo.Expo_Key, expo.Expo_res_result, expo.Expo_singo_no,
+		ISNULL((SELECT count(EdmsNo) FROM CPS.[dbo].[SDAA100] WITH (NOLOCK) WHERE a.startNum = EdmsNo and ISNULL(expo.Expo_singo_no,'')=EdmsSingoNo and UseYn='Y'), 0) AS 'fileCnt'
+		FROM [soo].[dbo].[CPS_StartInfo] a WITH (NOLOCK)
+		LEFT OUTER JOIN ncustoms_ay.[kcba].[Expo1] expo WITH (NOLOCK)
+		ON expo.Expo_iv_no = a.startNum
+		AND expo.Expo_SuchulSaupNo = a.startTaxpayerNum
+		where a.useYn = 'Y'
+		and a.startGubun = 'EXPORT'
+		and a.startJisaCode = 'ncustoms_ay'
+		union all
+		SELECT
+		a.startKey, a.startTaxpayerTradeName, a.startTaxpayerNum,
+		a.startNum, a.startReferenceNo1, a.startReferenceNo2, a.startIssueContent, a.startPoNo, a.startNote, SUBSTRING(a.addDtm,0,9) as 'addDay', a.addDtm, a.addUserId,
+		a.startCompensationYn, a.startLocation,
+		expo.Expo_Key, expo.Expo_res_result, expo.Expo_singo_no,
+		ISNULL((SELECT count(EdmsNo) FROM CPS.[dbo].[SDAA100] WITH (NOLOCK) WHERE a.startNum = EdmsNo and ISNULL(expo.Expo_singo_no,'')=EdmsSingoNo and UseYn='Y'), 0) AS 'fileCnt'
+		FROM [soo].[dbo].[CPS_StartInfo] a WITH (NOLOCK)
+		LEFT OUTER JOIN ncustoms_bs.[kcba].[Expo1] expo WITH (NOLOCK)
+		ON expo.Expo_iv_no = a.startNum
+		AND expo.Expo_SuchulSaupNo = a.startTaxpayerNum
+		where a.useYn = 'Y'
+		and a.startGubun = 'EXPORT'
+		and a.startJisaCode = 'ncustoms_bs'
+		union all
+		SELECT
+		a.startKey, a.startTaxpayerTradeName, a.startTaxpayerNum,
+		a.startNum, a.startReferenceNo1, a.startReferenceNo2, a.startIssueContent, a.startPoNo, a.startNote, SUBSTRING(a.addDtm,0,9) as 'addDay', a.addDtm, a.addUserId,
+		a.startCompensationYn, a.startLocation,
+		expo.Expo_Key, expo.Expo_res_result, expo.Expo_singo_no,
+		ISNULL((SELECT count(EdmsNo) FROM CPS.[dbo].[SDAA100] WITH (NOLOCK) WHERE a.startNum = EdmsNo and ISNULL(expo.Expo_singo_no,'')=EdmsSingoNo and UseYn='Y'), 0) AS 'fileCnt'
+		FROM [soo].[dbo].[CPS_StartInfo] a WITH (NOLOCK)
+		LEFT OUTER JOIN ncustoms_ca.[kcba].[Expo1] expo WITH (NOLOCK)
+		ON expo.Expo_iv_no = a.startNum
+		AND expo.Expo_SuchulSaupNo = a.startTaxpayerNum
+		where a.useYn = 'Y'
+		and a.startGubun = 'EXPORT'
+		and a.startJisaCode = 'ncustoms_ca'
+		union all
+		SELECT
+		a.startKey, a.startTaxpayerTradeName, a.startTaxpayerNum,
+		a.startNum, a.startReferenceNo1, a.startReferenceNo2, a.startIssueContent, a.startPoNo, a.startNote, SUBSTRING(a.addDtm,0,9) as 'addDay', a.addDtm, a.addUserId,
+		a.startCompensationYn, a.startLocation,
+		expo.Expo_Key, expo.Expo_res_result, expo.Expo_singo_no,
+		ISNULL((SELECT count(EdmsNo) FROM CPS.[dbo].[SDAA100] WITH (NOLOCK) WHERE a.startNum = EdmsNo and ISNULL(expo.Expo_singo_no,'')=EdmsSingoNo and UseYn='Y'), 0) AS 'fileCnt'
+		FROM [soo].[dbo].[CPS_StartInfo] a WITH (NOLOCK)
+		LEFT OUTER JOIN ncustoms_cj.[kcba].[Expo1] expo WITH (NOLOCK)
+		ON expo.Expo_iv_no = a.startNum
+		AND expo.Expo_SuchulSaupNo = a.startTaxpayerNum
+		where a.useYn = 'Y'
+		and a.startGubun = 'EXPORT'
+		and a.startJisaCode = 'ncustoms_cj'
+		union all
+		SELECT
+		a.startKey, a.startTaxpayerTradeName, a.startTaxpayerNum,
+		a.startNum, a.startReferenceNo1, a.startReferenceNo2, a.startIssueContent, a.startPoNo, a.startNote, SUBSTRING(a.addDtm,0,9) as 'addDay', a.addDtm, a.addUserId,
+		a.startCompensationYn, a.startLocation,
+		expo.Expo_Key, expo.Expo_res_result, expo.Expo_singo_no,
+		ISNULL((SELECT count(EdmsNo) FROM CPS.[dbo].[SDAA100] WITH (NOLOCK) WHERE a.startNum = EdmsNo and ISNULL(expo.Expo_singo_no,'')=EdmsSingoNo and UseYn='Y'), 0) AS 'fileCnt'
+		FROM [soo].[dbo].[CPS_StartInfo] a WITH (NOLOCK)
+		LEFT OUTER JOIN ncustoms_cw.[kcba].[Expo1] expo WITH (NOLOCK)
+		ON expo.Expo_iv_no = a.startNum
+		AND expo.Expo_SuchulSaupNo = a.startTaxpayerNum
+		where a.useYn = 'Y'
+		and a.startGubun = 'EXPORT'
+		and a.startJisaCode = 'ncustoms_cw'
+		union all
+		SELECT
+		a.startKey, a.startTaxpayerTradeName, a.startTaxpayerNum,
+		a.startNum, a.startReferenceNo1, a.startReferenceNo2, a.startIssueContent, a.startPoNo, a.startNote, SUBSTRING(a.addDtm,0,9) as 'addDay', a.addDtm, a.addUserId,
+		a.startCompensationYn, a.startLocation,
+		expo.Expo_Key, expo.Expo_res_result, expo.Expo_singo_no,
+		ISNULL((SELECT count(EdmsNo) FROM CPS.[dbo].[SDAA100] WITH (NOLOCK) WHERE a.startNum = EdmsNo and ISNULL(expo.Expo_singo_no,'')=EdmsSingoNo and UseYn='Y'), 0) AS 'fileCnt'
+		FROM [soo].[dbo].[CPS_StartInfo] a WITH (NOLOCK)
+		LEFT OUTER JOIN ncustoms_dj.[kcba].[Expo1] expo WITH (NOLOCK)
+		ON expo.Expo_iv_no = a.startNum
+		AND expo.Expo_SuchulSaupNo = a.startTaxpayerNum
+		where a.useYn = 'Y'
+		and a.startGubun = 'EXPORT'
+		and a.startJisaCode = 'ncustoms_dj'
+		union all
+		SELECT
+		a.startKey, a.startTaxpayerTradeName, a.startTaxpayerNum,
+		a.startNum, a.startReferenceNo1, a.startReferenceNo2, a.startIssueContent, a.startPoNo, a.startNote, SUBSTRING(a.addDtm,0,9) as 'addDay', a.addDtm, a.addUserId,
+		a.startCompensationYn, a.startLocation,
+		expo.Expo_Key, expo.Expo_res_result, expo.Expo_singo_no,
+		ISNULL((SELECT count(EdmsNo) FROM CPS.[dbo].[SDAA100] WITH (NOLOCK) WHERE a.startNum = EdmsNo and ISNULL(expo.Expo_singo_no,'')=EdmsSingoNo and UseYn='Y'), 0) AS 'fileCnt'
+		FROM [soo].[dbo].[CPS_StartInfo] a WITH (NOLOCK)
+		LEFT OUTER JOIN ncustoms_gm.[kcba].[Expo1] expo WITH (NOLOCK)
+		ON expo.Expo_iv_no = a.startNum
+		AND expo.Expo_SuchulSaupNo = a.startTaxpayerNum
+		where a.useYn = 'Y'
+		and a.startGubun = 'EXPORT'
+		and a.startJisaCode = 'ncustoms_gm'
+		union all
+		SELECT
+		a.startKey, a.startTaxpayerTradeName, a.startTaxpayerNum,
+		a.startNum, a.startReferenceNo1, a.startReferenceNo2, a.startIssueContent, a.startPoNo, a.startNote, SUBSTRING(a.addDtm,0,9) as 'addDay', a.addDtm, a.addUserId,
+		a.startCompensationYn, a.startLocation,
+		expo.Expo_Key, expo.Expo_res_result, expo.Expo_singo_no,
+		ISNULL((SELECT count(EdmsNo) FROM CPS.[dbo].[SDAA100] WITH (NOLOCK) WHERE a.startNum = EdmsNo and ISNULL(expo.Expo_singo_no,'')=EdmsSingoNo and UseYn='Y'), 0) AS 'fileCnt'
+		FROM [soo].[dbo].[CPS_StartInfo] a WITH (NOLOCK)
+		LEFT OUTER JOIN ncustoms_ic.[kcba].[Expo1] expo WITH (NOLOCK)
+		ON expo.Expo_iv_no = a.startNum
+		AND expo.Expo_SuchulSaupNo = a.startTaxpayerNum
+		where a.useYn = 'Y'
+		and a.startGubun = 'EXPORT'
+		and a.startJisaCode = 'ncustoms_ic'
+		union all
+		SELECT
+		a.startKey, a.startTaxpayerTradeName, a.startTaxpayerNum,
+		a.startNum, a.startReferenceNo1, a.startReferenceNo2, a.startIssueContent, a.startPoNo, a.startNote, SUBSTRING(a.addDtm,0,9) as 'addDay', a.addDtm, a.addUserId,
+		a.startCompensationYn, a.startLocation,
+		expo.Expo_Key, expo.Expo_res_result, expo.Expo_singo_no,
+		ISNULL((SELECT count(EdmsNo) FROM CPS.[dbo].[SDAA100] WITH (NOLOCK) WHERE a.startNum = EdmsNo and ISNULL(expo.Expo_singo_no,'')=EdmsSingoNo and UseYn='Y'), 0) AS 'fileCnt'
+		FROM [soo].[dbo].[CPS_StartInfo] a WITH (NOLOCK)
+		LEFT OUTER JOIN ncustoms_jj.[kcba].[Expo1] expo WITH (NOLOCK)
+		ON expo.Expo_iv_no = a.startNum
+		AND expo.Expo_SuchulSaupNo = a.startTaxpayerNum
+		where a.useYn = 'Y'
+		and a.startGubun = 'EXPORT'
+		and a.startJisaCode = 'ncustoms_jj'
+		union all
+		SELECT
+		a.startKey, a.startTaxpayerTradeName, a.startTaxpayerNum,
+		a.startNum, a.startReferenceNo1, a.startReferenceNo2, a.startIssueContent, a.startPoNo, a.startNote, SUBSTRING(a.addDtm,0,9) as 'addDay', a.addDtm, a.addUserId,
+		a.startCompensationYn, a.startLocation,
+		expo.Expo_Key, expo.Expo_res_result, expo.Expo_singo_no,
+		ISNULL((SELECT count(EdmsNo) FROM CPS.[dbo].[SDAA100] WITH (NOLOCK) WHERE a.startNum = EdmsNo and ISNULL(expo.Expo_singo_no,'')=EdmsSingoNo and UseYn='Y'), 0) AS 'fileCnt'
+		FROM [soo].[dbo].[CPS_StartInfo] a WITH (NOLOCK)
+		LEFT OUTER JOIN ncustoms_pj.[kcba].[Expo1] expo WITH (NOLOCK)
+		ON expo.Expo_iv_no = a.startNum
+		AND expo.Expo_SuchulSaupNo = a.startTaxpayerNum
+		where a.useYn = 'Y'
+		and a.startGubun = 'EXPORT'
+		and a.startJisaCode = 'ncustoms_pj'
+		union all
+		SELECT
+		a.startKey, a.startTaxpayerTradeName, a.startTaxpayerNum,
+		a.startNum, a.startReferenceNo1, a.startReferenceNo2, a.startIssueContent, a.startPoNo, a.startNote, SUBSTRING(a.addDtm,0,9) as 'addDay', a.addDtm, a.addUserId,
+		a.startCompensationYn, a.startLocation,
+		expo.Expo_Key, expo.Expo_res_result, expo.Expo_singo_no,
+		ISNULL((SELECT count(EdmsNo) FROM CPS.[dbo].[SDAA100] WITH (NOLOCK) WHERE a.startNum = EdmsNo and ISNULL(expo.Expo_singo_no,'')=EdmsSingoNo and UseYn='Y'), 0) AS 'fileCnt'
+		FROM [soo].[dbo].[CPS_StartInfo] a WITH (NOLOCK)
+		LEFT OUTER JOIN ncustoms_pt.[kcba].[Expo1] expo WITH (NOLOCK)
+		ON expo.Expo_iv_no = a.startNum
+		AND expo.Expo_SuchulSaupNo = a.startTaxpayerNum
+		where a.useYn = 'Y'
+		and a.startGubun = 'EXPORT'
+		and a.startJisaCode = 'ncustoms_pt'
+		union all
+		SELECT
+		a.startKey, a.startTaxpayerTradeName, a.startTaxpayerNum,
+		a.startNum, a.startReferenceNo1, a.startReferenceNo2, a.startIssueContent, a.startPoNo, a.startNote, SUBSTRING(a.addDtm,0,9) as 'addDay', a.addDtm, a.addUserId,
+		a.startCompensationYn, a.startLocation,
+		expo.Expo_Key, expo.Expo_res_result, expo.Expo_singo_no,
+		ISNULL((SELECT count(EdmsNo) FROM CPS.[dbo].[SDAA100] WITH (NOLOCK) WHERE a.startNum = EdmsNo and ISNULL(expo.Expo_singo_no,'')=EdmsSingoNo and UseYn='Y'), 0) AS 'fileCnt'
+		FROM [soo].[dbo].[CPS_StartInfo] a WITH (NOLOCK)
+		LEFT OUTER JOIN ncustoms_sel4.[kcba].[Expo1] expo WITH (NOLOCK)
+		ON expo.Expo_iv_no = a.startNum
+		AND expo.Expo_SuchulSaupNo = a.startTaxpayerNum
+		where a.useYn = 'Y'
+		and a.startGubun = 'EXPORT'
+		and a.startJisaCode = 'ncustoms_sel4'
+		union all
+		SELECT
+		a.startKey, a.startTaxpayerTradeName, a.startTaxpayerNum,
+		a.startNum, a.startReferenceNo1, a.startReferenceNo2, a.startIssueContent, a.startPoNo, a.startNote, SUBSTRING(a.addDtm,0,9) as 'addDay', a.addDtm, a.addUserId,
+		a.startCompensationYn, a.startLocation,
+		expo.Expo_Key, expo.Expo_res_result, expo.Expo_singo_no,
+		ISNULL((SELECT count(EdmsNo) FROM CPS.[dbo].[SDAA100] WITH (NOLOCK) WHERE a.startNum = EdmsNo and ISNULL(expo.Expo_singo_no,'')=EdmsSingoNo and UseYn='Y'), 0) AS 'fileCnt'
+		FROM [soo].[dbo].[CPS_StartInfo] a WITH (NOLOCK)
+		LEFT OUTER JOIN ncustoms_sn.[kcba].[Expo1] expo WITH (NOLOCK)
+		ON expo.Expo_iv_no = a.startNum
+		AND expo.Expo_SuchulSaupNo = a.startTaxpayerNum
+		where a.useYn = 'Y'
+		and a.startGubun = 'EXPORT'
+		and a.startJisaCode = 'ncustoms_sn'
+		union all
+		SELECT
+		a.startKey, a.startTaxpayerTradeName, a.startTaxpayerNum,
+		a.startNum, a.startReferenceNo1, a.startReferenceNo2, a.startIssueContent, a.startPoNo, a.startNote, SUBSTRING(a.addDtm,0,9) as 'addDay', a.addDtm, a.addUserId,
+		a.startCompensationYn, a.startLocation,
+		expo.Expo_Key, expo.Expo_res_result, expo.Expo_singo_no,
+		ISNULL((SELECT count(EdmsNo) FROM CPS.[dbo].[SDAA100] WITH (NOLOCK) WHERE a.startNum = EdmsNo and ISNULL(expo.Expo_singo_no,'')=EdmsSingoNo and UseYn='Y'), 0) AS 'fileCnt'
+		FROM [soo].[dbo].[CPS_StartInfo] a WITH (NOLOCK)
+		LEFT OUTER JOIN ncustoms_us.[kcba].[Expo1] expo WITH (NOLOCK)
+		ON expo.Expo_iv_no = a.startNum
+		AND expo.Expo_SuchulSaupNo = a.startTaxpayerNum
+		where a.useYn = 'Y'
+		and a.startGubun = 'EXPORT'
+		and a.startJisaCode = 'ncustoms_us'
+		union all
+		SELECT
+		a.startKey, a.startTaxpayerTradeName, a.startTaxpayerNum,
+		a.startNum, a.startReferenceNo1, a.startReferenceNo2, a.startIssueContent, a.startPoNo, a.startNote, SUBSTRING(a.addDtm,0,9) as 'addDay', a.addDtm, a.addUserId,
+		a.startCompensationYn, a.startLocation,
+		expo.Expo_Key, expo.Expo_res_result, expo.Expo_singo_no,
+		ISNULL((SELECT count(EdmsNo) FROM CPS.[dbo].[SDAA100] WITH (NOLOCK) WHERE a.startNum = EdmsNo and ISNULL(expo.Expo_singo_no,'')=EdmsSingoNo and UseYn='Y'), 0) AS 'fileCnt'
+		FROM [soo].[dbo].[CPS_StartInfo] a WITH (NOLOCK)
+		LEFT OUTER JOIN ncustoms_yj.[kcba].[Expo1] expo WITH (NOLOCK)
+		ON expo.Expo_iv_no = a.startNum
+		AND expo.Expo_SuchulSaupNo = a.startTaxpayerNum
+		where a.useYn = 'Y'
+		and a.startGubun = 'EXPORT'
+		and a.startJisaCode = 'ncustoms_yj'
+		union all
+		SELECT
+		a.startKey, a.startTaxpayerTradeName, a.startTaxpayerNum,
+		a.startNum, a.startReferenceNo1, a.startReferenceNo2, a.startIssueContent, a.startPoNo, a.startNote, SUBSTRING(a.addDtm,0,9) as 'addDay', a.addDtm, a.addUserId,
+		a.startCompensationYn, a.startLocation,
+		expo.Expo_Key, expo.Expo_res_result, expo.Expo_singo_no,
+		ISNULL((SELECT count(EdmsNo) FROM CPS.[dbo].[SDAA100] WITH (NOLOCK) WHERE a.startNum = EdmsNo and ISNULL(expo.Expo_singo_no,'')=EdmsSingoNo and UseYn='Y'), 0) AS 'fileCnt'
+		FROM [soo].[dbo].[CPS_StartInfo] a WITH (NOLOCK)
+		LEFT OUTER JOIN ncustoms_ys.[kcba].[Expo1] expo WITH (NOLOCK)
+		ON expo.Expo_iv_no = a.startNum
+		AND expo.Expo_SuchulSaupNo = a.startTaxpayerNum
+		where a.useYn = 'Y'
+		and a.startGubun = 'EXPORT'
+		and a.startJisaCode = 'ncustoms_ys'
+		union all
+		SELECT
+		a.startKey, a.startTaxpayerTradeName, a.startTaxpayerNum,
+		a.startNum, a.startReferenceNo1, a.startReferenceNo2, a.startIssueContent, a.startPoNo, a.startNote, SUBSTRING(a.addDtm,0,9) as 'addDay', a.addDtm, a.addUserId,
+		a.startCompensationYn, a.startLocation,
+		expo.Expo_Key, expo.Expo_res_result, expo.Expo_singo_no,
+		ISNULL((SELECT count(EdmsNo) FROM CPS.[dbo].[SDAA100] WITH (NOLOCK) WHERE a.startNum = EdmsNo and ISNULL(expo.Expo_singo_no,'')=EdmsSingoNo and UseYn='Y'), 0) AS 'fileCnt'
+		FROM [soo].[dbo].[CPS_StartInfo] a WITH (NOLOCK)
+		LEFT OUTER JOIN demoNcustomsPt.[kcba].[Expo1] expo WITH (NOLOCK)
+		ON expo.Expo_iv_no = a.startNum
+		AND expo.Expo_SuchulSaupNo = a.startTaxpayerNum
+		where a.useYn = 'Y'
+		and a.startGubun = 'EXPORT'
+		and a.startJisaCode = 'demoNcustomsPt'
+		) c
+		where 1=1
+		<if test='_DateType != null and _DateType != "ALL" and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+            <choose>
+                <when test='_DateType == "add_Day"'>AND SUBSTRING(c.addDtm,0,9) BETWEEN #{strFromDate} AND #{strToDate} /* 등록일 */</when>
+            </choose>
+        </if>
+        <if test='taxNum != null and taxNum != ""'>
+            <choose>
+                <when test='taxNum == "all"'>AND c.startTaxpayerNum IN (select userSaup from soo.dbo.CPS_SaveCustomer where userKey = #{ID} and useYn='Y')</when>
+                <when test='taxNum != "all"'>AND c.startTaxpayerNum = #{taxNum}</when>
+            </choose>
+        </if>
+        <if test='tradeName != null and tradeName != ""'>AND c.startTaxpayerTradeName like '%' + #{tradeName} + '%'</if>
+        <if test='startNum != null and startNum != ""'>AND c.startNum like '%' + #{startNum} + '%'</if>
+        <if test='referenceNo1 != null and referenceNo1 != ""'>AND (c.startReferenceNo1 LIKE #{referenceNo1} + '%' or c.startReferenceNo2 LIKE #{referenceNo1} + '%')</if>
+        <if test='compensationYn != null and compensationYn != ""'>AND c.startCompensationYn = #{compensationYn}</if>
+        <if test='location != null and location != ""'>AND c.startLocation like '%' + #{location} + '%'</if>
+        <if test='addUserNm != null and addUserNm != ""'>AND c.addUserNm like '%' + #{addUserNm} + '%'</if>
+        <if test='USERGRADEB != null and USERGRADEB == "D"'>AND c.addUserId = #{ID}</if>
+        order by c.startKey desc
+    </select>
+
+    <select id="selectExportResult건수_신고구분제외_전체" resultType="map">
+        /* 수출실적 건수 조회(전체_신고구분제외) */
+        SELECT a.db, a.yyyy, a.mm, SUM(a.PLcnt) AS 'PLcnt', SUM(a.JechulCnt) AS 'JechulCnt'
+        FROM (
+        SELECT a.db, a.yyyy, a.mm, a.Expo_key, COUNT(*) AS 'PLcnt', 0 AS 'JechulCnt'
+        FROM (
+        SELECT a.db, a.yyyy, a.mm, a.Expo_key
+        FROM [soo].[dbo].[TBR_RESULT_ETL_Export] a WITH (NOLOCK)
+        WHERE a.yyyy = #{yyyy}
+        AND a.Expo_singo_gbn IN ('H','I','P')
+        <if test='taxno != null and taxno != ""'>AND ( a.Expo_trust_saup = #{taxno} OR a.Expo_SuchulSaupNo = #{taxno} )</if>
+        <if test='db != "ALL"'>
+            <choose>
+                <when test='db == "ncustoms" or db == "ncustoms_ic"'>AND a.db = #{db}</when>
+                <otherwise>AND a.db LIKE #{db} + '%'</otherwise>
+            </choose>
+        </if>
+        GROUP BY a.db, a.yyyy, a.mm, a.Expo_key
+        ) a
+        GROUP BY a.db, a.yyyy, a.mm, a.Expo_key
+
+        UNION ALL
+
+        SELECT a.db, a.yyyy, a.mm, a.Expo_key, 0 AS 'PLcnt', COUNT(*) AS 'JechulCnt'
+        FROM (
+        SELECT a.db, a.yyyy, a.mm, a.Expo_key
+        FROM [soo].[dbo].[TBR_RESULT_ETL_Export] a WITH (NOLOCK)
+        WHERE a.yyyy = #{yyyy}
+        AND a.Expo_singo_gbn IN ('B','E','J','K','L','M','O')
+        <if test='taxno != null and taxno != ""'>AND ( a.Expo_trust_saup = #{taxno} OR a.Expo_SuchulSaupNo = #{taxno} )</if>
+        <if test='db != "ALL"'>
+            <choose>
+                <when test='db == "ncustoms" or db == "ncustoms_ic"'>AND a.db = #{db}</when>
+                <otherwise>AND a.db LIKE #{db} + '%'</otherwise>
+            </choose>
+        </if>
+        GROUP BY a.db, a.yyyy, a.mm, a.Expo_key
+        ) a
+        GROUP BY a.db, a.yyyy, a.mm, a.Expo_key
+        ) a
+        GROUP BY a.db, a.yyyy, a.mm
+        ORDER BY a.db, a.yyyy, a.mm
+    </select>
+
+    <select id="selectExportResult수출실적_전체" resultType="map">
+        /* 수출실적 수출실적 조회(전체) */
+        SELECT a.db, a.yyyy, a.mm, SUM(a.Expo_total_won) AS 'Expo_total_won', SUM(a.Expo_total_usd) AS 'Expo_total_usd'
+        FROM (
+        SELECT a.db, a.yyyy, a.mm, a.Expo_key, a.Expo_total_won, a.Expo_total_usd
+        FROM [soo].[dbo].[TBR_RESULT_ETL_Export] a WITH (NOLOCK)
+        WHERE a.yyyy = #{yyyy}
+        <if test='taxno != null and taxno != ""'>AND ( a.Expo_trust_saup = #{taxno} OR a.Expo_SuchulSaupNo = #{taxno} )</if>
+        <if test='db != "ALL"'>
+            <choose>
+                <when test='db == "ncustoms" or db == "ncustoms_ic"'>AND a.db = #{db}</when>
+                <otherwise>AND a.db LIKE #{db} + '%'</otherwise>
+            </choose>
+        </if>
+        GROUP BY a.db, a.yyyy, a.mm, a.Expo_key, a.Expo_total_won, a.Expo_total_usd
+        ) a
+        GROUP BY a.db, a.yyyy, a.mm
+        ORDER BY a.db, a.yyyy, a.mm
+    </select>
+
+    <select id="selectGeodisExportDeclarationMasterList" resultType="map">
+        /* 수출 통관정보 Declaration 마스터 조회(geodis) */
+        SELECT datas.*
+        FROM (
+        SELECT ROW_NUMBER() OVER (ORDER BY a.Expo_key) AS 'rownum',
+        a.Expo_key, a.Expo_iv_no, a.Expo_singo_no, a.Expo_ok_date, a.Expo_geyak_no1, a.Expo_geyak_no2,
+        a.Expo_gumaeja_sangho, a.Expo_mokjuk_name, a.Expo_gyelje, a.Expo_indojo, a.Expo_gyelje_money,
+        a.Expo_gyelje_input, a.Expo_total_usd, a.Expo_total_won, a.Expo_hanggu_code, a.Expo_hanggu_name, a.expo_LoadedDt,
+        a.Expo_pojang_su, a.Expo_total_jung, a.Expo_whaju_sangho, a.Expo_segwan, a.Expo_gwa, a.Expo_SuchulSaupNo, a.Expo_DaeSaupNo,
+        c.Expo1_Additional_Key, c.additionalInfo1, c.additionalInfo2, c.useYn,
+        SUBSTRING(a.Expo_singo_no, 1,5) + '-' + SUBSTRING(a.Expo_singo_no, 6,2) + '-' + SUBSTRING(a.Expo_singo_no, 8,7) AS 'Expo_singo_no_bar',
+        CASE WHEN a.Expo_unsong_type='10' THEN 'Ocean' ELSE 'Air' END AS 'Expo_unsong_type'
+        FROM ${_defaultDB}.[kcba].[Expo1] a WITH (NOLOCK)
+        LEFT OUTER JOIN ${_defaultDB}.[kcba].[Expo1_Additional] c WITH (NOLOCK)
+        ON a.Expo_key = c.Expo_key
+        AND c.Expo_Db = #{_defaultDB}
+        AND c.useYn LIKE '%' + #{expo1AdditionalUseYn} + '%'
+		WHERE a.Expo_DaeSaupNo = #{taxNum}
+        <if test='expoKey != null and expoKey != ""'>AND a.Expo_key = #{expoKey} /* Expo_key(PK) */</if>
+        <if test='expoIvNo != null and expoIvNo != ""'>AND a.Expo_iv_no LIKE '%' + #{expoIvNo} + '%' /* 인보이스 */</if>
+        <if test='expoSingoNo != null and expoSingoNo != ""'>AND a.Expo_singo_no LIKE '%' + #{expoSingoNo} + '%' /* 수출신고번호 */</if>
+        <if test='expoGumaejaSangho != null and expoGumaejaSangho != ""'>AND a.Expo_gumaeja_sangho LIKE '%' + #{expoGumaejaSangho} + '%' /* 구매자상호 */</if>
+        <if test='expoGeyakNo1 != null and expoGeyakNo1 != ""'>AND (a.Expo_geyak_no1 LIKE '%' + #{expoGeyakNo1} + '%' or a.Expo_geyak_no2 LIKE '%' + #{expoGeyakNo1} + '%') /* 계약번호1 */</if>
+        <if test='expoGeyakNo2 != null and expoGeyakNo2 != ""'>AND a.Expo_geyak_no2 LIKE '%' + #{expoGeyakNo2} + '%' /* 계약번호2 */</if>
+        <if test='expoHangguCode != null and expoHangguCode != ""'>AND a.Expo_hanggu_code LIKE '%' + #{expoHangguCode} + '%' /* 항구코드 */</if>
+        <if test='expoHangguName != null and expoHangguName != ""'>AND a.Expo_hanggu_name LIKE '%' + #{expoHangguName} + '%' /* 항구명 */</if>
+        <if test='_DateType != null and _DateType != "ALL" and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+            <choose>
+                <when test='_DateType == "expoOkDate_Day"'>AND a.Expo_ok_date BETWEEN #{strFromDate} AND #{strToDate} /* 수리일 */</when>
+                <when test='_DateType == "expoLoadedDt_Day"'>AND a.expo_LoadedDt BETWEEN #{strFromDate} AND #{strToDate} /* 선적일 */</when>
+            </choose>
+        </if>
+        <if test='additionalInfo1 != null and additionalInfo1 != ""'>AND c.additionalInfo1 LIKE #{additionalInfo1} + '%' /* additionalInfo1 */</if>
+        <if test='additionalInfo2 != null and additionalInfo2 != ""'>AND c.additionalInfo2 LIKE #{additionalInfo2} + '%' /* additionalInfo2 */</if>
+        <if test='expoUnsong != null and expoUnsong != ""'>AND a.Expo_unsong_type = #{expoUnsong}</if>
+        ) datas
+        <if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+            WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+        </if>
+    </select>
+
+    <select id="selectGeodisExportDeclarationDetailList" resultType="map">
+        /* 수출 통관정보 Declaration 디테일 조회(geodis) */
+        SELECT datas.*
+        FROM (
+        SELECT ROW_NUMBER() OVER (ORDER BY a.Exlan_key, a.Exlan_lan) AS 'rownum',
+        a.Exlan_key, a.Exlan_lan, a.Exlan_hs, a.Exlan_egukyk, a.Exlan_whan_jepum,
+        a.Exlan_gyelje_gum, a.Exlan_pojang_su, a.Exlan_pojang_danwi, a.Exlan_jung,
+        a.Exlan_fob_usd, a.Exlan_fob_won
+        FROM ${_defaultDB}.[kcba].[Expo2] a WITH (NOLOCK)
+        WHERE a.Exlan_key = #{exlanKey} /* Exlan_key(PK) */
+        <if test='exlanLan != null and exlanLan != ""'>AND a.Exlan_lan = #{expoKey} /* Exlan_lan(PK) */</if>
+        ) datas
+        <if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+            WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+        </if>
+    </select>
+
+    <select id="selectGeodisExportDeclarationSubDetailList" resultType="map">
+        /* 수출 통관정보 Declaration 서브디테일 조회(geodis) */
+        SELECT datas.*
+        FROM (
+        SELECT ROW_NUMBER() OVER (ORDER BY a.Expum_key, a.Expum_lan, a.Expum_haeng) AS 'rownum',
+        a.Expum_key, a.Expum_lan, a.Expum_haeng, a.Expum_pum_a, a.Expum_su, a.Expum_su_danwi,
+        a.Expum_danga, a.Expum_gyelje_gum, a.Expum_pum_b, a.Expum_pum_c, a.Expum_pum_d, a.Expum_pum_e,
+        a.Expum_pum_f, a.Expum_pum_g, a.Expum_pum_h, a.Expum_sungbun_a, a.Expum_sungbun_b
+        FROM ${_defaultDB}.[kcba].[Expo3] a WITH (NOLOCK)
+        WHERE a.Expum_key = #{expumKey} /* Expum_key(PK) */
+        <if test='expumLan != null and expumLan != ""'>AND a.Expum_lan = #{expumLan} /* Expum_lan(PK) */</if>
+        <if test='expumHaeng != null and expumHaeng != ""'>AND a.Expum_haeng = #{expumHaeng} /* Expum_haeng(PK) */</if>
+        ) datas
+        <if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+            WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+        </if>
+    </select>
+
+    <select id="selectGeodisExportAccountCostWithAdditionalInfoList" resultType="map">
+        /* 수출 회계 정산 전체 데이터 조회 with additional(geodis) */
+        SELECT datas.*
+        FROM (
+        SELECT ROW_NUMBER() OVER (ORDER BY a.FR_KEY) AS 'rownum',
+        a.FR_KEY, a.IMPO_EXPO_KEY, a.WORK_NM, a.SINGO_DT, a.SURI_DT, a.INDO_JOGUN, a.OWNER_COM_NM, a.HAWB, a.CUS_BUHO, a.SINGO_YEAR, a.SINGO_NO, a.SINGO_EK,
+        a.GAMGA_EK, a.JAEWON_CD, a.SEGWAN, a.DEAL_PUM_NM, a.TOT_QT, a.QT_UNIT, a.TOT_WT, a.WT_UNIT, a.PORT_CD, a.PORT_NM, a.MOKJUK_NM, a.SUPLY_NM, a.PAY_METHOD, a.MONEY_EK, a.MONEY_CD,
+        a.EXCH_RATE, a.FILE_NO1, a.FILE_NO2,
+        a.CUS_BUHO + '' + SUBSTRING(a.SINGO_YEAR,3,2) + '' + a.SINGO_NO AS 'FULLSINGONO',
+        b.SUP_EK, b.TAX_EK, b.SUM_EK,
+        e.Expo1_Additional_Key, e.additionalInfo1, e.additionalInfo2, e.useYn,
+        a.CUS_BUHO + '-' + SUBSTRING(a.SINGO_YEAR,3,2) + '-' + a.SINGO_NO AS 'FULLSINGONOBAR'
+        FROM [122.99.247.4].[CLFMS_SE].[dbo].[FR_MAIN] AS a WITH (NOLOCK)
+        INNER JOIN [122.99.247.4].[CLFMS_SE].[dbo].[ADJ_LIST] AS b WITH (NOLOCK)
+        ON a.FR_KEY = b.FR_KEY
+        AND b.DEL_YN = 'N'
+        AND a.WORK_NM LIKE #{workNm} + '%'
+        AND b.SUM_EK != 0
+        LEFT OUTER JOIN
+        (
+        SELECT c.Expo1_Additional_Key, c.Expo_Db, c.Expo_Key, c.additionalInfo1, c.additionalInfo2, c.useYn, d.AREA_CD
+        FROM ${_defaultDB}.[kcba].[Expo1_Additional] AS c WITH (NOLOCK)
+        INNER JOIN [122.99.247.4].[CLFMS_SE].[dbo].[AREA_INFO] AS d WITH (NOLOCK)
+        ON c.Expo_Db = d.DB_NM
+        AND c.Expo_Db = #{_defaultDB}
+        AND c.useYn = 'Y'
+        <if test='additionalInfo1 != null and additionalInfo1 != ""'>AND c.additionalInfo1 LIKE #{additionalInfo1} + '%' /* additionalInfo1 */</if>
+        <if test='additionalInfo2 != null and additionalInfo2 != ""'>AND c.additionalInfo2 LIKE #{additionalInfo2} + '%' /* additionalInfo2 */</if>
+        ) e
+        ON a.IMPO_EXPO_KEY = e.Expo_key
+        AND a.AREA_CD = e.AREA_CD
+        AND e.Expo_Db = #{_defaultDB}
+        AND e.useYn LIKE #{expo1AdditionalUseYn} + '%' /* 수출 추가정보 사용여부 */
+
+        WHERE (a.OWNER_BIZ_NO = #{taxNum} or a.TRADE_BIZ_NO = #{taxNum} or a.ADJ_BIZ_NO = #{taxNum} or a.DTI_BIZ_NO = #{taxNum} or a.AGENT_BIZ_NO = #{taxNum} or a.PROXY_BIZ_NO = #{taxNum})
+        <if test='agentBizNo != null and agentBizNo != ""'>AND a.AGENT_BIZ_NO LIKE '%' + #{agentBizNo} + '%' /* 사업자번호 */</if>
+        <if test='workCd != null and workCd != ""'>AND a.WORK_CD LIKE '%' + #{workCd} + '%' /* 수출입구분 */</if>
+        <if test='impoExpoKey != null and impoExpoKey != ""'>AND a.IMPO_EXPO_KEY = #{impoExpoKey} /* 수출입키 */</if>
+        <if test='singoNo != null and singoNo != ""'>AND a.SINGO_NO LIKE '%' + #{singoNo} + '%' /* 수입신고번호 */</if>
+        <if test='blNo != null and blNo != ""'>AND a.HAWB LIKE '%' + #{blNo} + '%' /* BL번호 */</if>
+        <if test='invoiceNo != null and invoiceNo != ""'>AND a.INVOICE_NO LIKE '%' + #{invoiceNo} + '%' /* 인보이스번호 */</if>
+        <if test='fileNo1 != null and fileNo1 != ""'>AND (a.FILE_NO1 LIKE '%' + #{fileNo1} + '%' or a.FILE_NO2 LIKE '%' + #{fileNo1} + '%') /* 파일1 */</if>
+        <if test='fileNo2 != null and fileNo2 != ""'>AND a.FILE_NO2 LIKE '%' + #{fileNo2} + '%' /* 파일2 */</if>
+        <if test='portCd != null and portCd != ""'>AND a.PORT_CD LIKE '%' + #{portCd} + '%' /* 항구코드 */</if>
+        <if test='portNm != null and portNm != ""'>AND a.PORT_NM LIKE '%' + #{portNm} + '%' /* 항구명 */</if>
+        <if test='suplyNm != null and suplyNm != ""'>AND a.SUPLY_NM LIKE '%' + #{suplyNm} + '%' /* 해외거래처상호 */</if>
+        <if test='jingsuTp != null and jingsuTp != ""'>AND a.JINGSU_TP LIKE '%' + #{jingsuTp} + '%' /* 징수형태 */</if>
+        <if test='segwan != null and segwan != ""'>AND a.SEGWAN LIKE '%' + #{segwan} + '%' /* 세관부호 */</if>
+        <if test='areaNm != null and areaNm != ""'>AND a.AREA_NM LIKE '%' + #{areaNm} + '%' /* 지점명 */</if>
+        <if test='cusBuho != null and cusBuho != ""'>AND a.CUS_BUHO LIKE '%' + #{cusBuho} + '%' /* 관세사부호 */</if>
+        <if test='frKey != null and frKey != ""'>AND a.FR_KEY = #{frKey} /* FR_KEY */</if>
+        <if test='_DateType != null and _DateType != "ALL" and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+            <choose>
+                <when test='_DateType == "Singo_date_Day"'>AND a.SINGO_DT BETWEEN #{strFromDate} AND #{strToDate} /* 신고일 */</when>
+                <when test='_DateType == "Ok_date_Day"'>AND a.SURI_DT BETWEEN #{strFromDate} AND #{strToDate} /* 수리일 */</when>
+            </choose>
+        </if>
+        <if test='strUnsong != null and strUnsong != ""'>
+            <choose>
+                <when test='strUnsong == "40"'>AND a.PORT_NM LIKE '%공항'</when>
+                <when test='strUnsong == "10"'>AND a.PORT_NM not LIKE '%공항'</when>
+            </choose>
+        </if>
+        ) datas
+        <if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+            WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+        </if>
+    </select>
+
+    <update id="updateGeodisExpoAdditionalInfo">
+		/* 지오디스 Ref no 추가 */
+		UPDATE	ncustoms_sel_040.[kcba].[Expo1]
+		set Expo_geyak_no2 = #{Expo_geyak_no2}
+		WHERE Expo_key = #{expoKey}
+	</update>
+
+    <update id="updateGeodisExpoAdditionalInfo1">
+		/* 지오디스 Ref no 추가 */
+		UPDATE	[122.99.247.4].[CLFMS_SE].[dbo].[FR_MAIN]
+		set FILE_NO2 = #{FILE_NO2}
+		WHERE FR_KEY = #{FR_KEY}
+	</update>
+
+    <select id="selectExportStatisticsList" resultType="map">
+        /* 메인 수출통계 */
+        SELECT
+		a.jisa, a.year, a.mm, count(*) as 'suri', SUM(a.Expo_total_won) AS 'totalWon', SUM(a.Expo_total_usd) AS 'totalUsd'
+		FROM (
+		select
+		'본사수출1' as 'jisa', substring(Expo_ok_date,0,5) as 'year', substring(Expo_ok_date,5,2) as 'mm',
+		Expo_total_won, Expo_total_usd
+		from ncustoms_sel_040.[kcba].[Expo1]
+		where substring(Expo_ok_date,0,7)=#{yyyymm}
+		) a
+		GROUP BY a.jisa, a.year, a.mm
+		union all
+		SELECT
+		a.jisa, a.year, a.mm, count(*) as 'suri', SUM(a.Expo_total_won) AS 'totalWon', SUM(a.Expo_total_usd) AS 'totalUsd'
+		FROM (
+		select
+		'본사수출2' as 'jisa', substring(Expo_ok_date,0,5) as 'year', substring(Expo_ok_date,5,2) as 'mm',
+		Expo_total_won, Expo_total_usd
+		from ncustoms_sel4.[kcba].[Expo1]
+		where substring(Expo_ok_date,0,7)=#{yyyymm}
+		) a
+		GROUP BY a.jisa, a.year, a.mm
+		union all
+		SELECT
+		a.jisa, a.year, a.mm, count(*) as 'suri', SUM(a.Expo_total_won) AS 'totalWon', SUM(a.Expo_total_usd) AS 'totalUsd'
+		FROM (
+		select
+		'안양지사' as 'jisa', substring(Expo_ok_date,0,5) as 'year', substring(Expo_ok_date,5,2) as 'mm',
+		Expo_total_won, Expo_total_usd
+		from ncustoms_ay.[kcba].[Expo1]
+		where substring(Expo_ok_date,0,7)=#{yyyymm}
+		) a
+		GROUP BY a.jisa, a.year, a.mm
+		union all
+		SELECT
+		a.jisa, a.year, a.mm, count(*) as 'suri', SUM(a.Expo_total_won) AS 'totalWon', SUM(a.Expo_total_usd) AS 'totalUsd'
+		FROM (
+		select
+		'부산지사' as 'jisa', substring(Expo_ok_date,0,5) as 'year', substring(Expo_ok_date,5,2) as 'mm',
+		Expo_total_won, Expo_total_usd
+		from ncustoms_bs.[kcba].[Expo1]
+		where substring(Expo_ok_date,0,7)=#{yyyymm}
+		) a
+		GROUP BY a.jisa, a.year, a.mm
+		union all
+		SELECT
+		a.jisa, a.year, a.mm, count(*) as 'suri', SUM(a.Expo_total_won) AS 'totalWon', SUM(a.Expo_total_usd) AS 'totalUsd'
+		FROM (
+		select
+		'천안지사' as 'jisa', substring(Expo_ok_date,0,5) as 'year', substring(Expo_ok_date,5,2) as 'mm',
+		Expo_total_won, Expo_total_usd
+		from ncustoms_ca.[kcba].[Expo1]
+		where substring(Expo_ok_date,0,7)=#{yyyymm}
+		) a
+		GROUP BY a.jisa, a.year, a.mm
+		union all
+		SELECT
+		a.jisa, a.year, a.mm, count(*) as 'suri', SUM(a.Expo_total_won) AS 'totalWon', SUM(a.Expo_total_usd) AS 'totalUsd'
+		FROM (
+		select
+		'청주지사' as 'jisa', substring(Expo_ok_date,0,5) as 'year', substring(Expo_ok_date,5,2) as 'mm',
+		Expo_total_won, Expo_total_usd
+		from ncustoms_cj.[kcba].[Expo1]
+		where substring(Expo_ok_date,0,7)=#{yyyymm}
+		) a
+		GROUP BY a.jisa, a.year, a.mm
+		union all
+		SELECT
+		a.jisa, a.year, a.mm, count(*) as 'suri', SUM(a.Expo_total_won) AS 'totalWon', SUM(a.Expo_total_usd) AS 'totalUsd'
+		FROM (
+		select
+		'창원지사' as 'jisa', substring(Expo_ok_date,0,5) as 'year', substring(Expo_ok_date,5,2) as 'mm',
+		Expo_total_won, Expo_total_usd
+		from ncustoms_cw.[kcba].[Expo1]
+		where substring(Expo_ok_date,0,7)=#{yyyymm}
+		) a
+		GROUP BY a.jisa, a.year, a.mm
+		union all
+		SELECT
+		a.jisa, a.year, a.mm, count(*) as 'suri', SUM(a.Expo_total_won) AS 'totalWon', SUM(a.Expo_total_usd) AS 'totalUsd'
+		FROM (
+		select
+		'대전지사' as 'jisa', substring(Expo_ok_date,0,5) as 'year', substring(Expo_ok_date,5,2) as 'mm',
+		Expo_total_won, Expo_total_usd
+		from ncustoms_dj.[kcba].[Expo1]
+		where substring(Expo_ok_date,0,7)=#{yyyymm}
+		) a
+		GROUP BY a.jisa, a.year, a.mm
+		union all
+		SELECT
+		a.jisa, a.year, a.mm, count(*) as 'suri', SUM(a.Expo_total_won) AS 'totalWon', SUM(a.Expo_total_usd) AS 'totalUsd'
+		FROM (
+		select
+		'구미지사' as 'jisa', substring(Expo_ok_date,0,5) as 'year', substring(Expo_ok_date,5,2) as 'mm',
+		Expo_total_won, Expo_total_usd
+		from ncustoms_gm.[kcba].[Expo1]
+		where substring(Expo_ok_date,0,7)=#{yyyymm}
+		) a
+		GROUP BY a.jisa, a.year, a.mm
+		union all
+		SELECT
+		a.jisa, a.year, a.mm, count(*) as 'suri', SUM(a.Expo_total_won) AS 'totalWon', SUM(a.Expo_total_usd) AS 'totalUsd'
+		FROM (
+		select
+		'인천해상' as 'jisa', substring(Expo_ok_date,0,5) as 'year', substring(Expo_ok_date,5,2) as 'mm',
+		Expo_total_won, Expo_total_usd
+		from ncustoms_ic.[kcba].[Expo1]
+		where substring(Expo_ok_date,0,7)=#{yyyymm}
+		) a
+		GROUP BY a.jisa, a.year, a.mm
+		union all
+		SELECT
+		a.jisa, a.year, a.mm, count(*) as 'suri', SUM(a.Expo_total_won) AS 'totalWon', SUM(a.Expo_total_usd) AS 'totalUsd'
+		FROM (
+		select
+		'진주지사' as 'jisa', substring(Expo_ok_date,0,5) as 'year', substring(Expo_ok_date,5,2) as 'mm',
+		Expo_total_won, Expo_total_usd
+		from ncustoms_jj.[kcba].[Expo1]
+		where substring(Expo_ok_date,0,7)=#{yyyymm}
+		) a
+		GROUP BY a.jisa, a.year, a.mm
+		union all
+		SELECT
+		a.jisa, a.year, a.mm, count(*) as 'suri', SUM(a.Expo_total_won) AS 'totalWon', SUM(a.Expo_total_usd) AS 'totalUsd'
+		FROM (
+		select
+		'파주지사' as 'jisa', substring(Expo_ok_date,0,5) as 'year', substring(Expo_ok_date,5,2) as 'mm',
+		Expo_total_won, Expo_total_usd
+		from ncustoms_pj.[kcba].[Expo1]
+		where substring(Expo_ok_date,0,7)=#{yyyymm}
+		) a
+		GROUP BY a.jisa, a.year, a.mm
+		union all
+		SELECT
+		a.jisa, a.year, a.mm, count(*) as 'suri', SUM(a.Expo_total_won) AS 'totalWon', SUM(a.Expo_total_usd) AS 'totalUsd'
+		FROM (
+		select
+		'평택지사' as 'jisa', substring(Expo_ok_date,0,5) as 'year', substring(Expo_ok_date,5,2) as 'mm',
+		Expo_total_won, Expo_total_usd
+		from ncustoms_pt.[kcba].[Expo1]
+		where substring(Expo_ok_date,0,7)=#{yyyymm}
+		) a
+		GROUP BY a.jisa, a.year, a.mm
+		union all
+		SELECT
+		a.jisa, a.year, a.mm, count(*) as 'suri', SUM(a.Expo_total_won) AS 'totalWon', SUM(a.Expo_total_usd) AS 'totalUsd'
+		FROM (
+		select
+		'경기지사' as 'jisa', substring(Expo_ok_date,0,5) as 'year', substring(Expo_ok_date,5,2) as 'mm',
+		Expo_total_won, Expo_total_usd
+		from ncustoms_sn.[kcba].[Expo1]
+		where substring(Expo_ok_date,0,7)=#{yyyymm}
+		) a
+		GROUP BY a.jisa, a.year, a.mm
+		union all
+		SELECT
+		a.jisa, a.year, a.mm, count(*) as 'suri', SUM(a.Expo_total_won) AS 'totalWon', SUM(a.Expo_total_usd) AS 'totalUsd'
+		FROM (
+		select
+		'울산지사' as 'jisa', substring(Expo_ok_date,0,5) as 'year', substring(Expo_ok_date,5,2) as 'mm',
+		Expo_total_won, Expo_total_usd
+		from ncustoms_us.[kcba].[Expo1]
+		where substring(Expo_ok_date,0,7)=#{yyyymm}
+		) a
+		GROUP BY a.jisa, a.year, a.mm
+		union all
+		SELECT
+		a.jisa, a.year, a.mm, count(*) as 'suri', SUM(a.Expo_total_won) AS 'totalWon', SUM(a.Expo_total_usd) AS 'totalUsd'
+		FROM (
+		select
+		'인천공항' as 'jisa', substring(Expo_ok_date,0,5) as 'year', substring(Expo_ok_date,5,2) as 'mm',
+		Expo_total_won, Expo_total_usd
+		from ncustoms_yj.[kcba].[Expo1]
+		where substring(Expo_ok_date,0,7)=#{yyyymm}
+		) a
+		GROUP BY a.jisa, a.year, a.mm
+		union all
+		SELECT
+		a.jisa, a.year, a.mm, count(*) as 'suri', SUM(a.Expo_total_won) AS 'totalWon', SUM(a.Expo_total_usd) AS 'totalUsd'
+		FROM (
+		select
+		'여수지사' as 'jisa', substring(Expo_ok_date,0,5) as 'year', substring(Expo_ok_date,5,2) as 'mm',
+		Expo_total_won, Expo_total_usd
+		from ncustoms_ys.[kcba].[Expo1]
+		where substring(Expo_ok_date,0,7)=#{yyyymm}
+		) a
+		GROUP BY a.jisa, a.year, a.mm
+    </select>
+
+    <select id="selectExportStatisticsYearList" resultType="map">
+        /* 메인 수출년간통계 */
+        select * from soo.dbo.CPS_YearStatistics
+		where gubun='Export'
+		and year=#{yyyy}
+    </select>
+
+    <select id="selectIsuExportStatusList" resultType="map">
+        /* 이수화학 수출 통관정보 상태조회 */
+        /* 수출사업자가 이수엑사켐이 아닌 것 2022-02-17*/
+        SELECT
+        Expo_key, Expo_iv_no, Expo_res_result, Expo_gurae_gbn, Expo_jong,
+        Expo_singo_no, Expo_singo_date, Expo_ok_date, UserNM, Expo_unsong_type,
+        forward_sangho, Expo_gumaeja_sangho, Expo_mokjuk_name, Expo_hanggu_name,
+        Expo_indojo, Expo_gyelje_money, Expo_gyelje_input, Expo_pojang_su, Expo_total_jung,
+        Expo_sunjuk_date, expo_Loaded_YN, expo_LoadedDt, Expo_SuchulSaupNo,
+        Expo_geyak_no1, Expo_geyak_no2, Expo_segwan, Expo_gwa, Expo_total_usd, Expo_total_won,
+        Expo_suchulja_sangho, Expo_whaju_sangho,
+        ISNULL((SELECT Exlan_egukyk FROM ${_defaultDB}.[kcba].[Expo2] WITH (NOLOCK) WHERE Expo_key = Exlan_key AND Exlan_lan = '001'), '') AS 'exlanEgukyk',
+        #{_defaultDB} as 'defaultDB'
+        FROM ${_defaultDB}.[kcba].[Expo1] WITH (NOLOCK)
+        WHERE 1 = 1
+        <if test='taxNum != null and taxNum != ""'>
+            <choose>
+                <when test='taxNum == "all"'>AND (Expo_SuchulSaupNo IN (select userSaup from soo.dbo.CPS_SaveCustomer where userKey = #{ID} and useYn='Y') or Expo_whaju_saup IN (select userSaup from soo.dbo.CPS_SaveCustomer where userKey = #{ID} and useYn='Y'))</when>
+                <otherwise>AND (Expo_SuchulSaupNo = '1148154648' or Expo_whaju_saup = '1148154648') and Expo_SuchulSaupNo != '1148611339' </otherwise>
+            </choose>
+        </if>
+        <if test='expoIvNo != null and expoIvNo != ""'>AND Expo_iv_no LIKE '%' + #{expoIvNo} + '%' /* 인보이스 */</if>
+        <if test='expoSingoNo != null and expoSingoNo != ""'>AND Expo_singo_no LIKE '%' + #{expoSingoNo} + '%' /* 수출신고번호 */</if>
+        <if test='expoGumaejaSangho != null and expoGumaejaSangho != ""'>AND Expo_gumaeja_sangho LIKE '%' + #{expoGumaejaSangho} + '%' /* 구매자상호 */</if>
+        <if test='_DateType != null and _DateType != "ALL" and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+            <choose>
+                <when test='_DateType == "Expo_singo_date_Day"'>AND Expo_singo_date BETWEEN #{strFromDate} AND #{strToDate} /* 신고일 */</when>
+                <when test='_DateType == "Expo_ok_date_Day"'>AND Expo_ok_date BETWEEN #{strFromDate} AND #{strToDate} /* 수리일 */</when>
+                <when test='_DateType == "expo_LoadedDt_Day"'>AND expo_LoadedDt BETWEEN #{strFromDate} AND #{strToDate} /* 선적일 */</when>
+                <when test='_DateType == "bfloaddt_Day"'>AND BFLOADDT BETWEEN #{strFromDate} AND #{strToDate} /* 출항일자 */</when>
+                <when test='_DateType == "expoSunjukDate_Day"'>AND Expo_sunjuk_date BETWEEN #{strFromDate} AND #{strToDate} /* 적재의무기한 */</when>
+            </choose>
+        </if>
+        <if test='expoLoadedYn != null and expoLoadedYn != ""'>AND expo_Loaded_YN LIKE '%' + #{expoLoadedYn} + '%'</if>
+        <if test='expoGeyakNo1 != null and expoGeyakNo1 != ""'>AND (Expo_geyak_no1 LIKE '%' + #{expoGeyakNo1} + '%' or Expo_geyak_no2 LIKE '%' + #{expoGeyakNo1} + '%')</if>
+        <if test='expoGeyakNo2 != null and expoGeyakNo2 != ""'>AND Expo_geyak_no2 LIKE '%' + #{expoGeyakNo2} + '%'</if>
+        <if test='expoSegwan != null and expoSegwan != ""'>AND Expo_segwan = #{expoSegwan}</if>
+        <if test='expoGroupSegwan != null and expoGroupSegwan != ""'>
+            <choose>
+                <when test='expoGroupSegwan == "경기"'>AND Expo_segwan in (012,014,021,131)</when>
+                <when test='expoGroupSegwan == "구미"'>AND Expo_segwan in (120,121)</when>
+                <when test='expoGroupSegwan == "대전"'>AND Expo_segwan in (080,081,082,150)</when>
+                <when test='expoGroupSegwan == "부산"'>AND Expo_segwan in (030,033,037,039,051,054,140)</when>
+                <when test='expoGroupSegwan == "서울"'>AND Expo_segwan in (010,011,090,100,101,102,103,130)</when>
+                <when test='expoGroupSegwan == "여수"'>AND Expo_segwan in (060,062,070,071)</when>
+                <when test='expoGroupSegwan == "울산"'>AND Expo_segwan in (110,122)</when>
+                <when test='expoGroupSegwan == "인천"'>AND Expo_segwan in (013,020,023,040,041)</when>
+                <when test='expoGroupSegwan == "창원"'>AND Expo_segwan in (050,052,053,056)</when>
+                <when test='expoGroupSegwan == "천안"'>AND Expo_segwan in (152)</when>
+                <when test='expoGroupSegwan == "청주"'>AND Expo_segwan in (151,153)</when>
+                <when test='expoGroupSegwan == "파주"'>AND Expo_segwan in (017)</when>
+                <when test='expoGroupSegwan == "평택"'>AND Expo_segwan in (016,154)</when>
+            </choose>
+        </if>
+        <if test='expoGwa != null and expoGwa != ""'>AND Expo_gwa LIKE '%' + #{expoGwa} + '%'</if>
+        <if test='expoChamjoNo != null and expoChamjoNo != ""'>AND Expo_chamjo_no LIKE '%' + #{expoChamjoNo} + '%'</if>
+        <if test='expoSuchuljaSangho != null and expoSuchuljaSangho != ""'>AND Expo_suchulja_sangho LIKE '%' + #{expoSuchuljaSangho} + '%'</if>
+        <if test='expoSuchuljaCode != null and expoSuchuljaCode != ""'>AND Expo_suchulja_code LIKE '%' + #{expoSuchuljaCode} + '%'</if>
+        <if test='expoSuchulSaupNo != null and expoSuchulSaupNo != ""'>AND Expo_SuchulSaupNo LIKE '%' + #{expoSuchulSaupNo} + '%'</if>
+        <if test='expoWhajuSangho != null and expoWhajuSangho != ""'>AND Expo_whaju_sangho LIKE '%' + #{expoWhajuSangho} + '%'</if>
+        <if test='expoWhajuCode != null and expoWhajuCode != ""'>AND Expo_whaju_code LIKE '%' + #{expoWhajuCode} + '%'</if>
+        <if test='expoWhajuSaup != null and expoWhajuSaup != ""'>AND Expo_whaju_saup LIKE '%' + #{expoWhajuSaup} + '%'</if>
+        <if test='expoTrustSangho != null and expoTrustSangho != ""'>AND Expo_trust_sangho LIKE '%' + #{expoTrustSangho} + '%'</if>
+        <if test='expoTrustCode != null and expoTrustCode != ""'>AND Expo_trust_code LIKE '%' + #{expoTrustCode} + '%'</if>
+        <if test='expoTrustSaup != null and expoTrustSaup != ""'>AND Expo_trust_saup LIKE '%' + #{expoTrustSaup} + '%'</if>
+        <if test='expumJepumCode != null and expumJepumCode != ""'>AND Expo_key in (select Expum_key FROM ${_defaultDB}.[kcba].[expo3] where Expum_jepum_code LIKE '%' + #{expumJepumCode} + '%')</if>
+        <if test='expumPum != null and expumPum != ""'>AND Expo_key in (select Expum_key FROM ${_defaultDB}.[kcba].[expo3] where Expum_pum_a+Expum_pum_b+Expum_pum_c+Expum_pum_d+Expum_pum_e+Expum_pum_f+Expum_pum_g+Expum_pum_h LIKE '%' + #{expumPum} + '%')</if>
+        <if test='expumSungbun != null and expumSungbun != ""'>AND Expo_key in (select Expum_key FROM ${_defaultDB}.[kcba].[expo3] where Expum_sungbun_a+Expum_sungbun_b LIKE '%' + #{expumSungbun} + '%')</if>
+        order by Expo_singo_date desc
+    </select>
+
+    <!-- select id="selectExportStatisticsYearList" resultType="map">
+        /* 메인 수출년간통계 */
+        SELECT
+		a.jisa, a.year, count(*) as 'suri', SUM(a.Expo_total_won) AS 'totalWon', SUM(a.Expo_total_usd) AS 'totalUsd'
+		FROM (
+		select
+		'본사수출1' as 'jisa', substring(Expo_ok_date,0,5) as 'year',
+		Expo_total_won, Expo_total_usd
+		from ncustoms_sel_040.[kcba].[Expo1]
+		where substring(Expo_ok_date,0,5)=#{yyyy}
+		) a
+		GROUP BY a.jisa, a.year
+		union all
+		SELECT
+		a.jisa, a.year, count(*) as 'suri', SUM(a.Expo_total_won) AS 'totalWon', SUM(a.Expo_total_usd) AS 'totalUsd'
+		FROM (
+		select
+		'본사수출2' as 'jisa', substring(Expo_ok_date,0,5) as 'year',
+		Expo_total_won, Expo_total_usd
+		from ncustoms_sel4.[kcba].[Expo1]
+		where substring(Expo_ok_date,0,5)=#{yyyy}
+		) a
+		GROUP BY a.jisa, a.year
+		union all
+		SELECT
+		a.jisa, a.year, count(*) as 'suri', SUM(a.Expo_total_won) AS 'totalWon', SUM(a.Expo_total_usd) AS 'totalUsd'
+		FROM (
+		select
+		'안양지사' as 'jisa', substring(Expo_ok_date,0,5) as 'year',
+		Expo_total_won, Expo_total_usd
+		from ncustoms_ay.[kcba].[Expo1]
+		where substring(Expo_ok_date,0,5)=#{yyyy}
+		) a
+		GROUP BY a.jisa, a.year
+		union all
+		SELECT
+		a.jisa, a.year, count(*) as 'suri', SUM(a.Expo_total_won) AS 'totalWon', SUM(a.Expo_total_usd) AS 'totalUsd'
+		FROM (
+		select
+		'부산지사' as 'jisa', substring(Expo_ok_date,0,5) as 'year',
+		Expo_total_won, Expo_total_usd
+		from ncustoms_bs.[kcba].[Expo1]
+		where substring(Expo_ok_date,0,5)=#{yyyy}
+		) a
+		GROUP BY a.jisa, a.year
+		union all
+		SELECT
+		a.jisa, a.year, count(*) as 'suri', SUM(a.Expo_total_won) AS 'totalWon', SUM(a.Expo_total_usd) AS 'totalUsd'
+		FROM (
+		select
+		'천안지사' as 'jisa', substring(Expo_ok_date,0,5) as 'year',
+		Expo_total_won, Expo_total_usd
+		from ncustoms_ca.[kcba].[Expo1]
+		where substring(Expo_ok_date,0,5)=#{yyyy}
+		) a
+		GROUP BY a.jisa, a.year
+		union all
+		SELECT
+		a.jisa, a.year, count(*) as 'suri', SUM(a.Expo_total_won) AS 'totalWon', SUM(a.Expo_total_usd) AS 'totalUsd'
+		FROM (
+		select
+		'청주지사' as 'jisa', substring(Expo_ok_date,0,5) as 'year',
+		Expo_total_won, Expo_total_usd
+		from ncustoms_cj.[kcba].[Expo1]
+		where substring(Expo_ok_date,0,5)=#{yyyy}
+		) a
+		GROUP BY a.jisa, a.year
+		union all
+		SELECT
+		a.jisa, a.year, count(*) as 'suri', SUM(a.Expo_total_won) AS 'totalWon', SUM(a.Expo_total_usd) AS 'totalUsd'
+		FROM (
+		select
+		'창원지사' as 'jisa', substring(Expo_ok_date,0,5) as 'year',
+		Expo_total_won, Expo_total_usd
+		from ncustoms_cw.[kcba].[Expo1]
+		where substring(Expo_ok_date,0,5)=#{yyyy}
+		) a
+		GROUP BY a.jisa, a.year
+		union all
+		SELECT
+		a.jisa, a.year, count(*) as 'suri', SUM(a.Expo_total_won) AS 'totalWon', SUM(a.Expo_total_usd) AS 'totalUsd'
+		FROM (
+		select
+		'대전지사' as 'jisa', substring(Expo_ok_date,0,5) as 'year',
+		Expo_total_won, Expo_total_usd
+		from ncustoms_dj.[kcba].[Expo1]
+		where substring(Expo_ok_date,0,5)=#{yyyy}
+		) a
+		GROUP BY a.jisa, a.year
+		union all
+		SELECT
+		a.jisa, a.year, count(*) as 'suri', SUM(a.Expo_total_won) AS 'totalWon', SUM(a.Expo_total_usd) AS 'totalUsd'
+		FROM (
+		select
+		'구미지사' as 'jisa', substring(Expo_ok_date,0,5) as 'year',
+		Expo_total_won, Expo_total_usd
+		from ncustoms_gm.[kcba].[Expo1]
+		where substring(Expo_ok_date,0,5)=#{yyyy}
+		) a
+		GROUP BY a.jisa, a.year
+		union all
+		SELECT
+		a.jisa, a.year, count(*) as 'suri', SUM(a.Expo_total_won) AS 'totalWon', SUM(a.Expo_total_usd) AS 'totalUsd'
+		FROM (
+		select
+		'인천해상' as 'jisa', substring(Expo_ok_date,0,5) as 'year',
+		Expo_total_won, Expo_total_usd
+		from ncustoms_ic.[kcba].[Expo1]
+		where substring(Expo_ok_date,0,5)=#{yyyy}
+		) a
+		GROUP BY a.jisa, a.year
+		union all
+		SELECT
+		a.jisa, a.year, count(*) as 'suri', SUM(a.Expo_total_won) AS 'totalWon', SUM(a.Expo_total_usd) AS 'totalUsd'
+		FROM (
+		select
+		'진주지사' as 'jisa', substring(Expo_ok_date,0,5) as 'year',
+		Expo_total_won, Expo_total_usd
+		from ncustoms_jj.[kcba].[Expo1]
+		where substring(Expo_ok_date,0,5)=#{yyyy}
+		) a
+		GROUP BY a.jisa, a.year
+		union all
+		SELECT
+		a.jisa, a.year, count(*) as 'suri', SUM(a.Expo_total_won) AS 'totalWon', SUM(a.Expo_total_usd) AS 'totalUsd'
+		FROM (
+		select
+		'파주지사' as 'jisa', substring(Expo_ok_date,0,5) as 'year',
+		Expo_total_won, Expo_total_usd
+		from ncustoms_pj.[kcba].[Expo1]
+		where substring(Expo_ok_date,0,5)=#{yyyy}
+		) a
+		GROUP BY a.jisa, a.year
+		union all
+		SELECT
+		a.jisa, a.year, count(*) as 'suri', SUM(a.Expo_total_won) AS 'totalWon', SUM(a.Expo_total_usd) AS 'totalUsd'
+		FROM (
+		select
+		'평택지사' as 'jisa', substring(Expo_ok_date,0,5) as 'year',
+		Expo_total_won, Expo_total_usd
+		from ncustoms_pt.[kcba].[Expo1]
+		where substring(Expo_ok_date,0,5)=#{yyyy}
+		) a
+		GROUP BY a.jisa, a.year
+		union all
+		SELECT
+		a.jisa, a.year, count(*) as 'suri', SUM(a.Expo_total_won) AS 'totalWon', SUM(a.Expo_total_usd) AS 'totalUsd'
+		FROM (
+		select
+		'경기지사' as 'jisa', substring(Expo_ok_date,0,5) as 'year',
+		Expo_total_won, Expo_total_usd
+		from ncustoms_sn.[kcba].[Expo1]
+		where substring(Expo_ok_date,0,5)=#{yyyy}
+		) a
+		GROUP BY a.jisa, a.year
+		union all
+		SELECT
+		a.jisa, a.year, count(*) as 'suri', SUM(a.Expo_total_won) AS 'totalWon', SUM(a.Expo_total_usd) AS 'totalUsd'
+		FROM (
+		select
+		'울산지사' as 'jisa', substring(Expo_ok_date,0,5) as 'year',
+		Expo_total_won, Expo_total_usd
+		from ncustoms_us.[kcba].[Expo1]
+		where substring(Expo_ok_date,0,5)=#{yyyy}
+		) a
+		GROUP BY a.jisa, a.year
+		union all
+		SELECT
+		a.jisa, a.year, count(*) as 'suri', SUM(a.Expo_total_won) AS 'totalWon', SUM(a.Expo_total_usd) AS 'totalUsd'
+		FROM (
+		select
+		'인천공항' as 'jisa', substring(Expo_ok_date,0,5) as 'year',
+		Expo_total_won, Expo_total_usd
+		from ncustoms_yj.[kcba].[Expo1]
+		where substring(Expo_ok_date,0,5)=#{yyyy}
+		) a
+		GROUP BY a.jisa, a.year
+		union all
+		SELECT
+		a.jisa, a.year, count(*) as 'suri', SUM(a.Expo_total_won) AS 'totalWon', SUM(a.Expo_total_usd) AS 'totalUsd'
+		FROM (
+		select
+		'여수지사' as 'jisa', substring(Expo_ok_date,0,5) as 'year',
+		Expo_total_won, Expo_total_usd
+		from ncustoms_ys.[kcba].[Expo1]
+		where substring(Expo_ok_date,0,5)=#{yyyy}
+		) a
+		GROUP BY a.jisa, a.year
+    </select-->
+
+    <select id="selectShipCheckList" resultType="map">
+        /* Risk관리 - 미선적 */
+		select
+			Expo_suchulja_sangho,
+			Expo_singo_no,
+			Expo_res_result,
+			Expo_iv_no,
+			Expo_geyak_no1,
+			Expo_geyak_no2,
+			Expo_segwan,
+			Expo_sunjuk_date,
+			Expo_ok_date,
+			Expo_mokjuk_code,
+			Expo_total_jung,
+			Expo_pojang_su,
+			Expo_gumaeja_sangho,
+			Expo_indojo,
+			Expo_gyelje_money,
+			Expo_gyelje_input,
+			Expo_hanggu_code,
+			UserNM,
+			DATEDIFF(DD,GETDATE()-1,LEFT(Expo_sunjuk_date,8)) as dayCheck
+		from ${_defaultDB}.kcba.expo1
+		where expo_Loaded_YN != 'Y'
+		and expo_ok_date != ''
+		and Expo_singo_date > '20170101'
+		and Expo_res_result != '취하'
+		<if test='taxNum != null and taxNum != ""'>
+            <choose>
+                <when test='taxNum == "all"'>AND (Expo_SuchulSaupNo IN (select userSaup from soo.dbo.CPS_SaveCustomer where userKey = #{ID} and useYn='Y') or Expo_whaju_saup IN (select userSaup from soo.dbo.CPS_SaveCustomer where userKey = #{ID} and useYn='Y'))</when>
+                <otherwise>AND (Expo_SuchulSaupNo = #{taxNum} or Expo_whaju_saup = #{taxNum})</otherwise>
+            </choose>
+        </if>
+        <if test='expoSuchuljaSangho != null and expoSuchuljaSangho != ""'>AND Expo_suchulja_sangho LIKE '%' + #{expoSuchuljaSangho} + '%'</if>
+        <if test='_DateType != null and _DateType != "" and (strFromDate2 != null and strFromDate2 != "") and (strToDate2 != null and strToDate2 != "")'>
+            <choose>
+                <when test='_DateType == "ALL"'>AND Expo_ok_date BETWEEN #{strFromDate2} AND #{strToDate2}</when>
+                <when test='_DateType == "Expo_ok_day"'>AND Expo_ok_date BETWEEN #{strFromDate2} AND #{strToDate2}</when>
+            </choose>
+        </if>
+        order by Expo_sunjuk_date
+    </select>
+
+    <select id="selectShipCheckList1" resultType="map">
+        /* Risk관리 - 미선적 에드워드*/
+		select
+			a.ExDaeSangHo as 'Expo_suchulja_sangho',
+			a.ExSingoNo as 'Expo_singo_no',
+			a.RecvResult as 'Expo_res_result',
+			a.ExIvNo1 as 'Expo_iv_no',
+			a.ExFileNo1 as 'Expo_geyak_no1',
+			a.ExFileNo2 as 'Expo_geyak_no2',
+			a.ExSegwan as 'Expo_segwan',
+			a.ExSunJukDate as 'Expo_sunjuk_date',
+			a.ExOkDtm as 'Expo_ok_date',
+			a.ExMooJukCode as 'Expo_mokjuk_code',
+			a.ExJungTotal as 'Expo_total_jung',
+			a.ExPoJangSu as 'Expo_pojang_su',
+			a.ExBuyerSangho as 'Expo_gumaeja_sangho',
+			a.ExIndoType as 'Expo_indojo',
+			a.ExPayUnit as 'Expo_gyelje_money',
+			a.ExPayTotal as 'Expo_gyelje_input',
+			a.ExLoadingCode as 'Expo_hanggu_code',
+			a.AddUserNm as 'UserNM',
+			DATEDIFF(DD,GETDATE(),LEFT(a.ExSunJukDate,8)) as dayCheck,
+			b.ShippingMode,
+			b.NameOfShipto
+		from CPS.dbo.EXAC100 a, rms.dbo.ED_EXPT_ORDR b
+		where a.ExSingoNo = b.EXPT_DECL_NO
+		and a.ExLeaveYN != 'Y'
+		and a.ExOkDtm != ''
+		and a.UseYn='Y'
+		and a.ExOkDtm <![CDATA[<]]> '99999999'
+		and a.ExJubsuDtm <![CDATA[>]]> '20170101'
+		and a.RecvResult != '취하'
+		and a.SendResult  = '완료'
+		and a.ExSunJukDate <![CDATA[<=]]> FORMAT(GETDATE()+11 ,'yyyyMMdd') + '999999'
+		<if test='taxNum != null and taxNum != ""'>
+            <choose>
+                <when test='taxNum == "all"'>AND (a.ExDaeSaup IN (select userSaup from soo.dbo.CPS_SaveCustomer where userKey = #{ID} and useYn='Y') or ExJeJoSaup IN (select userSaup from soo.dbo.CPS_SaveCustomer where userKey = #{ID} and useYn='Y'))</when>
+                <otherwise>AND (a.ExDaeSaup = #{taxNum} or a.ExJeJoSaup = #{taxNum})</otherwise>
+            </choose>
+        </if>
+        <if test='expoSuchuljaSangho != null and expoSuchuljaSangho != ""'>AND a.ExDaeSangHo LIKE '%' + #{expoSuchuljaSangho} + '%'</if>
+        <if test='_DateType != null and _DateType != "" and (strFromDate2 != null and strFromDate2 != "") and (strToDate2 != null and strToDate2 != "")'>
+            <choose>
+                <when test='_DateType == "ALL"'>AND a.ExOkDtm BETWEEN #{strFromDate2} AND #{strToDate2}+ '999999'</when>
+                <when test='_DateType == "Expo_ok_day"'>AND a.ExOkDtm BETWEEN #{strFromDate2} AND #{strToDate2}+ '999999'</when>
+            </choose>
+        </if>
+        order by a.ExSunJukDate
+    </select>
+    
+    <select id="selectShipCheckList1_back" resultType="map">
+        /* Risk관리 - 미선적 에드워드 엔컴*/
+		select
+			a.Expo_suchulja_sangho,
+			a.Expo_singo_no,
+			a.Expo_res_result,
+			a.Expo_iv_no,
+			a.Expo_geyak_no1,
+			a.Expo_geyak_no2,
+			a.Expo_segwan,
+			a.Expo_sunjuk_date,
+			a.Expo_ok_date,
+			a.Expo_mokjuk_code,
+			a.Expo_total_jung,
+			a.Expo_pojang_su,
+			a.Expo_gumaeja_sangho,
+			a.Expo_indojo,
+			a.Expo_gyelje_money,
+			a.Expo_gyelje_input,
+			a.Expo_hanggu_code,
+			a.UserNM,
+			DATEDIFF(DD,GETDATE(),LEFT(a.Expo_sunjuk_date,8)) as dayCheck,
+			b.ShippingMode,
+			b.NameOfShipto
+		from ${_defaultDB}.kcba.expo1 a, rms.dbo.ED_EXPT_ORDR b
+		where a.Expo_singo_no = b.EXPT_DECL_NO
+		and a.expo_Loaded_YN != 'Y'
+		and a.expo_ok_date != ''
+		and a.Expo_singo_date > '20170101'
+		and a.Expo_res_result != '취하'
+		and DATEDIFF(DD,GETDATE(),LEFT(a.Expo_sunjuk_date,8)) <![CDATA[<]]> 11
+		<if test='taxNum != null and taxNum != ""'>
+            <choose>
+                <when test='taxNum == "all"'>AND (a.Expo_SuchulSaupNo IN (select userSaup from soo.dbo.CPS_SaveCustomer where userKey = #{ID} and useYn='Y') or Expo_whaju_saup IN (select userSaup from soo.dbo.CPS_SaveCustomer where userKey = #{ID} and useYn='Y'))</when>
+                <otherwise>AND (a.Expo_SuchulSaupNo = #{taxNum} or a.Expo_whaju_saup = #{taxNum})</otherwise>
+            </choose>
+        </if>
+        <if test='expoSuchuljaSangho != null and expoSuchuljaSangho != ""'>AND a.Expo_suchulja_sangho LIKE '%' + #{expoSuchuljaSangho} + '%'</if>
+        <if test='_DateType != null and _DateType != "" and (strFromDate2 != null and strFromDate2 != "") and (strToDate2 != null and strToDate2 != "")'>
+            <choose>
+                <when test='_DateType == "ALL"'>AND a.Expo_ok_date BETWEEN #{strFromDate2} AND #{strToDate2}</when>
+                <when test='_DateType == "Expo_ok_day"'>AND a.Expo_ok_date BETWEEN #{strFromDate2} AND #{strToDate2}</when>
+            </choose>
+        </if>
+        order by a.Expo_sunjuk_date
+    </select>
+
+    <select id="selectShipCheckAllList" resultType="map">
+        /* Risk관리 - 미선적  전지사*/
+        select * from (
+		select
+		Expo_suchulja_sangho,
+		Expo_singo_no,
+		Expo_res_result,
+		Expo_iv_no,
+		Expo_geyak_no1,
+		Expo_geyak_no2,
+		Expo_segwan,
+		Expo_sunjuk_date,
+		Expo_ok_date,
+		Expo_mokjuk_code,
+		Expo_total_jung,
+		Expo_pojang_su,
+		Expo_gumaeja_sangho,
+		Expo_indojo,
+		Expo_gyelje_money,
+		Expo_gyelje_input,
+		Expo_hanggu_code,
+		UserNM,
+		Expo_SuchulSaupNo,
+		DATEDIFF(DD,GETDATE()-1,LEFT(Expo_sunjuk_date,8)) as dayCheck
+		from ncustoms_sel_040.kcba.expo1
+		where expo_Loaded_YN != 'Y'
+		and expo_ok_date != ''
+		and Expo_singo_date > '20170101'
+		and Expo_res_result != '취하'
+		union all
+		select
+		Expo_suchulja_sangho,
+		Expo_singo_no,
+		Expo_res_result,
+		Expo_iv_no,
+		Expo_geyak_no1,
+		Expo_geyak_no2,
+		Expo_segwan,
+		Expo_sunjuk_date,
+		Expo_ok_date,
+		Expo_mokjuk_code,
+		Expo_total_jung,
+		Expo_pojang_su,
+		Expo_gumaeja_sangho,
+		Expo_indojo,
+		Expo_gyelje_money,
+		Expo_gyelje_input,
+		Expo_hanggu_code,
+		UserNM,
+		Expo_SuchulSaupNo,
+		DATEDIFF(DD,GETDATE()-1,LEFT(Expo_sunjuk_date,8)) as dayCheck
+		from ncustoms_bs.kcba.expo1
+		where expo_Loaded_YN != 'Y'
+		and expo_ok_date != ''
+		and Expo_singo_date > '20170101'
+		and Expo_res_result != '취하'
+		union all
+		select
+		Expo_suchulja_sangho,
+		Expo_singo_no,
+		Expo_res_result,
+		Expo_iv_no,
+		Expo_geyak_no1,
+		Expo_geyak_no2,
+		Expo_segwan,
+		Expo_sunjuk_date,
+		Expo_ok_date,
+		Expo_mokjuk_code,
+		Expo_total_jung,
+		Expo_pojang_su,
+		Expo_gumaeja_sangho,
+		Expo_indojo,
+		Expo_gyelje_money,
+		Expo_gyelje_input,
+		Expo_hanggu_code,
+		UserNM,
+		Expo_SuchulSaupNo,
+		DATEDIFF(DD,GETDATE()-1,LEFT(Expo_sunjuk_date,8)) as dayCheck
+		from ncustoms_ca.kcba.expo1
+		where expo_Loaded_YN != 'Y'
+		and expo_ok_date != ''
+		and Expo_singo_date > '20170101'
+		and Expo_res_result != '취하'
+		union all
+		select
+		Expo_suchulja_sangho,
+		Expo_singo_no,
+		Expo_res_result,
+		Expo_iv_no,
+		Expo_geyak_no1,
+		Expo_geyak_no2,
+		Expo_segwan,
+		Expo_sunjuk_date,
+		Expo_ok_date,
+		Expo_mokjuk_code,
+		Expo_total_jung,
+		Expo_pojang_su,
+		Expo_gumaeja_sangho,
+		Expo_indojo,
+		Expo_gyelje_money,
+		Expo_gyelje_input,
+		Expo_hanggu_code,
+		UserNM,
+		Expo_SuchulSaupNo,
+		DATEDIFF(DD,GETDATE()-1,LEFT(Expo_sunjuk_date,8)) as dayCheck
+		from ncustoms_cj.kcba.expo1
+		where expo_Loaded_YN != 'Y'
+		and expo_ok_date != ''
+		and Expo_singo_date > '20170101'
+		and Expo_res_result != '취하'
+		union all
+		select
+		Expo_suchulja_sangho,
+		Expo_singo_no,
+		Expo_res_result,
+		Expo_iv_no,
+		Expo_geyak_no1,
+		Expo_geyak_no2,
+		Expo_segwan,
+		Expo_sunjuk_date,
+		Expo_ok_date,
+		Expo_mokjuk_code,
+		Expo_total_jung,
+		Expo_pojang_su,
+		Expo_gumaeja_sangho,
+		Expo_indojo,
+		Expo_gyelje_money,
+		Expo_gyelje_input,
+		Expo_hanggu_code,
+		UserNM,
+		Expo_SuchulSaupNo,
+		DATEDIFF(DD,GETDATE()-1,LEFT(Expo_sunjuk_date,8)) as dayCheck
+		from ncustoms_cw.kcba.expo1
+		where expo_Loaded_YN != 'Y'
+		and expo_ok_date != ''
+		and Expo_singo_date > '20170101'
+		and Expo_res_result != '취하'
+		union all
+		select
+		Expo_suchulja_sangho,
+		Expo_singo_no,
+		Expo_res_result,
+		Expo_iv_no,
+		Expo_geyak_no1,
+		Expo_geyak_no2,
+		Expo_segwan,
+		Expo_sunjuk_date,
+		Expo_ok_date,
+		Expo_mokjuk_code,
+		Expo_total_jung,
+		Expo_pojang_su,
+		Expo_gumaeja_sangho,
+		Expo_indojo,
+		Expo_gyelje_money,
+		Expo_gyelje_input,
+		Expo_hanggu_code,
+		UserNM,
+		Expo_SuchulSaupNo,
+		DATEDIFF(DD,GETDATE()-1,LEFT(Expo_sunjuk_date,8)) as dayCheck
+		from ncustoms_dj.kcba.expo1
+		where expo_Loaded_YN != 'Y'
+		and expo_ok_date != ''
+		and Expo_singo_date > '20170101'
+		and Expo_res_result != '취하'
+		union all
+		select
+		Expo_suchulja_sangho,
+		Expo_singo_no,
+		Expo_res_result,
+		Expo_iv_no,
+		Expo_geyak_no1,
+		Expo_geyak_no2,
+		Expo_segwan,
+		Expo_sunjuk_date,
+		Expo_ok_date,
+		Expo_mokjuk_code,
+		Expo_total_jung,
+		Expo_pojang_su,
+		Expo_gumaeja_sangho,
+		Expo_indojo,
+		Expo_gyelje_money,
+		Expo_gyelje_input,
+		Expo_hanggu_code,
+		UserNM,
+		Expo_SuchulSaupNo,
+		DATEDIFF(DD,GETDATE()-1,LEFT(Expo_sunjuk_date,8)) as dayCheck
+		from ncustoms_gm.kcba.expo1
+		where expo_Loaded_YN != 'Y'
+		and expo_ok_date != ''
+		and Expo_singo_date > '20170101'
+		and Expo_res_result != '취하'
+		union all
+		select
+		Expo_suchulja_sangho,
+		Expo_singo_no,
+		Expo_res_result,
+		Expo_iv_no,
+		Expo_geyak_no1,
+		Expo_geyak_no2,
+		Expo_segwan,
+		Expo_sunjuk_date,
+		Expo_ok_date,
+		Expo_mokjuk_code,
+		Expo_total_jung,
+		Expo_pojang_su,
+		Expo_gumaeja_sangho,
+		Expo_indojo,
+		Expo_gyelje_money,
+		Expo_gyelje_input,
+		Expo_hanggu_code,
+		UserNM,
+		Expo_SuchulSaupNo,
+		DATEDIFF(DD,GETDATE()-1,LEFT(Expo_sunjuk_date,8)) as dayCheck
+		from ncustoms_ic.kcba.expo1
+		where expo_Loaded_YN != 'Y'
+		and expo_ok_date != ''
+		and Expo_singo_date > '20170101'
+		and Expo_res_result != '취하'
+		union all
+		select
+		Expo_suchulja_sangho,
+		Expo_singo_no,
+		Expo_res_result,
+		Expo_iv_no,
+		Expo_geyak_no1,
+		Expo_geyak_no2,
+		Expo_segwan,
+		Expo_sunjuk_date,
+		Expo_ok_date,
+		Expo_mokjuk_code,
+		Expo_total_jung,
+		Expo_pojang_su,
+		Expo_gumaeja_sangho,
+		Expo_indojo,
+		Expo_gyelje_money,
+		Expo_gyelje_input,
+		Expo_hanggu_code,
+		UserNM,
+		Expo_SuchulSaupNo,
+		DATEDIFF(DD,GETDATE()-1,LEFT(Expo_sunjuk_date,8)) as dayCheck
+		from ncustoms_jj.kcba.expo1
+		where expo_Loaded_YN != 'Y'
+		and expo_ok_date != ''
+		and Expo_singo_date > '20170101'
+		and Expo_res_result != '취하'
+		union all
+		select
+		Expo_suchulja_sangho,
+		Expo_singo_no,
+		Expo_res_result,
+		Expo_iv_no,
+		Expo_geyak_no1,
+		Expo_geyak_no2,
+		Expo_segwan,
+		Expo_sunjuk_date,
+		Expo_ok_date,
+		Expo_mokjuk_code,
+		Expo_total_jung,
+		Expo_pojang_su,
+		Expo_gumaeja_sangho,
+		Expo_indojo,
+		Expo_gyelje_money,
+		Expo_gyelje_input,
+		Expo_hanggu_code,
+		UserNM,
+		Expo_SuchulSaupNo,
+		DATEDIFF(DD,GETDATE()-1,LEFT(Expo_sunjuk_date,8)) as dayCheck
+		from ncustoms_pj.kcba.expo1
+		where expo_Loaded_YN != 'Y'
+		and expo_ok_date != ''
+		and Expo_singo_date > '20170101'
+		and Expo_res_result != '취하'
+		union all
+		select
+		Expo_suchulja_sangho,
+		Expo_singo_no,
+		Expo_res_result,
+		Expo_iv_no,
+		Expo_geyak_no1,
+		Expo_geyak_no2,
+		Expo_segwan,
+		Expo_sunjuk_date,
+		Expo_ok_date,
+		Expo_mokjuk_code,
+		Expo_total_jung,
+		Expo_pojang_su,
+		Expo_gumaeja_sangho,
+		Expo_indojo,
+		Expo_gyelje_money,
+		Expo_gyelje_input,
+		Expo_hanggu_code,
+		UserNM,
+		Expo_SuchulSaupNo,
+		DATEDIFF(DD,GETDATE()-1,LEFT(Expo_sunjuk_date,8)) as dayCheck
+		from ncustoms_pt.kcba.expo1
+		where expo_Loaded_YN != 'Y'
+		and expo_ok_date != ''
+		and Expo_singo_date > '20170101'
+		and Expo_res_result != '취하'
+		union all
+		select
+		Expo_suchulja_sangho,
+		Expo_singo_no,
+		Expo_res_result,
+		Expo_iv_no,
+		Expo_geyak_no1,
+		Expo_geyak_no2,
+		Expo_segwan,
+		Expo_sunjuk_date,
+		Expo_ok_date,
+		Expo_mokjuk_code,
+		Expo_total_jung,
+		Expo_pojang_su,
+		Expo_gumaeja_sangho,
+		Expo_indojo,
+		Expo_gyelje_money,
+		Expo_gyelje_input,
+		Expo_hanggu_code,
+		UserNM,
+		Expo_SuchulSaupNo,
+		DATEDIFF(DD,GETDATE()-1,LEFT(Expo_sunjuk_date,8)) as dayCheck
+		from ncustoms_sel4.kcba.expo1
+		where expo_Loaded_YN != 'Y'
+		and expo_ok_date != ''
+		and Expo_singo_date > '20170101'
+		and Expo_res_result != '취하'
+		union all
+		select
+		Expo_suchulja_sangho,
+		Expo_singo_no,
+		Expo_res_result,
+		Expo_iv_no,
+		Expo_geyak_no1,
+		Expo_geyak_no2,
+		Expo_segwan,
+		Expo_sunjuk_date,
+		Expo_ok_date,
+		Expo_mokjuk_code,
+		Expo_total_jung,
+		Expo_pojang_su,
+		Expo_gumaeja_sangho,
+		Expo_indojo,
+		Expo_gyelje_money,
+		Expo_gyelje_input,
+		Expo_hanggu_code,
+		UserNM,
+		Expo_SuchulSaupNo,
+		DATEDIFF(DD,GETDATE()-1,LEFT(Expo_sunjuk_date,8)) as dayCheck
+		from ncustoms_sn.kcba.expo1
+		where expo_Loaded_YN != 'Y'
+		and expo_ok_date != ''
+		and Expo_singo_date > '20170101'
+		and Expo_res_result != '취하'
+		union all
+		select
+		Expo_suchulja_sangho,
+		Expo_singo_no,
+		Expo_res_result,
+		Expo_iv_no,
+		Expo_geyak_no1,
+		Expo_geyak_no2,
+		Expo_segwan,
+		Expo_sunjuk_date,
+		Expo_ok_date,
+		Expo_mokjuk_code,
+		Expo_total_jung,
+		Expo_pojang_su,
+		Expo_gumaeja_sangho,
+		Expo_indojo,
+		Expo_gyelje_money,
+		Expo_gyelje_input,
+		Expo_hanggu_code,
+		UserNM,
+		Expo_SuchulSaupNo,
+		DATEDIFF(DD,GETDATE()-1,LEFT(Expo_sunjuk_date,8)) as dayCheck
+		from ncustoms_us.kcba.expo1
+		where expo_Loaded_YN != 'Y'
+		and expo_ok_date != ''
+		and Expo_singo_date > '20170101'
+		and Expo_res_result != '취하'
+		union all
+		select
+		Expo_suchulja_sangho,
+		Expo_singo_no,
+		Expo_res_result,
+		Expo_iv_no,
+		Expo_geyak_no1,
+		Expo_geyak_no2,
+		Expo_segwan,
+		Expo_sunjuk_date,
+		Expo_ok_date,
+		Expo_mokjuk_code,
+		Expo_total_jung,
+		Expo_pojang_su,
+		Expo_gumaeja_sangho,
+		Expo_indojo,
+		Expo_gyelje_money,
+		Expo_gyelje_input,
+		Expo_hanggu_code,
+		UserNM,
+		Expo_SuchulSaupNo,
+		DATEDIFF(DD,GETDATE()-1,LEFT(Expo_sunjuk_date,8)) as dayCheck
+		from ncustoms_yj.kcba.expo1
+		where expo_Loaded_YN != 'Y'
+		and expo_ok_date != ''
+		and Expo_singo_date > '20170101'
+		and Expo_res_result != '취하'
+		union all
+		select
+		Expo_suchulja_sangho,
+		Expo_singo_no,
+		Expo_res_result,
+		Expo_iv_no,
+		Expo_geyak_no1,
+		Expo_geyak_no2,
+		Expo_segwan,
+		Expo_sunjuk_date,
+		Expo_ok_date,
+		Expo_mokjuk_code,
+		Expo_total_jung,
+		Expo_pojang_su,
+		Expo_gumaeja_sangho,
+		Expo_indojo,
+		Expo_gyelje_money,
+		Expo_gyelje_input,
+		Expo_hanggu_code,
+		UserNM,
+		Expo_SuchulSaupNo,
+		DATEDIFF(DD,GETDATE()-1,LEFT(Expo_sunjuk_date,8)) as dayCheck
+		from ncustoms_ys.kcba.expo1
+		where expo_Loaded_YN != 'Y'
+		and expo_ok_date != ''
+		and Expo_singo_date > '20170101'
+		and Expo_res_result != '취하'
+		) a
+		where 1 = 1
+		<if test='taxNum != null and taxNum != ""'>
+            <choose>
+                <when test='taxNum == "all"'>AND (a.Expo_SuchulSaupNo IN (select userSaup from soo.dbo.CPS_SaveCustomer where userKey = #{ID} and useYn='Y') or a.Expo_whaju_saup IN (select userSaup from soo.dbo.CPS_SaveCustomer where userKey = #{ID} and useYn='Y'))</when>
+                <otherwise>AND (a.Expo_SuchulSaupNo = #{taxNum} or a.Expo_whaju_saup = #{taxNum})</otherwise>
+            </choose>
+        </if>
+        <if test='expoSuchuljaSangho != null and expoSuchuljaSangho != ""'>AND a.Expo_suchulja_sangho LIKE '%' + #{expoSuchuljaSangho} + '%'</if>
+        <if test='_DateType != null and _DateType != "" and (strFromDate2 != null and strFromDate2 != "") and (strToDate2 != null and strToDate2 != "")'>
+            <choose>
+                <when test='_DateType == "ALL"'>AND a.Expo_ok_date BETWEEN #{strFromDate2} AND #{strToDate2}</when>
+                <when test='_DateType == "Expo_ok_day"'>AND a.Expo_ok_date BETWEEN #{strFromDate2} AND #{strToDate2}</when>
+            </choose>
+        </if>
+        order by Expo_sunjuk_date
+    </select>
+
+    <select id="selectExportBanipStatusList" resultType="map">
+        /* 수출 반입리스트 */
+        select
+		Ban1_key,Ban1_Invoice,Ban1_rcv_chk,BAN1_SINGO_NO,Ban1_jubsu_no,Ban1_jubsu_date,Ban1_verify_date,UserNM,Ban1_gong_sangho,
+		Ban1_yang_sangho,Ban1_place_name,Ban1_WEIGHT,Ban1_pojang_su,Ban1_gong_kum_krw,Ban1_gong_kum,Ban1_guen_no,Ban1_gubun
+		from ${_defaultDB}.kcba.ban1
+		where Ban1_year > '2013'
+		<if test='taxNum != null and taxNum != ""'>
+            <choose>
+                <when test='taxNum == "all"'>AND (Ban1_gong_saup IN (select userSaup from soo.dbo.CPS_SaveCustomer where userKey = #{ID} and useYn='Y') or Ban1_jejo_saup IN (select userSaup from soo.dbo.CPS_SaveCustomer where userKey = #{ID} and useYn='Y') or Ban1_yang_saup IN (select userSaup from soo.dbo.CPS_SaveCustomer where userKey = #{ID} and useYn='Y'))</when>
+                <otherwise>AND (Ban1_gong_saup = #{taxNum} or Ban1_jejo_saup = #{taxNum} or Ban1_yang_saup = #{taxNum})</otherwise>
+            </choose>
+        </if>
+        <if test='ban1JechlNo != null and ban1JechlNo != ""'>AND Ban1_jechl_no LIKE '%' + #{ban1JechlNo} + '%'</if>
+        <if test='ban1Invoice != null and ban1Invoice != ""'>AND Ban1_Invoice LIKE '%' + #{ban1Invoice} + '%'</if>
+        <if test='ban1JubsuNo != null and ban1JubsuNo != ""'>AND Ban1_jubsu_no LIKE '%' + #{ban1JubsuNo} + '%'</if>
+        <if test='ban1SingoNo != null and ban1SingoNo != ""'>AND BAN1_SINGO_NO LIKE '%' + #{ban1SingoNo} + '%'</if>
+        <if test='ban1GongSangho != null and ban1GongSangho != ""'>AND Ban1_gong_sangho LIKE '%' + #{ban1GongSangho} + '%'</if>
+        <if test='ban1YangSangho != null and ban1YangSangho != ""'>AND Ban1_yang_sangho LIKE '%' + #{ban1YangSangho} + '%'</if>
+        <if test='ban1JejoSangho != null and ban1JejoSangho != ""'>AND Ban1_jejo_sangho LIKE '%' + #{ban1JejoSangho} + '%'</if>
+        <if test='_DateType != null and _DateType != "" and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+            <choose>
+                <when test='_DateType == "ban1JubsuDate"'>AND Ban1_jubsu_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+                <when test='_DateType == "ban1VerifyDate"'>AND Ban1_verify_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+                <when test='_DateType == "ban1WrkDate"'>AND Ban1_wrk_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+            </choose>
+        </if>
+        order by Ban1_wrk_date desc
+    </select>
+
+    <select id="selectExportBanipAllStatusList" resultType="map">
+        /* 수출 반입전체리스트 */
+        select * from (
+        select
+		Ban1_key,Ban1_Invoice,Ban1_rcv_chk,BAN1_SINGO_NO,Ban1_jubsu_no,Ban1_jubsu_date,Ban1_verify_date,UserNM,Ban1_gong_sangho,
+		Ban1_yang_sangho,Ban1_place_name,Ban1_WEIGHT,Ban1_pojang_su,Ban1_gong_kum_krw,Ban1_gong_kum,Ban1_guen_no,Ban1_gubun,
+		Ban1_gong_saup,Ban1_jejo_saup,Ban1_yang_saup,Ban1_jechl_no,Ban1_jejo_sangho,Ban1_wrk_date
+		from ncustoms_sel_040.kcba.ban1
+		where Ban1_year > '2013'
+		union all
+		select
+		Ban1_key,Ban1_Invoice,Ban1_rcv_chk,BAN1_SINGO_NO,Ban1_jubsu_no,Ban1_jubsu_date,Ban1_verify_date,UserNM,Ban1_gong_sangho,
+		Ban1_yang_sangho,Ban1_place_name,Ban1_WEIGHT,Ban1_pojang_su,Ban1_gong_kum_krw,Ban1_gong_kum,Ban1_guen_no,Ban1_gubun,
+		Ban1_gong_saup,Ban1_jejo_saup,Ban1_yang_saup,Ban1_jechl_no,Ban1_jejo_sangho,Ban1_wrk_date
+		from ncustoms_ay.kcba.ban1
+		where Ban1_year > '2013'
+		union all
+		select
+		Ban1_key,Ban1_Invoice,Ban1_rcv_chk,BAN1_SINGO_NO,Ban1_jubsu_no,Ban1_jubsu_date,Ban1_verify_date,UserNM,Ban1_gong_sangho,
+		Ban1_yang_sangho,Ban1_place_name,Ban1_WEIGHT,Ban1_pojang_su,Ban1_gong_kum_krw,Ban1_gong_kum,Ban1_guen_no,Ban1_gubun,
+		Ban1_gong_saup,Ban1_jejo_saup,Ban1_yang_saup,Ban1_jechl_no,Ban1_jejo_sangho,Ban1_wrk_date
+		from ncustoms_bs.kcba.ban1
+		where Ban1_year > '2013'
+		union all
+		select
+		Ban1_key,Ban1_Invoice,Ban1_rcv_chk,BAN1_SINGO_NO,Ban1_jubsu_no,Ban1_jubsu_date,Ban1_verify_date,UserNM,Ban1_gong_sangho,
+		Ban1_yang_sangho,Ban1_place_name,Ban1_WEIGHT,Ban1_pojang_su,Ban1_gong_kum_krw,Ban1_gong_kum,Ban1_guen_no,Ban1_gubun,
+		Ban1_gong_saup,Ban1_jejo_saup,Ban1_yang_saup,Ban1_jechl_no,Ban1_jejo_sangho,Ban1_wrk_date
+		from ncustoms_ca.kcba.ban1
+		where Ban1_year > '2013'
+		union all
+		select
+		Ban1_key,Ban1_Invoice,Ban1_rcv_chk,BAN1_SINGO_NO,Ban1_jubsu_no,Ban1_jubsu_date,Ban1_verify_date,UserNM,Ban1_gong_sangho,
+		Ban1_yang_sangho,Ban1_place_name,Ban1_WEIGHT,Ban1_pojang_su,Ban1_gong_kum_krw,Ban1_gong_kum,Ban1_guen_no,Ban1_gubun,
+		Ban1_gong_saup,Ban1_jejo_saup,Ban1_yang_saup,Ban1_jechl_no,Ban1_jejo_sangho,Ban1_wrk_date
+		from ncustoms_cj.kcba.ban1
+		where Ban1_year > '2013'
+		union all
+		select
+		Ban1_key,Ban1_Invoice,Ban1_rcv_chk,BAN1_SINGO_NO,Ban1_jubsu_no,Ban1_jubsu_date,Ban1_verify_date,UserNM,Ban1_gong_sangho,
+		Ban1_yang_sangho,Ban1_place_name,Ban1_WEIGHT,Ban1_pojang_su,Ban1_gong_kum_krw,Ban1_gong_kum,Ban1_guen_no,Ban1_gubun,
+		Ban1_gong_saup,Ban1_jejo_saup,Ban1_yang_saup,Ban1_jechl_no,Ban1_jejo_sangho,Ban1_wrk_date
+		from ncustoms_cw.kcba.ban1
+		where Ban1_year > '2013'
+		union all
+		select
+		Ban1_key,Ban1_Invoice,Ban1_rcv_chk,BAN1_SINGO_NO,Ban1_jubsu_no,Ban1_jubsu_date,Ban1_verify_date,UserNM,Ban1_gong_sangho,
+		Ban1_yang_sangho,Ban1_place_name,Ban1_WEIGHT,Ban1_pojang_su,Ban1_gong_kum_krw,Ban1_gong_kum,Ban1_guen_no,Ban1_gubun,
+		Ban1_gong_saup,Ban1_jejo_saup,Ban1_yang_saup,Ban1_jechl_no,Ban1_jejo_sangho,Ban1_wrk_date
+		from ncustoms_dj.kcba.ban1
+		where Ban1_year > '2013'
+		union all
+		select
+		Ban1_key,Ban1_Invoice,Ban1_rcv_chk,BAN1_SINGO_NO,Ban1_jubsu_no,Ban1_jubsu_date,Ban1_verify_date,UserNM,Ban1_gong_sangho,
+		Ban1_yang_sangho,Ban1_place_name,Ban1_WEIGHT,Ban1_pojang_su,Ban1_gong_kum_krw,Ban1_gong_kum,Ban1_guen_no,Ban1_gubun,
+		Ban1_gong_saup,Ban1_jejo_saup,Ban1_yang_saup,Ban1_jechl_no,Ban1_jejo_sangho,Ban1_wrk_date
+		from ncustoms_gm.kcba.ban1
+		where Ban1_year > '2013'
+		union all
+		select
+		Ban1_key,Ban1_Invoice,Ban1_rcv_chk,BAN1_SINGO_NO,Ban1_jubsu_no,Ban1_jubsu_date,Ban1_verify_date,UserNM,Ban1_gong_sangho,
+		Ban1_yang_sangho,Ban1_place_name,Ban1_WEIGHT,Ban1_pojang_su,Ban1_gong_kum_krw,Ban1_gong_kum,Ban1_guen_no,Ban1_gubun,
+		Ban1_gong_saup,Ban1_jejo_saup,Ban1_yang_saup,Ban1_jechl_no,Ban1_jejo_sangho,Ban1_wrk_date
+		from ncustoms_ic.kcba.ban1
+		where Ban1_year > '2013'
+		union all
+		select
+		Ban1_key,Ban1_Invoice,Ban1_rcv_chk,BAN1_SINGO_NO,Ban1_jubsu_no,Ban1_jubsu_date,Ban1_verify_date,UserNM,Ban1_gong_sangho,
+		Ban1_yang_sangho,Ban1_place_name,Ban1_WEIGHT,Ban1_pojang_su,Ban1_gong_kum_krw,Ban1_gong_kum,Ban1_guen_no,Ban1_gubun,
+		Ban1_gong_saup,Ban1_jejo_saup,Ban1_yang_saup,Ban1_jechl_no,Ban1_jejo_sangho,Ban1_wrk_date
+		from ncustoms_jj.kcba.ban1
+		where Ban1_year > '2013'
+		union all
+		select
+		Ban1_key,Ban1_Invoice,Ban1_rcv_chk,BAN1_SINGO_NO,Ban1_jubsu_no,Ban1_jubsu_date,Ban1_verify_date,UserNM,Ban1_gong_sangho,
+		Ban1_yang_sangho,Ban1_place_name,Ban1_WEIGHT,Ban1_pojang_su,Ban1_gong_kum_krw,Ban1_gong_kum,Ban1_guen_no,Ban1_gubun,
+		Ban1_gong_saup,Ban1_jejo_saup,Ban1_yang_saup,Ban1_jechl_no,Ban1_jejo_sangho,Ban1_wrk_date
+		from ncustoms_pj.kcba.ban1
+		where Ban1_year > '2013'
+		union all
+		select
+		Ban1_key,Ban1_Invoice,Ban1_rcv_chk,BAN1_SINGO_NO,Ban1_jubsu_no,Ban1_jubsu_date,Ban1_verify_date,UserNM,Ban1_gong_sangho,
+		Ban1_yang_sangho,Ban1_place_name,Ban1_WEIGHT,Ban1_pojang_su,Ban1_gong_kum_krw,Ban1_gong_kum,Ban1_guen_no,Ban1_gubun,
+		Ban1_gong_saup,Ban1_jejo_saup,Ban1_yang_saup,Ban1_jechl_no,Ban1_jejo_sangho,Ban1_wrk_date
+		from ncustoms_pt.kcba.ban1
+		where Ban1_year > '2013'
+		union all
+		select
+		Ban1_key,Ban1_Invoice,Ban1_rcv_chk,BAN1_SINGO_NO,Ban1_jubsu_no,Ban1_jubsu_date,Ban1_verify_date,UserNM,Ban1_gong_sangho,
+		Ban1_yang_sangho,Ban1_place_name,Ban1_WEIGHT,Ban1_pojang_su,Ban1_gong_kum_krw,Ban1_gong_kum,Ban1_guen_no,Ban1_gubun,
+		Ban1_gong_saup,Ban1_jejo_saup,Ban1_yang_saup,Ban1_jechl_no,Ban1_jejo_sangho,Ban1_wrk_date
+		from ncustoms_sel4.kcba.ban1
+		where Ban1_year > '2013'
+		union all
+		select
+		Ban1_key,Ban1_Invoice,Ban1_rcv_chk,BAN1_SINGO_NO,Ban1_jubsu_no,Ban1_jubsu_date,Ban1_verify_date,UserNM,Ban1_gong_sangho,
+		Ban1_yang_sangho,Ban1_place_name,Ban1_WEIGHT,Ban1_pojang_su,Ban1_gong_kum_krw,Ban1_gong_kum,Ban1_guen_no,Ban1_gubun,
+		Ban1_gong_saup,Ban1_jejo_saup,Ban1_yang_saup,Ban1_jechl_no,Ban1_jejo_sangho,Ban1_wrk_date
+		from ncustoms_sn.kcba.ban1
+		where Ban1_year > '2013'
+		union all
+		select
+		Ban1_key,Ban1_Invoice,Ban1_rcv_chk,BAN1_SINGO_NO,Ban1_jubsu_no,Ban1_jubsu_date,Ban1_verify_date,UserNM,Ban1_gong_sangho,
+		Ban1_yang_sangho,Ban1_place_name,Ban1_WEIGHT,Ban1_pojang_su,Ban1_gong_kum_krw,Ban1_gong_kum,Ban1_guen_no,Ban1_gubun,
+		Ban1_gong_saup,Ban1_jejo_saup,Ban1_yang_saup,Ban1_jechl_no,Ban1_jejo_sangho,Ban1_wrk_date
+		from ncustoms_us.kcba.ban1
+		where Ban1_year > '2013'
+		union all
+		select
+		Ban1_key,Ban1_Invoice,Ban1_rcv_chk,BAN1_SINGO_NO,Ban1_jubsu_no,Ban1_jubsu_date,Ban1_verify_date,UserNM,Ban1_gong_sangho,
+		Ban1_yang_sangho,Ban1_place_name,Ban1_WEIGHT,Ban1_pojang_su,Ban1_gong_kum_krw,Ban1_gong_kum,Ban1_guen_no,Ban1_gubun,
+		Ban1_gong_saup,Ban1_jejo_saup,Ban1_yang_saup,Ban1_jechl_no,Ban1_jejo_sangho,Ban1_wrk_date
+		from ncustoms_yj.kcba.ban1
+		where Ban1_year > '2013'
+		union all
+		select
+		Ban1_key,Ban1_Invoice,Ban1_rcv_chk,BAN1_SINGO_NO,Ban1_jubsu_no,Ban1_jubsu_date,Ban1_verify_date,UserNM,Ban1_gong_sangho,
+		Ban1_yang_sangho,Ban1_place_name,Ban1_WEIGHT,Ban1_pojang_su,Ban1_gong_kum_krw,Ban1_gong_kum,Ban1_guen_no,Ban1_gubun,
+		Ban1_gong_saup,Ban1_jejo_saup,Ban1_yang_saup,Ban1_jechl_no,Ban1_jejo_sangho,Ban1_wrk_date
+		from ncustoms_ys.kcba.ban1
+		where Ban1_year > '2013'
+		) a
+		where 1 = 1
+		<if test='taxNum != null and taxNum != ""'>
+            <choose>
+                <when test='taxNum == "all"'>AND (a.Ban1_gong_saup IN (select userSaup from soo.dbo.CPS_SaveCustomer where userKey = #{ID} and useYn='Y') or a.Ban1_jejo_saup IN (select userSaup from soo.dbo.CPS_SaveCustomer where userKey = #{ID} and useYn='Y') or a.Ban1_yang_saup IN (select userSaup from soo.dbo.CPS_SaveCustomer where userKey = #{ID} and useYn='Y'))</when>
+                <otherwise>AND (a.Ban1_gong_saup = #{taxNum} or a.Ban1_jejo_saup = #{taxNum} or a.Ban1_yang_saup = #{taxNum})</otherwise>
+            </choose>
+        </if>
+        <if test='ban1JechlNo != null and ban1JechlNo != ""'>AND a.Ban1_jechl_no LIKE '%' + #{ban1JechlNo} + '%'</if>
+        <if test='ban1Invoice != null and ban1Invoice != ""'>AND a.Ban1_Invoice LIKE '%' + #{ban1Invoice} + '%'</if>
+        <if test='ban1JubsuNo != null and ban1JubsuNo != ""'>AND a.Ban1_jubsu_no LIKE '%' + #{ban1JubsuNo} + '%'</if>
+        <if test='ban1SingoNo != null and ban1SingoNo != ""'>AND a.BAN1_SINGO_NO LIKE '%' + #{ban1SingoNo} + '%'</if>
+        <if test='ban1GongSangho != null and ban1GongSangho != ""'>AND a.Ban1_gong_sangho LIKE '%' + #{ban1GongSangho} + '%'</if>
+        <if test='ban1YangSangho != null and ban1YangSangho != ""'>AND a.Ban1_yang_sangho LIKE '%' + #{ban1YangSangho} + '%'</if>
+        <if test='ban1JejoSangho != null and ban1JejoSangho != ""'>AND a.Ban1_jejo_sangho LIKE '%' + #{ban1JejoSangho} + '%'</if>
+        <if test='_DateType != null and _DateType != "" and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+            <choose>
+                <when test='_DateType == "ban1JubsuDate"'>AND a.Ban1_jubsu_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+                <when test='_DateType == "ban1VerifyDate"'>AND a.Ban1_verify_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+                <when test='_DateType == "ban1WrkDate"'>AND a.Ban1_wrk_date BETWEEN #{strFromDate} AND #{strToDate}</when>
+            </choose>
+        </if>
+        order by a.Ban1_wrk_date desc
+    </select>
+
+    <select id="selectExportFieldAllStatusList" resultType="map">
+        /* 전체수출통관현황 (현장직원) */
+        select * from
+		(
+		SELECT
+		a.Expo_key, a.Expo_res_result, a.Expo_suchulja_sangho, a.Expo_iv_no, a.Expo_singo_no, a.Expo_ok_date,
+		a.Expo_singo_date, a.expo_SeBuho, a.expo_SeDmdngNm, '본사' as 'jisa', a.Expo_junsong_result, a.Expo_segwan,
+		CASE WHEN a.Expo_segwan != '' and a.Expo_gwa !='' then a.Expo_segwan + '-' +a.Expo_gwa
+		     ELSE a.Expo_segwan end AS 'segwan',
+		a.Expo_geyak_no1, a.Expo_geyak_no2, a.UserNM, b.userDepart
+		FROM ncustoms_sel_040.[kcba].[Expo1] a , soo.dbo.CPS_UserInfo b
+		where a.UserID = b.userId
+		union all
+		SELECT
+		a.Expo_key, a.Expo_res_result, a.Expo_suchulja_sangho, a.Expo_iv_no, a.Expo_singo_no, a.Expo_ok_date,
+		a.Expo_singo_date, a.expo_SeBuho, a.expo_SeDmdngNm, '부산' as 'jisa', a.Expo_junsong_result, a.Expo_segwan,
+		CASE WHEN a.Expo_segwan != '' and a.Expo_gwa !='' then a.Expo_segwan + '-' +a.Expo_gwa
+		     ELSE a.Expo_segwan end AS 'segwan',
+		a.Expo_geyak_no1, a.Expo_geyak_no2, a.UserNM, b.userDepart
+		FROM ncustoms_bs.[kcba].[Expo1] a , soo.dbo.CPS_UserInfo b
+		where a.UserID = b.userId
+		union all
+		SELECT
+		a.Expo_key, a.Expo_res_result, a.Expo_suchulja_sangho, a.Expo_iv_no, a.Expo_singo_no, a.Expo_ok_date,
+		a.Expo_singo_date, a.expo_SeBuho, a.expo_SeDmdngNm, '천안' as 'jisa', a.Expo_junsong_result, a.Expo_segwan,
+		CASE WHEN a.Expo_segwan != '' and a.Expo_gwa !='' then a.Expo_segwan + '-' +a.Expo_gwa
+		     ELSE a.Expo_segwan end AS 'segwan',
+		a.Expo_geyak_no1, a.Expo_geyak_no2, a.UserNM, b.userDepart
+		FROM ncustoms_ca.[kcba].[Expo1] a , soo.dbo.CPS_UserInfo b
+		where a.UserID = b.userId
+		union all
+		SELECT
+		a.Expo_key, a.Expo_res_result, a.Expo_suchulja_sangho, a.Expo_iv_no, a.Expo_singo_no, a.Expo_ok_date,
+		a.Expo_singo_date, a.expo_SeBuho, a.expo_SeDmdngNm, '청주' as 'jisa', a.Expo_junsong_result, a.Expo_segwan,
+		CASE WHEN a.Expo_segwan != '' and a.Expo_gwa !='' then a.Expo_segwan + '-' +a.Expo_gwa
+		     ELSE a.Expo_segwan end AS 'segwan',
+		a.Expo_geyak_no1, a.Expo_geyak_no2, a.UserNM, b.userDepart
+		FROM ncustoms_cj.[kcba].[Expo1] a , soo.dbo.CPS_UserInfo b
+		where a.UserID = b.userId
+		union all
+		SELECT
+		a.Expo_key, a.Expo_res_result, a.Expo_suchulja_sangho, a.Expo_iv_no, a.Expo_singo_no, a.Expo_ok_date,
+		a.Expo_singo_date, a.expo_SeBuho, a.expo_SeDmdngNm, '창원' as 'jisa', a.Expo_junsong_result, a.Expo_segwan,
+		CASE WHEN a.Expo_segwan != '' and a.Expo_gwa !='' then a.Expo_segwan + '-' +a.Expo_gwa
+		     ELSE a.Expo_segwan end AS 'segwan',
+		a.Expo_geyak_no1, a.Expo_geyak_no2, a.UserNM, b.userDepart
+		FROM ncustoms_cw.[kcba].[Expo1] a , soo.dbo.CPS_UserInfo b
+		where a.UserID = b.userId
+		union all
+		SELECT
+		a.Expo_key, a.Expo_res_result, a.Expo_suchulja_sangho, a.Expo_iv_no, a.Expo_singo_no, a.Expo_ok_date,
+		a.Expo_singo_date, a.expo_SeBuho, a.expo_SeDmdngNm, '대전' as 'jisa', a.Expo_junsong_result, a.Expo_segwan,
+		CASE WHEN a.Expo_segwan != '' and a.Expo_gwa !='' then a.Expo_segwan + '-' +a.Expo_gwa
+		     ELSE a.Expo_segwan end AS 'segwan',
+		a.Expo_geyak_no1, a.Expo_geyak_no2, a.UserNM, b.userDepart
+		FROM ncustoms_dj.[kcba].[Expo1] a , soo.dbo.CPS_UserInfo b
+		where a.UserID = b.userId
+		union all
+		SELECT
+		a.Expo_key, a.Expo_res_result, a.Expo_suchulja_sangho, a.Expo_iv_no, a.Expo_singo_no, a.Expo_ok_date,
+		a.Expo_singo_date, a.expo_SeBuho, a.expo_SeDmdngNm, '구미' as 'jisa', a.Expo_junsong_result, a.Expo_segwan,
+		CASE WHEN a.Expo_segwan != '' and a.Expo_gwa !='' then a.Expo_segwan + '-' +a.Expo_gwa
+		     ELSE a.Expo_segwan end AS 'segwan',
+		a.Expo_geyak_no1, a.Expo_geyak_no2, a.UserNM, b.userDepart
+		FROM ncustoms_gm.[kcba].[Expo1] a , soo.dbo.CPS_UserInfo b
+		where a.UserID = b.userId
+		union all
+		SELECT
+		a.Expo_key, a.Expo_res_result, a.Expo_suchulja_sangho, a.Expo_iv_no, a.Expo_singo_no, a.Expo_ok_date,
+		a.Expo_singo_date, a.expo_SeBuho, a.expo_SeDmdngNm, '인천해상' as 'jisa', a.Expo_junsong_result, a.Expo_segwan,
+		CASE WHEN a.Expo_segwan != '' and a.Expo_gwa !='' then a.Expo_segwan + '-' +a.Expo_gwa
+		     ELSE a.Expo_segwan end AS 'segwan',
+		a.Expo_geyak_no1, a.Expo_geyak_no2, a.UserNM, b.userDepart
+		FROM ncustoms_ic.[kcba].[Expo1] a , soo.dbo.CPS_UserInfo b
+		where a.UserID = b.userId
+		union all
+		SELECT
+		a.Expo_key, a.Expo_res_result, a.Expo_suchulja_sangho, a.Expo_iv_no, a.Expo_singo_no, a.Expo_ok_date,
+		a.Expo_singo_date, a.expo_SeBuho, a.expo_SeDmdngNm, '진주' as 'jisa', a.Expo_junsong_result, a.Expo_segwan,
+		CASE WHEN a.Expo_segwan != '' and a.Expo_gwa !='' then a.Expo_segwan + '-' +a.Expo_gwa
+		     ELSE a.Expo_segwan end AS 'segwan',
+		a.Expo_geyak_no1, a.Expo_geyak_no2, a.UserNM, b.userDepart
+		FROM ncustoms_jj.[kcba].[Expo1] a , soo.dbo.CPS_UserInfo b
+		where a.UserID = b.userId
+		union all
+		SELECT
+		a.Expo_key, a.Expo_res_result, a.Expo_suchulja_sangho, a.Expo_iv_no, a.Expo_singo_no, a.Expo_ok_date,
+		a.Expo_singo_date, a.expo_SeBuho, a.expo_SeDmdngNm, '파주' as 'jisa', a.Expo_junsong_result, a.Expo_segwan,
+		CASE WHEN a.Expo_segwan != '' and a.Expo_gwa !='' then a.Expo_segwan + '-' +a.Expo_gwa
+		     ELSE a.Expo_segwan end AS 'segwan',
+		a.Expo_geyak_no1, a.Expo_geyak_no2, a.UserNM, b.userDepart
+		FROM ncustoms_pj.[kcba].[Expo1] a , soo.dbo.CPS_UserInfo b
+		where a.UserID = b.userId
+		union all
+		SELECT
+		a.Expo_key, a.Expo_res_result, a.Expo_suchulja_sangho, a.Expo_iv_no, a.Expo_singo_no, a.Expo_ok_date,
+		a.Expo_singo_date, a.expo_SeBuho, a.expo_SeDmdngNm, '평택' as 'jisa', a.Expo_junsong_result, a.Expo_segwan,
+		CASE WHEN a.Expo_segwan != '' and a.Expo_gwa !='' then a.Expo_segwan + '-' +a.Expo_gwa
+		     ELSE a.Expo_segwan end AS 'segwan',
+		a.Expo_geyak_no1, a.Expo_geyak_no2, a.UserNM, b.userDepart
+		FROM ncustoms_pt.[kcba].[Expo1] a , soo.dbo.CPS_UserInfo b
+		where a.UserID = b.userId
+		union all
+		SELECT
+		a.Expo_key, a.Expo_res_result, a.Expo_suchulja_sangho, a.Expo_iv_no, a.Expo_singo_no, a.Expo_ok_date,
+		a.Expo_singo_date, a.expo_SeBuho, a.expo_SeDmdngNm, '본사' as 'jisa', a.Expo_junsong_result, a.Expo_segwan,
+		CASE WHEN a.Expo_segwan != '' and a.Expo_gwa !='' then a.Expo_segwan + '-' +a.Expo_gwa
+		     ELSE a.Expo_segwan end AS 'segwan',
+		a.Expo_geyak_no1, a.Expo_geyak_no2, a.UserNM, b.userDepart
+		FROM ncustoms_sel4.[kcba].[Expo1] a , soo.dbo.CPS_UserInfo b
+		where a.UserID = b.userId
+		union all
+		SELECT
+		a.Expo_key, a.Expo_res_result, a.Expo_suchulja_sangho, a.Expo_iv_no, a.Expo_singo_no, a.Expo_ok_date,
+		a.Expo_singo_date, a.expo_SeBuho, a.expo_SeDmdngNm, '경기' as 'jisa', a.Expo_junsong_result, a.Expo_segwan,
+		CASE WHEN a.Expo_segwan != '' and a.Expo_gwa !='' then a.Expo_segwan + '-' +a.Expo_gwa
+		     ELSE a.Expo_segwan end AS 'segwan',
+		a.Expo_geyak_no1, a.Expo_geyak_no2, a.UserNM, b.userDepart
+		FROM ncustoms_sn.[kcba].[Expo1] a , soo.dbo.CPS_UserInfo b
+		where a.UserID = b.userId
+		union all
+		SELECT
+		a.Expo_key, a.Expo_res_result, a.Expo_suchulja_sangho, a.Expo_iv_no, a.Expo_singo_no, a.Expo_ok_date,
+		a.Expo_singo_date, a.expo_SeBuho, a.expo_SeDmdngNm, '울산' as 'jisa', a.Expo_junsong_result, a.Expo_segwan,
+		CASE WHEN a.Expo_segwan != '' and a.Expo_gwa !='' then a.Expo_segwan + '-' +a.Expo_gwa
+		     ELSE a.Expo_segwan end AS 'segwan',
+		a.Expo_geyak_no1, a.Expo_geyak_no2, a.UserNM, b.userDepart
+		FROM ncustoms_us.[kcba].[Expo1] a , soo.dbo.CPS_UserInfo b
+		where a.UserID = b.userId
+		union all
+		SELECT
+		a.Expo_key, a.Expo_res_result, a.Expo_suchulja_sangho, a.Expo_iv_no, a.Expo_singo_no, a.Expo_ok_date,
+		a.Expo_singo_date, a.expo_SeBuho, a.expo_SeDmdngNm, '인천공항' as 'jisa', a.Expo_junsong_result, a.Expo_segwan,
+		CASE WHEN a.Expo_segwan != '' and a.Expo_gwa !='' then a.Expo_segwan + '-' +a.Expo_gwa
+		     ELSE a.Expo_segwan end AS 'segwan',
+		a.Expo_geyak_no1, a.Expo_geyak_no2, a.UserNM, b.userDepart
+		FROM ncustoms_yj.[kcba].[Expo1] a , soo.dbo.CPS_UserInfo b
+		where a.UserID = b.userId
+		union all
+		SELECT
+		a.Expo_key, a.Expo_res_result, a.Expo_suchulja_sangho, a.Expo_iv_no, a.Expo_singo_no, a.Expo_ok_date,
+		a.Expo_singo_date, a.expo_SeBuho, a.expo_SeDmdngNm, '여수' as 'jisa', a.Expo_junsong_result, a.Expo_segwan,
+		CASE WHEN a.Expo_segwan != '' and a.Expo_gwa !='' then a.Expo_segwan + '-' +a.Expo_gwa
+		     ELSE a.Expo_segwan end AS 'segwan',
+		a.Expo_geyak_no1, a.Expo_geyak_no2, a.UserNM, b.userDepart
+		FROM ncustoms_ys.[kcba].[Expo1] a , soo.dbo.CPS_UserInfo b
+		where a.UserID = b.userId
+		) a
+        WHERE a.Expo_junsong_result = '완료'
+        <if test='suchuljaSangho != null and suchuljaSangho != ""'>AND a.Expo_suchulja_sangho LIKE '%' + #{suchuljaSangho} + '%'</if>
+        <if test='expoInvNo != null and expoInvNo != ""'>AND a.Expo_iv_no LIKE '%' + #{expoInvNo} + '%'</if>
+        <if test='expoSingoNo != null and expoSingoNo != ""'>AND a.Expo_singo_no LIKE '%' + #{expoSingoNo} + '%'</if>
+        <if test='expoGeyakNo1 != null and expoGeyakNo1 != ""'>AND a.Expo_geyak_no1 LIKE '%' + #{expoGeyakNo1} + '%'</if>
+        <if test='_Test1 != null and _Test1 != ""'>AND a.Expo_res_result in ('적검','검사','제출','서류')</if>
+        <if test='_DateType != null and _DateType != "ALL" and (strFromDate2 != null and strFromDate2 != "") and (strToDate2 != null and strToDate2 != "")'>
+            <choose>
+                <when test='_DateType == "Expo_singo_date_Day"'>AND a.Expo_singo_date BETWEEN #{strFromDate2} AND #{strToDate2}</when>
+                <when test='_DateType == "Expo_ok_date_Day"'>AND a.Expo_ok_date BETWEEN #{strFromDate2} AND #{strToDate2}</when>
+            </choose>
+        </if>
+        <if test='expoGroupSegwan != null and expoGroupSegwan != ""'>
+            <choose>
+                <when test='expoGroupSegwan == "인천공항"'>AND a.Expo_segwan in (040,240)</when>
+                <when test='expoGroupSegwan == "공항우편세관"'>AND a.Expo_segwan in (013)</when>
+                <when test='expoGroupSegwan == "인천항"'>AND a.Expo_segwan in (020)</when>
+                <when test='expoGroupSegwan == "부산항"'>AND a.Expo_segwan in (030,033,037,039)</when>
+                <when test='expoGroupSegwan == "김해공항"'>AND a.Expo_segwan in (140)</when>
+                <when test='expoGroupSegwan == "김포"'>AND a.Expo_segwan in (041)</when>
+                <when test='expoGroupSegwan == "평택"'>AND a.Expo_segwan in (016)</when>
+                <when test='expoGroupSegwan == "경기"'>AND a.Expo_segwan in (012,014,131)</when>
+            </choose>
+        </if>
+    </select>
+
+    <select id="selectExportJungFieldAllStatusList" resultType="map">
+        /* 전체수출통관정정현황 (현장직원) */
+        select * from
+		(
+		select
+		a.Ejj1_recv_result, a.Ejj1_gubun, a.Ejj1_jung_sayu_cd, a.Ejj1_suchul_sangho, a.Ejj1_singo_no, a.Ejj1_exsingo_date,
+		a.Ejj1_sinchung_date, a.Ejj1_segwan, a.Ejj_SeDmdngNm, a.Ejj_SeBuho, a.UserNM, a.Ejj1_gwichek_sayu_cd,
+		a.ejj1_jung_sayu1+''+a.Ejj1_jung_sayu2+''+a.Ejj1_jung_sayu3+''+a.Ejj1_jung_sayu4+''+a.Ejj1_jung_sayu5 as 'sayu',
+		b.Expo_geyak_no1, b.Expo_geyak_no2, b.Expo_iv_no, '본사' as 'jisa', c.jubsu_rsltdesc, d.userDepart,
+		CASE WHEN a.Ejj1_segwan != '' and a.Ejj1_gwa !='' then a.Ejj1_segwan + '-' +a.Ejj1_gwa
+		     ELSE a.Ejj1_segwan end AS 'segwan'
+		from ncustoms_sel_040.kcba.Ejung1 a WITH (NOLOCK), ncustoms_sel_040.kcba.Expo1 b WITH (NOLOCK), gocustom_sel_040.dbo.govcbr5afa1 c WITH (NOLOCK), soo.dbo.CPS_UserInfo d
+		where a.Ejj1_singo_no = b.Expo_singo_no
+		and a.Ejj1_singo_no = c.APPL_NO
+		and c.APPL_DOC_CD = 'GOVCBR5AS'
+		and c.jubsu_rsltdesc = '서류심사'
+		and b.Expo_singo_no != ''
+		and (a.Ejj1_gubun = 'B' or a.Ejj1_gubun = 'A' or a.Ejj1_gubun = 'C')
+		and a.Ejj1_seungin_date is null
+		and a.Ejj1_recv_result='접수'
+		and a.Ejj1_send_result='완료'
+		and a.UserID = d.userId
+		union all
+		select
+		a.Ejj1_recv_result, a.Ejj1_gubun, a.Ejj1_jung_sayu_cd, a.Ejj1_suchul_sangho, a.Ejj1_singo_no, a.Ejj1_exsingo_date,
+		a.Ejj1_sinchung_date, a.Ejj1_segwan, a.Ejj_SeDmdngNm, a.Ejj_SeBuho, a.UserNM, a.Ejj1_gwichek_sayu_cd,
+		a.ejj1_jung_sayu1+''+a.Ejj1_jung_sayu2+''+a.Ejj1_jung_sayu3+''+a.Ejj1_jung_sayu4+''+a.Ejj1_jung_sayu5 as 'sayu',
+		b.Expo_geyak_no1, b.Expo_geyak_no2, b.Expo_iv_no, '부산' as 'jisa', c.jubsu_rsltdesc, d.userDepart,
+		CASE WHEN a.Ejj1_segwan != '' and a.Ejj1_gwa !='' then a.Ejj1_segwan + '-' +a.Ejj1_gwa
+		     ELSE a.Ejj1_segwan end AS 'segwan'
+		from ncustoms_bs.kcba.Ejung1 a WITH (NOLOCK), ncustoms_bs.kcba.Expo1 b WITH (NOLOCK), gocustom_bs.dbo.govcbr5afa1 c WITH (NOLOCK), soo.dbo.CPS_UserInfo d
+		where a.Ejj1_singo_no = b.Expo_singo_no
+		and a.Ejj1_singo_no = c.APPL_NO
+		and c.APPL_DOC_CD = 'GOVCBR5AS'
+		and c.jubsu_rsltdesc = '서류심사'
+		and b.Expo_singo_no != ''
+		and (a.Ejj1_gubun = 'B' or a.Ejj1_gubun = 'A' or a.Ejj1_gubun = 'C')
+		and a.Ejj1_seungin_date is null
+		and a.Ejj1_recv_result='접수'
+		and a.Ejj1_send_result='완료'
+		and a.UserID = d.userId
+		union all
+		select
+		a.Ejj1_recv_result, a.Ejj1_gubun, a.Ejj1_jung_sayu_cd, a.Ejj1_suchul_sangho, a.Ejj1_singo_no, a.Ejj1_exsingo_date,
+		a.Ejj1_sinchung_date, a.Ejj1_segwan, a.Ejj_SeDmdngNm, a.Ejj_SeBuho, a.UserNM, a.Ejj1_gwichek_sayu_cd,
+		a.ejj1_jung_sayu1+''+a.Ejj1_jung_sayu2+''+a.Ejj1_jung_sayu3+''+a.Ejj1_jung_sayu4+''+a.Ejj1_jung_sayu5 as 'sayu',
+		b.Expo_geyak_no1, b.Expo_geyak_no2, b.Expo_iv_no, '천안' as 'jisa', c.jubsu_rsltdesc, d.userDepart,
+		CASE WHEN a.Ejj1_segwan != '' and a.Ejj1_gwa !='' then a.Ejj1_segwan + '-' +a.Ejj1_gwa
+		     ELSE a.Ejj1_segwan end AS 'segwan'
+		from ncustoms_ca.kcba.Ejung1 a WITH (NOLOCK), ncustoms_ca.kcba.Expo1 b WITH (NOLOCK), gocustom_ca.dbo.govcbr5afa1 c WITH (NOLOCK), soo.dbo.CPS_UserInfo d
+		where a.Ejj1_singo_no = b.Expo_singo_no
+		and a.Ejj1_singo_no = c.APPL_NO
+		and c.APPL_DOC_CD = 'GOVCBR5AS'
+		and c.jubsu_rsltdesc = '서류심사'
+		and b.Expo_singo_no != ''
+		and (a.Ejj1_gubun = 'B' or a.Ejj1_gubun = 'A' or a.Ejj1_gubun = 'C')
+		and a.Ejj1_seungin_date is null
+		and a.Ejj1_recv_result='접수'
+		and a.Ejj1_send_result='완료'
+		and a.UserID = d.userId
+		union all
+		select
+		a.Ejj1_recv_result, a.Ejj1_gubun, a.Ejj1_jung_sayu_cd, a.Ejj1_suchul_sangho, a.Ejj1_singo_no, a.Ejj1_exsingo_date,
+		a.Ejj1_sinchung_date, a.Ejj1_segwan, a.Ejj_SeDmdngNm, a.Ejj_SeBuho, a.UserNM, a.Ejj1_gwichek_sayu_cd,
+		a.ejj1_jung_sayu1+''+a.Ejj1_jung_sayu2+''+a.Ejj1_jung_sayu3+''+a.Ejj1_jung_sayu4+''+a.Ejj1_jung_sayu5 as 'sayu',
+		b.Expo_geyak_no1, b.Expo_geyak_no2, b.Expo_iv_no, '청주' as 'jisa', c.jubsu_rsltdesc, d.userDepart,
+		CASE WHEN a.Ejj1_segwan != '' and a.Ejj1_gwa !='' then a.Ejj1_segwan + '-' +a.Ejj1_gwa
+		     ELSE a.Ejj1_segwan end AS 'segwan'
+		from ncustoms_cj.kcba.Ejung1 a WITH (NOLOCK), ncustoms_cj.kcba.Expo1 b WITH (NOLOCK), gocustom_cj.dbo.govcbr5afa1 c WITH (NOLOCK), soo.dbo.CPS_UserInfo d
+		where a.Ejj1_singo_no = b.Expo_singo_no
+		and a.Ejj1_singo_no = c.APPL_NO
+		and c.APPL_DOC_CD = 'GOVCBR5AS'
+		and c.jubsu_rsltdesc = '서류심사'
+		and b.Expo_singo_no != ''
+		and (a.Ejj1_gubun = 'B' or a.Ejj1_gubun = 'A' or a.Ejj1_gubun = 'C')
+		and a.Ejj1_seungin_date is null
+		and a.Ejj1_recv_result='접수'
+		and a.Ejj1_send_result='완료'
+		and a.UserID = d.userId
+		union all
+		select
+		a.Ejj1_recv_result, a.Ejj1_gubun, a.Ejj1_jung_sayu_cd, a.Ejj1_suchul_sangho, a.Ejj1_singo_no, a.Ejj1_exsingo_date,
+		a.Ejj1_sinchung_date, a.Ejj1_segwan, a.Ejj_SeDmdngNm, a.Ejj_SeBuho, a.UserNM, a.Ejj1_gwichek_sayu_cd,
+		a.ejj1_jung_sayu1+''+a.Ejj1_jung_sayu2+''+a.Ejj1_jung_sayu3+''+a.Ejj1_jung_sayu4+''+a.Ejj1_jung_sayu5 as 'sayu',
+		b.Expo_geyak_no1, b.Expo_geyak_no2, b.Expo_iv_no, '창원' as 'jisa', c.jubsu_rsltdesc, d.userDepart,
+		CASE WHEN a.Ejj1_segwan != '' and a.Ejj1_gwa !='' then a.Ejj1_segwan + '-' +a.Ejj1_gwa
+		     ELSE a.Ejj1_segwan end AS 'segwan'
+		from ncustoms_cw.kcba.Ejung1 a WITH (NOLOCK), ncustoms_cw.kcba.Expo1 b WITH (NOLOCK), gocustom_cw.dbo.govcbr5afa1 c WITH (NOLOCK), soo.dbo.CPS_UserInfo d
+		where a.Ejj1_singo_no = b.Expo_singo_no
+		and a.Ejj1_singo_no = c.APPL_NO
+		and c.APPL_DOC_CD = 'GOVCBR5AS'
+		and c.jubsu_rsltdesc = '서류심사'
+		and b.Expo_singo_no != ''
+		and (a.Ejj1_gubun = 'B' or a.Ejj1_gubun = 'A' or a.Ejj1_gubun = 'C')
+		and a.Ejj1_seungin_date is null
+		and a.Ejj1_recv_result='접수'
+		and a.Ejj1_send_result='완료'
+		and a.UserID = d.userId
+		union all
+		select
+		a.Ejj1_recv_result, a.Ejj1_gubun, a.Ejj1_jung_sayu_cd, a.Ejj1_suchul_sangho, a.Ejj1_singo_no, a.Ejj1_exsingo_date,
+		a.Ejj1_sinchung_date, a.Ejj1_segwan, a.Ejj_SeDmdngNm, a.Ejj_SeBuho, a.UserNM, a.Ejj1_gwichek_sayu_cd,
+		a.ejj1_jung_sayu1+''+a.Ejj1_jung_sayu2+''+a.Ejj1_jung_sayu3+''+a.Ejj1_jung_sayu4+''+a.Ejj1_jung_sayu5 as 'sayu',
+		b.Expo_geyak_no1, b.Expo_geyak_no2, b.Expo_iv_no, '대전' as 'jisa', c.jubsu_rsltdesc, d.userDepart,
+		CASE WHEN a.Ejj1_segwan != '' and a.Ejj1_gwa !='' then a.Ejj1_segwan + '-' +a.Ejj1_gwa
+		     ELSE a.Ejj1_segwan end AS 'segwan'
+		from ncustoms_dj.kcba.Ejung1 a WITH (NOLOCK), ncustoms_dj.kcba.Expo1 b WITH (NOLOCK), gocustom_dj.dbo.govcbr5afa1 c WITH (NOLOCK), soo.dbo.CPS_UserInfo d
+		where a.Ejj1_singo_no = b.Expo_singo_no
+		and a.Ejj1_singo_no = c.APPL_NO
+		and c.APPL_DOC_CD = 'GOVCBR5AS'
+		and c.jubsu_rsltdesc = '서류심사'
+		and b.Expo_singo_no != ''
+		and (a.Ejj1_gubun = 'B' or a.Ejj1_gubun = 'A' or a.Ejj1_gubun = 'C')
+		and a.Ejj1_seungin_date is null
+		and a.Ejj1_recv_result='접수'
+		and a.Ejj1_send_result='완료'
+		and a.UserID = d.userId
+		union all
+		select
+		a.Ejj1_recv_result, a.Ejj1_gubun, a.Ejj1_jung_sayu_cd, a.Ejj1_suchul_sangho, a.Ejj1_singo_no, a.Ejj1_exsingo_date,
+		a.Ejj1_sinchung_date, a.Ejj1_segwan, a.Ejj_SeDmdngNm, a.Ejj_SeBuho, a.UserNM, a.Ejj1_gwichek_sayu_cd,
+		a.ejj1_jung_sayu1+''+a.Ejj1_jung_sayu2+''+a.Ejj1_jung_sayu3+''+a.Ejj1_jung_sayu4+''+a.Ejj1_jung_sayu5 as 'sayu',
+		b.Expo_geyak_no1, b.Expo_geyak_no2, b.Expo_iv_no, '구미' as 'jisa', c.jubsu_rsltdesc, d.userDepart,
+		CASE WHEN a.Ejj1_segwan != '' and a.Ejj1_gwa !='' then a.Ejj1_segwan + '-' +a.Ejj1_gwa
+		     ELSE a.Ejj1_segwan end AS 'segwan'
+		from ncustoms_gm.kcba.Ejung1 a WITH (NOLOCK), ncustoms_gm.kcba.Expo1 b WITH (NOLOCK), gocustom_gm.dbo.govcbr5afa1 c WITH (NOLOCK), soo.dbo.CPS_UserInfo d
+		where a.Ejj1_singo_no = b.Expo_singo_no
+		and a.Ejj1_singo_no = c.APPL_NO
+		and c.APPL_DOC_CD = 'GOVCBR5AS'
+		and c.jubsu_rsltdesc = '서류심사'
+		and b.Expo_singo_no != ''
+		and (a.Ejj1_gubun = 'B' or a.Ejj1_gubun = 'A' or a.Ejj1_gubun = 'C')
+		and a.Ejj1_seungin_date is null
+		and a.Ejj1_recv_result='접수'
+		and a.Ejj1_send_result='완료'
+		and a.UserID = d.userId
+		union all
+		select
+		a.Ejj1_recv_result, a.Ejj1_gubun, a.Ejj1_jung_sayu_cd, a.Ejj1_suchul_sangho, a.Ejj1_singo_no, a.Ejj1_exsingo_date,
+		a.Ejj1_sinchung_date, a.Ejj1_segwan, a.Ejj_SeDmdngNm, a.Ejj_SeBuho, a.UserNM, a.Ejj1_gwichek_sayu_cd,
+		a.ejj1_jung_sayu1+''+a.Ejj1_jung_sayu2+''+a.Ejj1_jung_sayu3+''+a.Ejj1_jung_sayu4+''+a.Ejj1_jung_sayu5 as 'sayu',
+		b.Expo_geyak_no1, b.Expo_geyak_no2, b.Expo_iv_no, '인천해상' as 'jisa', c.jubsu_rsltdesc, d.userDepart,
+		CASE WHEN a.Ejj1_segwan != '' and a.Ejj1_gwa !='' then a.Ejj1_segwan + '-' +a.Ejj1_gwa
+		     ELSE a.Ejj1_segwan end AS 'segwan'
+		from ncustoms_ic.kcba.Ejung1 a WITH (NOLOCK), ncustoms_ic.kcba.Expo1 b WITH (NOLOCK), gocustom_ic.dbo.govcbr5afa1 c WITH (NOLOCK), soo.dbo.CPS_UserInfo d
+		where a.Ejj1_singo_no = b.Expo_singo_no
+		and a.Ejj1_singo_no = c.APPL_NO
+		and c.APPL_DOC_CD = 'GOVCBR5AS'
+		and c.jubsu_rsltdesc = '서류심사'
+		and b.Expo_singo_no != ''
+		and (a.Ejj1_gubun = 'B' or a.Ejj1_gubun = 'A' or a.Ejj1_gubun = 'C')
+		and a.Ejj1_seungin_date is null
+		and a.Ejj1_recv_result='접수'
+		and a.Ejj1_send_result='완료'
+		and a.UserID = d.userId
+		union all
+		select
+		a.Ejj1_recv_result, a.Ejj1_gubun, a.Ejj1_jung_sayu_cd, a.Ejj1_suchul_sangho, a.Ejj1_singo_no, a.Ejj1_exsingo_date,
+		a.Ejj1_sinchung_date, a.Ejj1_segwan, a.Ejj_SeDmdngNm, a.Ejj_SeBuho, a.UserNM, a.Ejj1_gwichek_sayu_cd,
+		a.ejj1_jung_sayu1+''+a.Ejj1_jung_sayu2+''+a.Ejj1_jung_sayu3+''+a.Ejj1_jung_sayu4+''+a.Ejj1_jung_sayu5 as 'sayu',
+		b.Expo_geyak_no1, b.Expo_geyak_no2, b.Expo_iv_no, '진주' as 'jisa', c.jubsu_rsltdesc, d.userDepart,
+		CASE WHEN a.Ejj1_segwan != '' and a.Ejj1_gwa !='' then a.Ejj1_segwan + '-' +a.Ejj1_gwa
+		     ELSE a.Ejj1_segwan end AS 'segwan'
+		from ncustoms_jj.kcba.Ejung1 a WITH (NOLOCK), ncustoms_jj.kcba.Expo1 b WITH (NOLOCK), gocustom_jj.dbo.govcbr5afa1 c WITH (NOLOCK), soo.dbo.CPS_UserInfo d
+		where a.Ejj1_singo_no = b.Expo_singo_no
+		and a.Ejj1_singo_no = c.APPL_NO
+		and c.APPL_DOC_CD = 'GOVCBR5AS'
+		and c.jubsu_rsltdesc = '서류심사'
+		and b.Expo_singo_no != ''
+		and (a.Ejj1_gubun = 'B' or a.Ejj1_gubun = 'A' or a.Ejj1_gubun = 'C')
+		and a.Ejj1_seungin_date is null
+		and a.Ejj1_recv_result='접수'
+		and a.Ejj1_send_result='완료'
+		and a.UserID = d.userId
+		union all
+		select
+		a.Ejj1_recv_result, a.Ejj1_gubun, a.Ejj1_jung_sayu_cd, a.Ejj1_suchul_sangho, a.Ejj1_singo_no, a.Ejj1_exsingo_date,
+		a.Ejj1_sinchung_date, a.Ejj1_segwan, a.Ejj_SeDmdngNm, a.Ejj_SeBuho, a.UserNM, a.Ejj1_gwichek_sayu_cd,
+		a.ejj1_jung_sayu1+''+a.Ejj1_jung_sayu2+''+a.Ejj1_jung_sayu3+''+a.Ejj1_jung_sayu4+''+a.Ejj1_jung_sayu5 as 'sayu',
+		b.Expo_geyak_no1, b.Expo_geyak_no2, b.Expo_iv_no, '파주' as 'jisa', c.jubsu_rsltdesc, d.userDepart,
+		CASE WHEN a.Ejj1_segwan != '' and a.Ejj1_gwa !='' then a.Ejj1_segwan + '-' +a.Ejj1_gwa
+		     ELSE a.Ejj1_segwan end AS 'segwan'
+		from ncustoms_pj.kcba.Ejung1 a WITH (NOLOCK), ncustoms_pj.kcba.Expo1 b WITH (NOLOCK), gocustom_pj.dbo.govcbr5afa1 c WITH (NOLOCK), soo.dbo.CPS_UserInfo d
+		where a.Ejj1_singo_no = b.Expo_singo_no
+		and a.Ejj1_singo_no = c.APPL_NO
+		and c.APPL_DOC_CD = 'GOVCBR5AS'
+		and c.jubsu_rsltdesc = '서류심사'
+		and b.Expo_singo_no != ''
+		and (a.Ejj1_gubun = 'B' or a.Ejj1_gubun = 'A' or a.Ejj1_gubun = 'C')
+		and a.Ejj1_seungin_date is null
+		and a.Ejj1_recv_result='접수'
+		and a.Ejj1_send_result='완료'
+		and a.UserID = d.userId
+		union all
+		select
+		a.Ejj1_recv_result, a.Ejj1_gubun, a.Ejj1_jung_sayu_cd, a.Ejj1_suchul_sangho, a.Ejj1_singo_no, a.Ejj1_exsingo_date,
+		a.Ejj1_sinchung_date, a.Ejj1_segwan, a.Ejj_SeDmdngNm, a.Ejj_SeBuho, a.UserNM, a.Ejj1_gwichek_sayu_cd,
+		a.ejj1_jung_sayu1+''+a.Ejj1_jung_sayu2+''+a.Ejj1_jung_sayu3+''+a.Ejj1_jung_sayu4+''+a.Ejj1_jung_sayu5 as 'sayu',
+		b.Expo_geyak_no1, b.Expo_geyak_no2, b.Expo_iv_no, '평택' as 'jisa', c.jubsu_rsltdesc, d.userDepart,
+		CASE WHEN a.Ejj1_segwan != '' and a.Ejj1_gwa !='' then a.Ejj1_segwan + '-' +a.Ejj1_gwa
+		     ELSE a.Ejj1_segwan end AS 'segwan'
+		from ncustoms_pt.kcba.Ejung1 a WITH (NOLOCK), ncustoms_pt.kcba.Expo1 b WITH (NOLOCK), gocustom_pt.dbo.govcbr5afa1 c WITH (NOLOCK), soo.dbo.CPS_UserInfo d
+		where a.Ejj1_singo_no = b.Expo_singo_no
+		and a.Ejj1_singo_no = c.APPL_NO
+		and c.APPL_DOC_CD = 'GOVCBR5AS'
+		and c.jubsu_rsltdesc = '서류심사'
+		and b.Expo_singo_no != ''
+		and (a.Ejj1_gubun = 'B' or a.Ejj1_gubun = 'A' or a.Ejj1_gubun = 'C')
+		and a.Ejj1_seungin_date is null
+		and a.Ejj1_recv_result='접수'
+		and a.Ejj1_send_result='완료'
+		and a.UserID = d.userId
+		union all
+		select
+		a.Ejj1_recv_result, a.Ejj1_gubun, a.Ejj1_jung_sayu_cd, a.Ejj1_suchul_sangho, a.Ejj1_singo_no, a.Ejj1_exsingo_date,
+		a.Ejj1_sinchung_date, a.Ejj1_segwan, a.Ejj_SeDmdngNm, a.Ejj_SeBuho, a.UserNM, a.Ejj1_gwichek_sayu_cd,
+		a.ejj1_jung_sayu1+''+a.Ejj1_jung_sayu2+''+a.Ejj1_jung_sayu3+''+a.Ejj1_jung_sayu4+''+a.Ejj1_jung_sayu5 as 'sayu',
+		b.Expo_geyak_no1, b.Expo_geyak_no2, b.Expo_iv_no, '본사' as 'jisa', c.jubsu_rsltdesc, d.userDepart,
+		CASE WHEN a.Ejj1_segwan != '' and a.Ejj1_gwa !='' then a.Ejj1_segwan + '-' +a.Ejj1_gwa
+		     ELSE a.Ejj1_segwan end AS 'segwan'
+		from ncustoms_sel4.kcba.Ejung1 a WITH (NOLOCK), ncustoms_sel4.kcba.Expo1 b WITH (NOLOCK), gocustom_sel4.dbo.govcbr5afa1 c WITH (NOLOCK), soo.dbo.CPS_UserInfo d
+		where a.Ejj1_singo_no = b.Expo_singo_no
+		and a.Ejj1_singo_no = c.APPL_NO
+		and c.APPL_DOC_CD = 'GOVCBR5AS'
+		and c.jubsu_rsltdesc = '서류심사'
+		and b.Expo_singo_no != ''
+		and (a.Ejj1_gubun = 'B' or a.Ejj1_gubun = 'A' or a.Ejj1_gubun = 'C')
+		and a.Ejj1_seungin_date is null
+		and a.Ejj1_recv_result='접수'
+		and a.Ejj1_send_result='완료'
+		and a.UserID = d.userId
+		union all
+		select
+		a.Ejj1_recv_result, a.Ejj1_gubun, a.Ejj1_jung_sayu_cd, a.Ejj1_suchul_sangho, a.Ejj1_singo_no, a.Ejj1_exsingo_date,
+		a.Ejj1_sinchung_date, a.Ejj1_segwan, a.Ejj_SeDmdngNm, a.Ejj_SeBuho, a.UserNM, a.Ejj1_gwichek_sayu_cd,
+		a.ejj1_jung_sayu1+''+a.Ejj1_jung_sayu2+''+a.Ejj1_jung_sayu3+''+a.Ejj1_jung_sayu4+''+a.Ejj1_jung_sayu5 as 'sayu',
+		b.Expo_geyak_no1, b.Expo_geyak_no2, b.Expo_iv_no, '경기' as 'jisa', c.jubsu_rsltdesc, d.userDepart,
+		CASE WHEN a.Ejj1_segwan != '' and a.Ejj1_gwa !='' then a.Ejj1_segwan + '-' +a.Ejj1_gwa
+		     ELSE a.Ejj1_segwan end AS 'segwan'
+		from ncustoms_sn.kcba.Ejung1 a WITH (NOLOCK), ncustoms_sn.kcba.Expo1 b WITH (NOLOCK), gocustom_sn.dbo.govcbr5afa1 c WITH (NOLOCK), soo.dbo.CPS_UserInfo d
+		where a.Ejj1_singo_no = b.Expo_singo_no
+		and a.Ejj1_singo_no = c.APPL_NO
+		and c.APPL_DOC_CD = 'GOVCBR5AS'
+		and c.jubsu_rsltdesc = '서류심사'
+		and b.Expo_singo_no != ''
+		and (a.Ejj1_gubun = 'B' or a.Ejj1_gubun = 'A' or a.Ejj1_gubun = 'C')
+		and a.Ejj1_seungin_date is null
+		and a.Ejj1_recv_result='접수'
+		and a.Ejj1_send_result='완료'
+		and a.UserID = d.userId
+		union all
+		select
+		a.Ejj1_recv_result, a.Ejj1_gubun, a.Ejj1_jung_sayu_cd, a.Ejj1_suchul_sangho, a.Ejj1_singo_no, a.Ejj1_exsingo_date,
+		a.Ejj1_sinchung_date, a.Ejj1_segwan, a.Ejj_SeDmdngNm, a.Ejj_SeBuho, a.UserNM, a.Ejj1_gwichek_sayu_cd,
+		a.ejj1_jung_sayu1+''+a.Ejj1_jung_sayu2+''+a.Ejj1_jung_sayu3+''+a.Ejj1_jung_sayu4+''+a.Ejj1_jung_sayu5 as 'sayu',
+		b.Expo_geyak_no1, b.Expo_geyak_no2, b.Expo_iv_no, '울산' as 'jisa', c.jubsu_rsltdesc, d.userDepart,
+		CASE WHEN a.Ejj1_segwan != '' and a.Ejj1_gwa !='' then a.Ejj1_segwan + '-' +a.Ejj1_gwa
+		     ELSE a.Ejj1_segwan end AS 'segwan'
+		from ncustoms_us.kcba.Ejung1 a WITH (NOLOCK), ncustoms_us.kcba.Expo1 b WITH (NOLOCK), gocustom_us.dbo.govcbr5afa1 c WITH (NOLOCK), soo.dbo.CPS_UserInfo d
+		where a.Ejj1_singo_no = b.Expo_singo_no
+		and a.Ejj1_singo_no = c.APPL_NO
+		and c.APPL_DOC_CD = 'GOVCBR5AS'
+		and c.jubsu_rsltdesc = '서류심사'
+		and b.Expo_singo_no != ''
+		and (a.Ejj1_gubun = 'B' or a.Ejj1_gubun = 'A' or a.Ejj1_gubun = 'C')
+		and a.Ejj1_seungin_date is null
+		and a.Ejj1_recv_result='접수'
+		and a.Ejj1_send_result='완료'
+		and a.UserID = d.userId
+		union all
+		select
+		a.Ejj1_recv_result, a.Ejj1_gubun, a.Ejj1_jung_sayu_cd, a.Ejj1_suchul_sangho, a.Ejj1_singo_no, a.Ejj1_exsingo_date,
+		a.Ejj1_sinchung_date, a.Ejj1_segwan, a.Ejj_SeDmdngNm, a.Ejj_SeBuho, a.UserNM, a.Ejj1_gwichek_sayu_cd,
+		a.ejj1_jung_sayu1+''+a.Ejj1_jung_sayu2+''+a.Ejj1_jung_sayu3+''+a.Ejj1_jung_sayu4+''+a.Ejj1_jung_sayu5 as 'sayu',
+		b.Expo_geyak_no1, b.Expo_geyak_no2, b.Expo_iv_no, '인천공항' as 'jisa', c.jubsu_rsltdesc, d.userDepart,
+		CASE WHEN a.Ejj1_segwan != '' and a.Ejj1_gwa !='' then a.Ejj1_segwan + '-' +a.Ejj1_gwa
+		     ELSE a.Ejj1_segwan end AS 'segwan'
+		from ncustoms_yj.kcba.Ejung1 a WITH (NOLOCK), ncustoms_yj.kcba.Expo1 b WITH (NOLOCK), gocustom_yj.dbo.govcbr5afa1 c WITH (NOLOCK), soo.dbo.CPS_UserInfo d
+		where a.Ejj1_singo_no = b.Expo_singo_no
+		and a.Ejj1_singo_no = c.APPL_NO
+		and c.APPL_DOC_CD = 'GOVCBR5AS'
+		and c.jubsu_rsltdesc = '서류심사'
+		and b.Expo_singo_no != ''
+		and (a.Ejj1_gubun = 'B' or a.Ejj1_gubun = 'A' or a.Ejj1_gubun = 'C')
+		and a.Ejj1_seungin_date is null
+		and a.Ejj1_recv_result='접수'
+		and a.Ejj1_send_result='완료'
+		and a.UserID = d.userId
+		union all
+		select
+		a.Ejj1_recv_result, a.Ejj1_gubun, a.Ejj1_jung_sayu_cd, a.Ejj1_suchul_sangho, a.Ejj1_singo_no, a.Ejj1_exsingo_date,
+		a.Ejj1_sinchung_date, a.Ejj1_segwan, a.Ejj_SeDmdngNm, a.Ejj_SeBuho, a.UserNM, a.Ejj1_gwichek_sayu_cd,
+		a.ejj1_jung_sayu1+''+a.Ejj1_jung_sayu2+''+a.Ejj1_jung_sayu3+''+a.Ejj1_jung_sayu4+''+a.Ejj1_jung_sayu5 as 'sayu',
+		b.Expo_geyak_no1, b.Expo_geyak_no2, b.Expo_iv_no, '여수' as 'jisa', c.jubsu_rsltdesc, d.userDepart,
+		CASE WHEN a.Ejj1_segwan != '' and a.Ejj1_gwa !='' then a.Ejj1_segwan + '-' +a.Ejj1_gwa
+		     ELSE a.Ejj1_segwan end AS 'segwan'
+		from ncustoms_ys.kcba.Ejung1 a WITH (NOLOCK), ncustoms_ys.kcba.Expo1 b WITH (NOLOCK), gocustom_ys.dbo.govcbr5afa1 c WITH (NOLOCK), soo.dbo.CPS_UserInfo d
+		where a.Ejj1_singo_no = b.Expo_singo_no
+		and a.Ejj1_singo_no = c.APPL_NO
+		and c.APPL_DOC_CD = 'GOVCBR5AS'
+		and c.jubsu_rsltdesc = '서류심사'
+		and b.Expo_singo_no != ''
+		and (a.Ejj1_gubun = 'B' or a.Ejj1_gubun = 'A' or a.Ejj1_gubun = 'C')
+		and a.Ejj1_seungin_date is null
+		and a.Ejj1_recv_result='접수'
+		and a.Ejj1_send_result='완료'
+		and a.UserID = d.userId
+		) k
+        where 1 = 1
+        <if test='suchuljaSangho != null and suchuljaSangho != ""'>AND k.Ejj1_suchul_sangho LIKE '%' + #{suchuljaSangho} + '%'</if>
+        <if test='expoInvNo != null and expoInvNo != ""'>AND k.Expo_iv_no LIKE '%' + #{expoInvNo} + '%'</if>
+        <if test='expoSingoNo != null and expoSingoNo != ""'>AND k.Ejj1_singo_no LIKE '%' + #{expoSingoNo} + '%'</if>
+        <if test='_DateType != null and _DateType != "ALL" and (strFromDate3 != null and strFromDate3 != "") and (strToDate3 != null and strToDate3 != "")'>
+            <choose>
+                <when test='_DateType == "singo_date"'>AND k.Ejj1_exsingo_date BETWEEN #{strFromDate3} AND #{strToDate3}</when>
+                <when test='_DateType == "sinchung_date"'>AND k.Ejj1_sinchung_date BETWEEN #{strFromDate3} AND #{strToDate3}</when>
+            </choose>
+        </if>
+        <if test='expoGroupSegwan != null and expoGroupSegwan != ""'>
+            <choose>
+                <when test='expoGroupSegwan == "인천공항"'>AND k.Ejj1_segwan in (040,240)</when>
+                <when test='expoGroupSegwan == "공항우편세관"'>AND k.Ejj1_segwan in (013)</when>
+                <when test='expoGroupSegwan == "인천항"'>AND k.Ejj1_segwan in (020)</when>
+                <when test='expoGroupSegwan == "부산항"'>AND k.Ejj1_segwan in (030,033,037,039)</when>
+                <when test='expoGroupSegwan == "김해공항"'>AND k.Ejj1_segwan in (140)</when>
+                <when test='expoGroupSegwan == "김포"'>AND k.Ejj1_segwan in (041)</when>
+                <when test='expoGroupSegwan == "평택"'>AND k.Ejj1_segwan in (016)</when>
+                <when test='expoGroupSegwan == "경기"'>AND k.Ejj1_segwan in (012,014,131)</when>
+            </choose>
+        </if>
+    </select>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <select id="findExportStartInfoWithEdmsList" resultType="map">
+        /* Export Simple Request 조회(EDMS) */
+        SELECT datas.*
+        FROM (
+        SELECT ROW_NUMBER() OVER (ORDER BY a.imsKey DESC) AS 'rownum',
+        a.imsKey, a.imsTaxpayerKey, a.imsTaxpayerDB, a.imsTaxpayerCode, a.imsTaxpayerTradeName, a.imsTaxpayerNum,
+        a.imsInvoiceNo, a.imsReferenceNo1, a.imsReferenceNo2, a.imsIssueContent, a.imsPoNo, a.imsSubmitDay, a.imsUseYn,
+        expo.Expo_Key, expo.Expo_res_result, expo.Expo_singo_no, ISNULL(b.fileCnt, 0) AS 'fileCnt'
+        FROM [soo].[dbo].[TBR_Expo_StartInfo] a WITH (NOLOCK)
+        LEFT OUTER JOIN (
+        SELECT b.edmsComCode, b.edmsComNum, b.edmsNum, COUNT(c.edmsFileKey) AS 'fileCnt'
+        FROM [soo].[dbo].[TBR_EDMS_Master] b WITH (NOLOCK)
+        LEFT OUTER JOIN [soo].[dbo].[TBR_EDMS_AttachFile] c WITH (NOLOCK)
+        ON b.edmsKey = c.edmsParentKey
+        AND c.useYn = 'Y'
+        GROUP BY b.edmsComCode, b.edmsComNum, b.edmsNum ) b
+        ON a.imsTaxpayerCode = b.edmsComCode
+        and a.imsTaxpayerNum = b.edmsComNum
+        and a.imsInvoiceNo = b.edmsNum
+        LEFT OUTER JOIN ${_defaultDB}.[kcba].[Expo1] expo WITH (NOLOCK)
+        ON expo.Expo_iv_no = a.imsInvoiceNo
+        AND expo.Expo_SuchulSaupNo = a.imsTaxpayerNum
+        where a.imsTaxpayerNum = #{customerTaxNum}
+        <if test='sType != null and sType != "ALL" and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+            <choose>
+                <when test='sType == "imsSubmitDay"'>AND a.imsSubmitDay <![CDATA[>=]]> #{strFromDate} AND a.imsSubmitDay <![CDATA[<=]]> #{strToDate} /* 등록일 */</when>
+            </choose>
+        </if>
+        <if test='imsInvoiceNo != null and imsInvoiceNo != ""'>AND a.imsInvoiceNo like '%' + #{imsInvoiceNo} + '%' /* Inv번호(LIKE) */</if>
+        <if test='imsInvoiceNo != null and imsInvoiceNo != ""'>AND a.imsInvoiceNo IN ${imsInvoiceNo} /* Inv번호(IN) */</if>
+        <if test='imsReferenceNo1 != null and imsReferenceNo1 != ""'>AND a.imsReferenceNo1 LIKE '%' + #{imsReferenceNo1} + '%' /* 관리번호 */</if>
+        <if test='imsUseYn != null and imsUseYn != ""'>AND a.imsUseYn = #{imsUseYn} /* 사용여부 */</if>
+        ) datas
+        <if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+            WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber}) + 1 - 1) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+        </if>
+    </select>
+
+    <select id="findExportStatusList" resultType="map">
+        /* 수출통관현황(expoStatus) */
+        SELECT datas.*
+        FROM (
+        SELECT ROW_NUMBER() OVER (ORDER BY a.Expo_key) AS 'rownum',
+        a.Expo_key, a.Expo_iv_no, a.Expo_res_result, a.Expo_gurae_gbn, a.Expo_jong,
+        a.Expo_singo_no, a.Expo_singo_date, a.Expo_ok_date, a.UserNM, a.Expo_unsong_type,
+        a.forward_sangho, a.Expo_gumaeja_sangho, a.Expo_mokjuk_name, a.Expo_hanggu_name,
+        a.Expo_indojo, a.Expo_gyelje_money, a.Expo_gyelje_input, a.Expo_pojang_su, a.Expo_total_jung,
+        a.Expo_sunjuk_date, a.expo_Loaded_YN, a.expo_LoadedDt, a.Expo_SuchulSaupNo,
+        a.Expo_geyak_no1, a.Expo_geyak_no2, a.Expo_segwan, a.Expo_gwa,
+        b.mappKey, b.mappDbKey, b.mappGubun, ISNULL(b.fileCnt, 0) AS 'fileCnt',
+        ISNULL((SELECT Exlan_egukyk FROM ${_defaultDB}.[kcba].[Expo2] WITH (NOLOCK) WHERE a.Expo_key = Exlan_key AND Exlan_lan = '001'), '') AS 'exlanEgukyk',
+        ISNULL((SELECT count(count) FROM rms.dbo.TBR_ASML_FTPLog WITH (NOLOCK) WHERE a.Expo_singo_no = singoNum), 0) AS 'ftpCount'
+        FROM ${_defaultDB}.[kcba].[Expo1] a WITH (NOLOCK)
+        LEFT OUTER JOIN (
+        SELECT a.mappExpoKey, a.mappKey, a.mappDbKey, a.mappGubun, COUNT(b.EX_FILE_KEY) AS 'fileCnt'
+        FROM [soo].[dbo].[TBR_Expo_Mapping] a WITH (NOLOCK)
+        LEFT OUTER JOIN [soo].[dbo].[TBR_Expo_AttachFile] b WITH (NOLOCK)
+        ON a.mappKey = b.EX_PARENT_ID
+        AND a.mappGubun = b.EX_PARENT_TYPE
+        AND a.useYn = 'Y'
+        AND b.USEYN = 'Y'
+        WHERE a.mappGubun = #{mappGubun}
+        AND a.mappDbKey = #{_defaultDB}
+        GROUP BY a.mappExpoKey, a.mappKey, a.mappDbKey, a.mappGubun ) b
+        ON a.Expo_key = b.mappExpoKey
+        WHERE a.Expo_SuchulSaupNo = #{taxNum}
+        and a.Expo_suchulja_code = #{SaupCode}
+        <if test='expoIvNo != null and expoIvNo != ""'>AND a.Expo_iv_no LIKE '%' + #{expoIvNo} + '%' /* 인보이스 */</if>
+        <if test='expoSingoNo != null and expoSingoNo != ""'>AND a.Expo_singo_no LIKE '%' + #{expoSingoNo} + '%' /* 수출신고번호 */</if>
+        <if test='expoGumaejaSangho != null and expoGumaejaSangho != ""'>AND a.Expo_gumaeja_sangho LIKE '%' + #{expoGumaejaSangho} + '%' /* 구매자상호 */</if>
+        <if test='_DateType != null and _DateType != "ALL" and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+            <choose>
+                <when test='_DateType == "expoSingoDate_Day"'>AND a.Expo_singo_date BETWEEN #{strFromDate} AND #{strToDate} /* 신고일 */</when>
+                <when test='_DateType == "expoOkDate_Day"'>AND a.Expo_ok_date BETWEEN #{strFromDate} AND #{strToDate} /* 수리일 */</when>
+                <when test='_DateType == "expoLoadedDt_Day"'>AND a.expo_LoadedDt BETWEEN #{strFromDate} AND #{strToDate} /* 선적일 */</when>
+                <when test='_DateType == "bfloaddt_Day"'>AND a.BFLOADDT BETWEEN #{strFromDate} AND #{strToDate} /* 출항일자 */</when>
+                <when test='_DateType == "expoSunjukDate_Day"'>AND a.Expo_sunjuk_date BETWEEN #{strFromDate} AND #{strToDate} /* 적재의무기한 */</when>
+            </choose>
+        </if>
+        <if test='expoLoadedYn != null and expoLoadedYn != ""'>AND a.expo_Loaded_YN LIKE '%' + #{expoLoadedYn} + '%'</if>
+        <if test='expoGeyakNo1 != null and expoGeyakNo1 != ""'>AND a.Expo_geyak_no1 LIKE '%' + #{expoGeyakNo1} + '%'</if>
+        <if test='expoGeyakNo2 != null and expoGeyakNo2 != ""'>AND a.Expo_geyak_no2 LIKE '%' + #{expoGeyakNo2} + '%'</if>
+        <if test='expoSegwan != null and expoSegwan != ""'>AND a.Expo_segwan LIKE '%' + #{expoSegwan} + '%'</if>
+        <if test='expoGwa != null and expoGwa != ""'>AND a.Expo_gwa LIKE '%' + #{expoGwa} + '%'</if>
+        <if test='expoChamjoNo != null and expoChamjoNo != ""'>AND a.Expo_chamjo_no LIKE '%' + #{expoChamjoNo} + '%'</if>
+        <if test='expoSuchuljaSangho != null and expoSuchuljaSangho != ""'>AND a.Expo_suchulja_sangho LIKE '%' + #{expoSuchuljaSangho} + '%'</if>
+        <if test='expoSuchuljaCode != null and expoSuchuljaCode != ""'>AND a.Expo_suchulja_code LIKE '%' + #{expoSuchuljaCode} + '%'</if>
+        <if test='expoSuchulSaupNo != null and expoSuchulSaupNo != ""'>AND a.Expo_SuchulSaupNo LIKE '%' + #{expoSuchulSaupNo} + '%'</if>
+        <if test='expoWhajuSangho != null and expoWhajuSangho != ""'>AND a.Expo_whaju_sangho LIKE '%' + #{expoWhajuSangho} + '%'</if>
+        <if test='expoWhajuCode != null and expoWhajuCode != ""'>AND a.Expo_whaju_code LIKE '%' + #{expoWhajuCode} + '%'</if>
+        <if test='expoWhajuSaup != null and expoWhajuSaup != ""'>AND a.Expo_whaju_saup LIKE '%' + #{expoWhajuSaup} + '%'</if>
+        <if test='expoTrustSangho != null and expoTrustSangho != ""'>AND a.Expo_trust_sangho LIKE '%' + #{expoTrustSangho} + '%'</if>
+        <if test='expoTrustCode != null and expoTrustCode != ""'>AND a.Expo_trust_code LIKE '%' + #{expoTrustCode} + '%'</if>
+        <if test='expoTrustSaup != null and expoTrustSaup != ""'>AND a.Expo_trust_saup LIKE '%' + #{expoTrustSaup} + '%'</if>
+        ) datas
+        <if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+            WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+        </if>
+    </select>
+
+    <select id="findExportDetailStatusList" resultType="map">
+        /* 수출화물통관 디테일 조회 */
+		SELECT *
+		FROM [ncustoms_sel_040].[kcba].[Expo2] WITH (NOLOCK)
+		WHERE Exlan_key = #{strExlanKey}
+    </select>
+
+    <select id="findExportSubDetailStatusList" resultType="map">
+        /* 수출화물통관 서브디테일 조회 */
+		SELECT *
+		FROM [ncustoms_sel_040].[kcba].[Expo3] WITH (NOLOCK)
+		WHERE Expum_key = #{strExpumKey}
+		  AND Expum_lan = #{strExpumLan}
+    </select>
+
+    <select id="findExportAllRequirementsManagementList" resultType="map">
+        /* 소요량 관리용 수출 전체 통관 데이터 조회(expo1,2,3) */
+        SELECT datas.*
+        FROM (
+        SELECT ROW_NUMBER() OVER (ORDER BY a.Expo_key ASC) AS 'rownum',
+        a.Expo_key, a.Expo_year, a.Expo_jechlno, a.Expo_Chk_dg, a.Expo_save_gbn, a.Expo_local_gubun,
+        a.Expo_geyak_no1, a.Expo_geyak_no2, a.Expo_tcano, a.Expo_jiyek_gbn, a.Expo_singoja_sangho, a.Expo_suchulja_code,
+        a.Expo_suchulja_sangho, a.Expo_suchulja_buho, a.Expo_suchulja_gbn, a.Expo_whaju_code, a.Expo_whaju_sangho, a.Expo_whaju_juso,
+        a.Expo_whaju_name, a.Expo_whaju_tong, a.Expo_whaju_saup_gbn, a.Expo_whaju_saup, a.Expo_gumaeja_code, a.Expo_gumaeja_sangho,
+        a.Expo_gumaeja_nation, a.Expo_whan_sin, a.Expo_whan_buho, a.Expo_whan_gigwan, a.Expo_segwan, a.Expo_gwa, a.Expo_singo_year,
+        a.Expo_singo_no, a.Expo_singo_dg, a.Expo_singo_date, a.Expo_singo_gbn, a.Expo_gumsa_gbn, a.Expo_gurae_gbn, a.Expo_jong,
+        a.Expo_gyelje, a.Expo_mokjuk_code, a.Expo_mokjuk_name, a.Expo_hanggu_code, a.Expo_hanggu_name, a.Expo_unsong_type, a.Expo_unsong_box,
+        a.Expo_jejo_date, a.Expo_post, a.Expo_juso, a.Expo_lc_no, a.Expo_iv_no, a.Expo_chamjo_no,
+        (SELECT [GEOWS].[dbo].[ufn_getIdxDataLikeSplit](a.Expo_chamjo_no, 1, ',')) AS 'expoWorkOrderNum',
+        (SELECT [GEOWS].[dbo].[ufn_getIdxDataLikeSplit](a.Expo_chamjo_no, 2, ',')) AS 'expoEngineNum',
+        a.Expo_lan, a.Expo_total_jung, a.Expo_jung_danwi,
+        a.Expo_pojang_su, a.Expo_usd_exch, a.Expo_total_won, a.Expo_total_usd, a.Expo_indojo, a.Expo_gyelje_money, a.Expo_gyelje_exch, a.Expo_gyelje_input,
+        a.Expo_calc_yn, a.Expo_fre_money, a.Expo_fre_exch, a.Expo_fre_input, a.Expo_fre_calc, a.Expo_ins_money, a.Expo_ins_exch, a.Expo_ins_input, a.Expo_ins_calc,
+        a.Expo_etc_money, a.Expo_etc_exch, a.Expo_etc_input, a.Expo_etc_gum, a.Expo_seung_no, a.Expo_seung_ch_date, a.Expo_seung_date, a.Expo_sayu,
+        a.Expo_chucheon_no, a.Expo_chucheon_date, a.Expo_gumsa_no, a.Expo_gumsa_date, a.Expo_gumyeok_no, a.Expo_gumyeok_date, a.Expo_junlyk_no, a.Expo_junlyk_date,
+        a.Expo_unsong_code, a.Expo_unsong_sangho, a.Expo_unsong_date1, a.Expo_unsong_date2, a.Expo_res_type, a.Expo_send_gbn, a.Expo_gijelan, a.Expo_ok_date,
+        a.Expo_ok_no, a.Expo_junsong_result, a.Expo_res_result, a.Expo_acccnv, a.Expo_jung_cd, a.Expo_damdangja, a.Expo_jangchi_cnt, a.Expo_webserver,
+        a.Expo_daecode, a.Expo_daesangho, a.Expo_DaeSaupNo, a.Expo_SuchulSaupNo, a.Expo_suchul_Upte, a.Expo_suchul_jongMok, a.Expo_whaju_Upte, a.Expo_whaju_jongMok,
+        a.Log_type, a.Event_type, a.Expo_imsigae_yn, a.Expo_bansong_sayu, a.Expo_mrn_bunhal, a.Expo_sunjuk_date, a.Expo_tca_siljuk, a.Expo_Old_Yn, a.Fax_send,
+        a.Expo_trust_code, a.Expo_trust_sangho, a.Expo_trust_juso, a.Expo_trust_name, a.Expo_trust_tong, a.Expo_trust_saup, a.Expo_trust_saup_gbn, a.Expo_trust_gubun,
+        a.Scan_link, a.expo_jung_cd2, a.Expo_whan_gan2, a.Expo_industry, a.userno, a.expo_how_check, a.expo_pojang_danwi, a.expo_singoja_gije, a.expo_singoja_name,
+        a.Expo_Jukip_YN, a.forward_code, a.forward_sangho, a.expo_eng_Address, a.Expo_Leave_Day, a.Expo_SouthNorthTradeYn, a.Expo_UCR, a.expo_suchulja_tong,
+        a.expo_trust_post, a.mail_send, a.SMSSend, a.UserID, a.UserNM, a.AddDtTime, a.EditDtTime, a.expo_preLoadAreaCd, a.expo_preStartDt,
+        a.expo_shipAirComCd, a.expo_shipAirComNm, a.expo_shipAirNm, a.expo_Loaded_YN, a.expo_SeBuho, a.expo_SeDmdngNm, a.AttachImageYN, a.expo_jangchi_code,
+        a.expo_banip_no, a.expo_LoadedDt, a.SENDERNM, a.BFLOADCHK, a.EXPO_TRUST_JUSOD, a.EXPO_TRUST_ROADCD, a.EXPO_TRUST_BUILDMNGNO, a.EXPO_MRN_NO,
+        a.Expo_suchulja_comno, a.EXPO_TRUST_comno, a.Expo_whaju_comno, a.EXPO_OK_DTTM, a.EXPO_BLNO, a.BFLOADDT,
+        b.Exlan_key, b.Exlan_lan, b.Exlan_jung_gubun, b.Exlan_hs, b.Exlan_jepum_code, b.Exlan_jung, b.Exlan_jung_danwi,
+        b.Exlan_su, b.Exlan_su_danwi, b.Exlan_pojang_su, b.Exlan_pojang_danwi, b.Exlan_whan_jepum, b.Exlan_hname, b.Exlan_ename,
+        b.Exlan_egukyk, b.Exlan_pum1, b.Exlan_gukyk, b.Exlan_gyelje_gum, b.Exlan_gyelje_fob, b.Exlan_fob_won, b.Exlan_fob_usd,
+        b.Exlan_imposingono, b.Exlan_impolanno, b.Exlan_jung_cd, b.Exlan_attach_yn, b.exlan_sangpyo, b.exlan_wonsanji, b.exlan_wonsanji_bang,
+        b.exlan_wonsanji_pyosi, b.exlan_CoIssueYN, b.DELFLAG,
+        c.Expum_key, c.Expum_lan, c.Expum_haeng, c.Expum_jepum_code, c.Expum_pum, c.Expum_sungbun, c.Expum_su, c.Expum_su_danwi,
+        c.Expum_jung, c.Expum_jung_danwi, c.Expum_indojo, c.Expum_gyelje_money, c.Expum_gyelje_gum, c.Expum_jung_cd, c.Expum_danga,
+        c.Expum_pum_a, c.Expum_pum_b, c.Expum_pum_c, c.Expum_pum_d, c.Expum_pum_e, c.Expum_pum_f, c.Expum_pum_g, c.Expum_pum_h,
+        c.Expum_sungbun_a, c.Expum_sungbun_b, c.expum_pum1, c.expum_pum2, c.expum_pum3, c.expum_pum4, c.expum_pum5,
+        c.Expum_gk1, c.Expum_gk2, c.Expum_gk3, c.Expum_gk4, c.Expum_gk5, c.expum_chamjo_no, c.EXPUM_MDLSPEC, c.JJGBN, c.DELFLAG AS 'Expum_DELFLAG',
+        ISNULL((SELECT a1.engineNum FROM [GEOWS].[dbo].[TBR_Order_WorkOrder] a1 WITH (NOLOCK) WHERE (SELECT [GEOWS].[dbo].[ufn_getIdxDataLikeSplit](a.Expo_chamjo_no, 1, ',')) = a1.workOrderNum AND a1.useYn = 'Y'), '') AS 'engineNum'
+        FROM [ncustoms_pj].[kcba].[Expo1] a WITH (NOLOCK)
+        INNER JOIN [ncustoms_pj].[kcba].[Expo2] b WITH (NOLOCK)
+        ON a.Expo_Key = b.Exlan_key
+        INNER JOIN [ncustoms_pj].[kcba].[Expo3] c WITH (NOLOCK)
+        ON a.Expo_Key = c.Expum_key
+        <where>
+            AND a.Expo_SuchulSaupNo = #{geowsTaxNum}
+            <if test='_isCustomsStock != null and _isCustomsStock != ""'>AND a.Exo_singo_date <![CDATA[ >= ]]> #{_isCustomsStock} /* 시스템사용시작일 */</if>
+            <if test='expoSingoNo != null and expoSingoNo != ""'>AND a.Expo_singo_no LIKE '%' + #{expoSingoNo} + '%' /* expoSingoNo */</if>
+            <if test='expoLcNo != null and expoLcNo != ""'>AND a.Expo_lc_no LIKE '%' + #{expoLcNo} + '%' /* expoLcNo */</if>
+            <if test='expoIvNo != null and expoIvNo != ""'>AND a.Expo_iv_no LIKE '%' + #{expoIvNo} + '%' /* expoIvNo */</if>
+            <if test='expoGumaejaSangho != null and expoGumaejaSangho != ""'>AND a.Expo_gumaeja_sangho LIKE '%' + #{expoGumaejaSangho} + '%' /* expoGumaejaSangho */</if>
+            <if test='_dateType != null and _dateType != "ALL" and (startDay != null and startDay != "") and (endDay != null and endDay != "")'>
+                <choose>
+                    <when test='_dateType == "expoSingoDate"'>AND a.Expo_singo_date BETWEEN #{startDay} AND #{endDay}</when>
+                    <when test='_dateType == "expoOkDate"'>AND a.Expo_ok_date BETWEEN #{startDay} AND #{endDay}</when>
+                    <when test='_dateType == "expoLoadedDt"'>AND a.Expo_LoadedDt BETWEEN #{startDay} AND #{endDay}</when>
+                    <when test='_dateType == "expoSunjukDate"'>AND a.Expo_sunjuk_date BETWEEN #{startDay} AND #{endDay}</when>
+                </choose>
+            </if>
+            <if test='eqExpoChamjoNo != null and eqExpoChamjoNo != ""'>AND a.Expo_chamjo_no = #{eqExpoChamjoNo} /* 무역업체참조번호(워크오더번호) */</if>
+            <if test='likeExpoChamjoNo != null and likeExpoChamjoNo != ""'>AND a.Expo_chamjo_no LIKE '%' + #{likeExpoChamjoNo} + '%' /* 무역업체참조번호(워크오더번호) */</if>
+            <if test='containsExpoChamjoNo != null and containsExpoChamjoNo != ""'>AND a.Expo_chamjo_no LIKE '%' + #{containsExpoChamjoNo} + '%' /* 무역업체참조번호(워크오더번호) */</if>
+            <if test='exlanJepumCode != null and exlanJepumCode != ""'>AND b.Exlan_jepum_code LIKE '%' + #{exlanJepumCode} + '%' /* exlanJepumCode */</if>
+            <if test='eqExpumSungbunA != null and eqExpumSungbunA != ""'>AND c.Expum_sungbun_a = #{eqExpumSungbunA} /* expumSungbunA(워크오더) */</if>
+            <if test='likeExpumSungbunA != null and likeExpumSungbunA != ""'>AND c.Expum_sungbun_a LIKE '%' + #{likeExpumSungbunA} + '%' /* expumSungbunA(워크오더) */</if>
+            <if test='_isEngineExpo != null and _isEngineExpo != ""'>AND a.Expo_chamjo_no LIKE '%' + ',' + '%' /* 엔진 수출을 판단(워크오더번호,엔진번호) */</if>
+            <if test='expoWorkOrderNum != null and expoWorkOrderNum != ""'>AND (SELECT [GEOWS].[dbo].[ufn_getIdxDataLikeSplit](a.Expo_chamjo_no, 1, ',')) = #{expoWorkOrderNum} /* 워크오더번호 */</if>
+            <if test='expoEngineNum != null and expoEngineNum != ""'>AND (SELECT [GEOWS].[dbo].[ufn_getIdxDataLikeSplit](a.Expo_chamjo_no, 2, ',')) = #{expoEngineNum} /* 엔진번호 */</if>
+        </where>
+        ) datas
+        <if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+            WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+        </if>
+    </select>
+
+    <select id="findExportRequirementsManagementList" resultType="map">
+        /* 소요량 관리용 수출 통관 데이터 조회(expo1,3) */
+        SELECT datas.*
+        FROM (
+        SELECT ROW_NUMBER() OVER (ORDER BY a.Expo_key ASC) AS 'rownum',
+        a.Expo_key, a.Expo_year, a.Expo_jechlno, a.Expo_Chk_dg, a.Expo_save_gbn, a.Expo_local_gubun,
+        a.Expo_geyak_no1, a.Expo_geyak_no2, a.Expo_tcano, a.Expo_jiyek_gbn, a.Expo_singoja_sangho, a.Expo_suchulja_code,
+        a.Expo_suchulja_sangho, a.Expo_suchulja_buho, a.Expo_suchulja_gbn, a.Expo_whaju_code, a.Expo_whaju_sangho, a.Expo_whaju_juso,
+        a.Expo_whaju_name, a.Expo_whaju_tong, a.Expo_whaju_saup_gbn, a.Expo_whaju_saup, a.Expo_gumaeja_code, a.Expo_gumaeja_sangho,
+        a.Expo_gumaeja_nation, a.Expo_whan_sin, a.Expo_whan_buho, a.Expo_whan_gigwan, a.Expo_segwan, a.Expo_gwa, a.Expo_singo_year,
+        a.Expo_singo_no, a.Expo_singo_dg, a.Expo_singo_date, a.Expo_singo_gbn, a.Expo_gumsa_gbn, a.Expo_gurae_gbn, a.Expo_jong,
+        a.Expo_gyelje, a.Expo_mokjuk_code, a.Expo_mokjuk_name, a.Expo_hanggu_code, a.Expo_hanggu_name, a.Expo_unsong_type, a.Expo_unsong_box,
+        a.Expo_jejo_date, a.Expo_post, a.Expo_juso, a.Expo_lc_no, a.Expo_iv_no, a.Expo_chamjo_no,
+        (SELECT [GEOWS].[dbo].[ufn_getIdxDataLikeSplit](a.Expo_chamjo_no, 1, ',')) AS 'expoWorkOrderNum',
+        (SELECT [GEOWS].[dbo].[ufn_getIdxDataLikeSplit](a.Expo_chamjo_no, 2, ',')) AS 'expoEngineNum',
+        a.Expo_lan, a.Expo_total_jung, a.Expo_jung_danwi,
+        a.Expo_pojang_su, a.Expo_usd_exch, a.Expo_total_won, a.Expo_total_usd, a.Expo_indojo, a.Expo_gyelje_money, a.Expo_gyelje_exch, a.Expo_gyelje_input,
+        a.Expo_calc_yn, a.Expo_fre_money, a.Expo_fre_exch, a.Expo_fre_input, a.Expo_fre_calc, a.Expo_ins_money, a.Expo_ins_exch, a.Expo_ins_input, a.Expo_ins_calc,
+        a.Expo_etc_money, a.Expo_etc_exch, a.Expo_etc_input, a.Expo_etc_gum, a.Expo_seung_no, a.Expo_seung_ch_date, a.Expo_seung_date, a.Expo_sayu,
+        a.Expo_chucheon_no, a.Expo_chucheon_date, a.Expo_gumsa_no, a.Expo_gumsa_date, a.Expo_gumyeok_no, a.Expo_gumyeok_date, a.Expo_junlyk_no, a.Expo_junlyk_date,
+        a.Expo_unsong_code, a.Expo_unsong_sangho, a.Expo_unsong_date1, a.Expo_unsong_date2, a.Expo_res_type, a.Expo_send_gbn, a.Expo_gijelan, a.Expo_ok_date,
+        a.Expo_ok_no, a.Expo_junsong_result, a.Expo_res_result, a.Expo_acccnv, a.Expo_jung_cd, a.Expo_damdangja, a.Expo_jangchi_cnt, a.Expo_webserver,
+        a.Expo_daecode, a.Expo_daesangho, a.Expo_DaeSaupNo, a.Expo_SuchulSaupNo, a.Expo_suchul_Upte, a.Expo_suchul_jongMok, a.Expo_whaju_Upte, a.Expo_whaju_jongMok,
+        a.Log_type, a.Event_type, a.Expo_imsigae_yn, a.Expo_bansong_sayu, a.Expo_mrn_bunhal, a.Expo_sunjuk_date, a.Expo_tca_siljuk, a.Expo_Old_Yn, a.Fax_send,
+        a.Expo_trust_code, a.Expo_trust_sangho, a.Expo_trust_juso, a.Expo_trust_name, a.Expo_trust_tong, a.Expo_trust_saup, a.Expo_trust_saup_gbn, a.Expo_trust_gubun,
+        a.Scan_link, a.expo_jung_cd2, a.Expo_whan_gan2, a.Expo_industry, a.userno, a.expo_how_check, a.expo_pojang_danwi, a.expo_singoja_gije, a.expo_singoja_name,
+        a.Expo_Jukip_YN, a.forward_code, a.forward_sangho, a.expo_eng_Address, a.Expo_Leave_Day, a.Expo_SouthNorthTradeYn, a.Expo_UCR, a.expo_suchulja_tong,
+        a.expo_trust_post, a.mail_send, a.SMSSend, a.UserID, a.UserNM, a.AddDtTime, a.EditDtTime, a.expo_preLoadAreaCd, a.expo_preStartDt,
+        a.expo_shipAirComCd, a.expo_shipAirComNm, a.expo_shipAirNm, a.expo_Loaded_YN, a.expo_SeBuho, a.expo_SeDmdngNm, a.AttachImageYN, a.expo_jangchi_code,
+        a.expo_banip_no, a.expo_LoadedDt, a.SENDERNM, a.BFLOADCHK, a.EXPO_TRUST_JUSOD, a.EXPO_TRUST_ROADCD, a.EXPO_TRUST_BUILDMNGNO, a.EXPO_MRN_NO,
+        a.Expo_suchulja_comno, a.EXPO_TRUST_comno, a.Expo_whaju_comno, a.EXPO_OK_DTTM, a.EXPO_BLNO, a.BFLOADDT,
+        b.Expum_key, b.Expum_lan, b.Expum_haeng, b.Expum_jepum_code, b.Expum_pum, b.Expum_sungbun, b.Expum_su, b.Expum_su_danwi,
+        b.Expum_jung, b.Expum_jung_danwi, b.Expum_indojo, b.Expum_gyelje_money, b.Expum_gyelje_gum, b.Expum_jung_cd, b.Expum_danga,
+        b.Expum_pum_a, b.Expum_pum_b, b.Expum_pum_c, b.Expum_pum_d, b.Expum_pum_e, b.Expum_pum_f, b.Expum_pum_g, b.Expum_pum_h,
+        b.Expum_sungbun_a, b.Expum_sungbun_b, b.expum_pum1, b.expum_pum2, b.expum_pum3, b.expum_pum4, b.expum_pum5,
+        b.Expum_gk1, b.Expum_gk2, b.Expum_gk3, b.Expum_gk4, b.Expum_gk5, b.expum_chamjo_no, b.EXPUM_MDLSPEC, b.JJGBN, b.DELFLAG AS 'Expum_DELFLAG',
+        ISNULL((SELECT a1.engineNum FROM [GEOWS].[dbo].[TBR_Order_WorkOrder] a1 WITH (NOLOCK) WHERE (SELECT [GEOWS].[dbo].[ufn_getIdxDataLikeSplit](a.Expo_chamjo_no, 1, ',')) = a1.workOrderNum AND a1.useYn = 'Y'), '') AS 'engineNum',
+        ISNULL((SELECT a2.Exlan_egukyk FROM [ncustoms_pj].[kcba].[Expo2] a2 WITH (NOLOCK) WHERE a2.Exlan_key = a.Expo_key and a2.Exlan_lan = '001'), '') AS 'exlanEgukyk'
+        FROM [ncustoms_pj].[kcba].[Expo1] a WITH (NOLOCK)
+        INNER JOIN [ncustoms_pj].[kcba].[Expo3] b WITH (NOLOCK)
+        ON a.Expo_Key = b.Expum_key
+        <where>
+            AND a.Expo_SuchulSaupNo = #{geowsTaxNum}
+            <if test='_isCustomsStock != null and _isCustomsStock != ""'>AND a.Exo_singo_date <![CDATA[ >= ]]> #{_isCustomsStock} /* 시스템사용시작일 */</if>
+            <if test='expoSingoNo != null and expoSingoNo != ""'>AND a.Expo_singo_no LIKE '%' + #{expoSingoNo} + '%' /* expoSingoNo */</if>
+            <if test='expoLcNo != null and expoLcNo != ""'>AND a.Expo_lc_no LIKE '%' + #{expoLcNo} + '%' /* expoLcNo */</if>
+            <if test='expoIvNo != null and expoIvNo != ""'>AND a.Expo_iv_no LIKE '%' + #{expoIvNo} + '%' /* expoIvNo */</if>
+            <if test='expoGumaejaSangho != null and expoGumaejaSangho != ""'>AND a.Expo_gumaeja_sangho LIKE '%' + #{expoGumaejaSangho} + '%' /* expoGumaejaSangho */</if>
+            <if test='_dateType != null and _dateType != "ALL" and (startDay != null and startDay != "") and (endDay != null and endDay != "")'>
+                <choose>
+                    <when test='_dateType == "expoSingoDate"'>AND a.Expo_singo_date BETWEEN #{startDay} AND #{endDay}</when>
+                    <when test='_dateType == "expoOkDate"'>AND a.Expo_ok_date BETWEEN #{startDay} AND #{endDay}</when>
+                    <when test='_dateType == "expoLoadedDt"'>AND a.Expo_LoadedDt BETWEEN #{startDay} AND #{endDay}</when>
+                    <when test='_dateType == "expoSunjukDate"'>AND a.Expo_sunjuk_date BETWEEN #{startDay} AND #{endDay}</when>
+                </choose>
+            </if>
+            <if test='eqExpoChamjoNo != null and eqExpoChamjoNo != ""'>AND a.Expo_chamjo_no = #{eqExpoChamjoNo} /* 무역업체참조번호(워크오더번호) */</if>
+            <if test='likeExpoChamjoNo != null and likeExpoChamjoNo != ""'>AND a.Expo_chamjo_no LIKE '%' + #{likeExpoChamjoNo} + '%' /* 무역업체참조번호(워크오더번호) */</if>
+            <if test='containsExpoChamjoNo != null and containsExpoChamjoNo != ""'>AND a.Expo_chamjo_no LIKE '%' + #{containsExpoChamjoNo} + '%' /* 무역업체참조번호(워크오더번호) */</if>
+            <if test='eqExpumSungbunA != null and eqExpumSungbunA != ""'>AND b.Expum_sungbun_a = #{eqExpumSungbunA} /* expumSungbunA(워크오더) */</if>
+            <if test='likeExpumSungbunA != null and likeExpumSungbunA != ""'>AND b.Expum_sungbun_a LIKE '%' + #{likeExpumSungbunA} + '%' /* expumSungbunA(워크오더) */</if>
+            <if test='_isEngineExpo != null and _isEngineExpo != ""'>AND a.Expo_chamjo_no LIKE '%' + ',' + '%' /* 엔진 수출을 판단(워크오더번호,엔진번호) */</if>
+            <if test='expoWorkOrderNum != null and expoWorkOrderNum != ""'>AND (SELECT [GEOWS].[dbo].[ufn_getIdxDataLikeSplit](a.Expo_chamjo_no, 1, ',')) = #{expoWorkOrderNum} /* 워크오더번호 */</if>
+            <if test='expoEngineNum != null and expoEngineNum != ""'>AND (SELECT [GEOWS].[dbo].[ufn_getIdxDataLikeSplit](a.Expo_chamjo_no, 2, ',')) = #{expoEngineNum} /* 엔진번호 */</if>
+        </where>
+        ) datas
+        <if test='_pageNumber != null and _pageNumber != "" and _pageRow != null and _pageRow != ""'>
+            WHERE datas.rownum BETWEEN (((CONVERT(INTEGER, #{_pageNumber})) * (CONVERT(INTEGER, #{_pageRow}))) +1) AND ((CONVERT(INTEGER, #{_pageNumber}) + 1) * CONVERT(INTEGER, #{_pageRow}))
+        </if>
+    </select>
+
+
+
+    <select id="findExportResult소분류" statementType="CALLABLE" resultType="map">
+        { call [soo].[dbo].[USP_RESULT_Expo_getExportResult_소분류] (
+        @yyyy = #{yyyy}, @mm = #{mm}, @db = #{db}, @taxNum = #{taxNum}, @singoGubun = #{singoGubun}, @searchGubun = #{searchGubun}, @searchKeyword = #{searchKeyword}
+        ) }
+    </select>
+
+
+
+    <select id="findAccountCostCustomsList" resultType="map">
+        /* 수출입 공용 회계 통관 데이터 조회 */
+        SELECT a.FR_KEY, a.SINGO_DT, a.SURI_DT, a.HAWB, a.AREA_NM, a.CUS_BUHO, a.SINGO_YEAR, a.SINGO_NO,
+                a.SUPLY_NM, a.DEAL_PUM_NM, a.SINGO_EK, a.GAMGA_EK, a.TOT_QT, a.QT_UNIT, a.TOT_WT, a.JINGSU_TP,
+                a.INDO_JOGUN, a.PAY_METHOD, a.MONEY_EK, a.MONEY_CD, a.EXCH_RATE, a.JAEWON_CD, a.SEGWAN, a.GWA,
+                a.FILE_NO1, a.FILE_NO2, a.INVOICE_NO
+        FROM [122.99.247.4].[CLFMS_SE].[dbo].[FR_MAIN] AS a WITH (NOLOCK)
+        WHERE a.WORK_NM LIKE #{workNm} + '%'
+        AND a.owner_biz_no = #{taxNo}
+        <if test='agentBizNo != null and agentBizNo != ""'>AND a.AGENT_BIZ_NO LIKE '%' + #{agentBizNo} + '%' /* 사업자번호 */</if>
+        <if test='workCd != null and workCd != ""'>AND a.WORK_CD LIKE '%' + #{workCd} + '%' /* 수출입구분 */</if>
+        <if test='impoExpoKey != null and impoExpoKey != ""'>AND a.IMPO_EXPO_KEY = #{impoExpoKey} /* 수출입키 */</if>
+        <if test='singoNo != null and singoNo != ""'>AND a.SINGO_NO LIKE '%' + #{singoNo} + '%' /* 수입신고번호 */</if>
+        <if test='hawb != null and hawb != ""'>AND a.HAWB LIKE '%' + #{hawb} + '%' /* BL번호 */</if>
+        <if test='invoiceNo != null and invoiceNo != ""'>AND a.INVOICE_NO LIKE '%' + #{invoiceNo} + '%' /* 인보이스번호 */</if>
+        <if test='fileNo1 != null and fileNo1 != ""'>AND a.FILE_NO1 LIKE '%' + #{fileNo1} + '%' /* 파일1 */</if>
+        <if test='fileNo2 != null and fileNo2 != ""'>AND a.FILE_NO2 LIKE '%' + #{fileNo2} + '%' /* 파일2 */</if>
+        <if test='suplyNm != null and suplyNm != ""'>AND a.SUPLY_NM LIKE '%' + #{suplyNm} + '%' /* 해외거래처상호 */</if>
+        <if test='jingsuTp != null and jingsuTp != ""'>AND a.JINGSU_TP LIKE '%' + #{jingsuTp} + '%' /* 징수형태 */</if>
+        <if test='segwan != null and segwan != ""'>AND a.SEGWAN LIKE '%' + #{segwan} + '%' /* 세관부호 */</if>
+        <if test='areaNm != null and areaNm != ""'>AND a.AREA_NM LIKE '%' + #{areaNm} + '%' /* 지점명 */</if>
+        <if test='cusBuho != null and cusBuho != ""'>AND a.CUS_BUHO LIKE '%' + #{cusBuho} + '%' /* 관세사부호 */</if>
+        <if test='sType != null and sType != "ALL" and (strFromDate != null and strFromDate != "") and (strToDate != null and strToDate != "")'>
+            <choose>
+                <when test='sType == "singoDt_Day"'>AND a.SINGO_DT BETWEEN #{strFromDate} AND #{strToDate} /* 신고일 */</when>
+                <when test='sType == "suriDt_Day"'>AND a.SURI_DT BETWEEN #{strFromDate} AND #{strToDate} /* 수리일 */</when>
+            </choose>
+        </if>
+    </select>
+
+    <select id="findAccountCostAdjustmentList" resultType="map">
+        /* 수출입 공용 회계 정산 데이터 조회 */
+        SELECT a.ADJ_COM_NM, a.ADJ_NM, a.AC_NM, a.SUP_EK, a.TAX_EK, a.SUM_EK
+        FROM  [122.99.247.4].[CLFMS_SE].[dbo].[ADJ_LIST] AS a WITH (NOLOCK)
+        WHERE a.FR_KEY = #{frKey}
+        AND a.DEL_YN = 'N'
+        AND a.SUM_EK != 0
+    </select>
+
+    <select id="selectExJungList" resultType="map">
+		/* 에드워드 수출정정리스트 */
+		select * from (
+			select
+				d.SingoNo as 'Ejj1_singo_no',
+				rms.dbo.fn_NEW_DATE_VIEW('D1',d.OkDt) as 'Expo_ok_date',
+				d.IvNo as 'Expo_iv_no',
+				d.JungCd,
+				case when d.JungCd = '01' then (select CdPrtNm from CPS.dbo.CDAA100D where Mcd = 'EXP_DCLR_WTHD_RCD' and useYn = 'Y' and Cd = d.JungCd)
+				else (select CdPrtNm from CPS.dbo.CDAA100D where Mcd = 'EXP_DCLR_MDFY_RCD' and useYn = 'Y' and Cd = d.JungCd) end as 'Ejj1_jung_sayu_cd',
+				case when isNull(d.RecvOkDt,'') = '' then ( select rms.dbo.fn_NEW_DATE_VIEW('D1',k.EffectiveDateTime) from cps_sr.dbo.GOVC5DT k where k.DeID = d.SingoNo and left(k.IssueDateTime, 12) = left(d.SinchungDtm, 12)) 
+				else rms.dbo.fn_NEW_DATE_VIEW('D1',d.RecvOkDt) end as 'Ejj1_seungin_date',
+				case when d.OkGbn is not null then d.OkGbn else '' end as 'OkGbn',
+				d.BfDesc,
+				d.AfDesc,
+				case when d.ErrScoreLast is not null then d.ErrScoreLast else '0' end as 'ErrScoreLast',
+				(select CusHnm from CPS.[dbo].[CDAB100M] where CusCd = d.Segwan) as 'Ejj1_segwan',
+				d.LanNo,
+				case when d.JungCd = '01' then (select CdPrtNm from CPS.dbo.CDAA100D where Mcd = 'EXP_DCLR_WTHD_TPCD' and useYn = 'Y' and Cd = d.hangmokCode)
+				else (select CdPrtNm from CPS.dbo.CDAA100D where Mcd = 'EXP_DCLR_ITEM_CD' and useYn = 'Y' and Cd = d.hangmokCode) end as 'hangmokCode',
+				case when isNull(d.ReasonCd,'') = '' then ( select k.ReasonCode from cps_sr.dbo.GOVC5DT k where k.DeID = d.SingoNo and left(k.IssueDateTime, 12) = left(d.SinchungDtm, 12))
+				else d.ReasonCd end as 'Ejj1_gwichek_sayu_cd',
+				case when isNull(d.ReasonCd,'') = '' then (select CdPrtNm from CPS.dbo.CDAA100D where Mcd = 'EXP_IMPT_RCD' and useYn = 'Y' and Cd = ( select k.ReasonCode from cps_sr.dbo.GOVC5DT k where k.DeID = d.SingoNo and left(k.IssueDateTime, 12) = left(d.SinchungDtm, 12)))
+				else (select CdPrtNm from CPS.dbo.CDAA100D where Mcd = 'EXP_IMPT_RCD' and useYn = 'Y' and Cd = d.ReasonCd) end as 'Ejj1_gwichek_sayu_desc',
+				d.ReasonSayu as 'Ejj1_gwichek_sayu',
+				d.DamDang as 'Ejj_SeDmdngNm',
+				( select top 1 a.ExBuyerSangho from CPS.[dbo].[EXAC100] a where a.UseYn='Y' and a.ExSingoNo = d.SingoNo ) as 'ExBuyerSangho',					
+				d.JungSayu as 'Ejj1_jung_sayu1',
+				d.RecvOkDt,
+				d.OkDt
+				from CPS_SR.[dbo].[GOVCBR5FR] d
+				<where>
+					and d.imexGbn='EX'
+					<if test='taxNum != null and taxNum != ""'>AND d.DealSaupHead = #{taxNum}</if>
+					<if test='expoSingoNo != null and expoSingoNo != ""'>AND d.SingoNo LIKE '%' + #{expoSingoNo} + '%'</if>
+					<if test='expoIvNo != null and expoIvNo != ""'>AND d.IvNo LIKE '%' + #{expoIvNo} + '%'</if>
+			    </where>
+		) q
+		<where>
+			and q.OkGbn !=''
+			<if test='_DateType != "ALL" and _DateType != null and (strFromDate6 != null and strFromDate6 != "") and (strToDate6 != null and strToDate6 != "")'>
+			  <choose>
+				<when test='_DateType == "Ejj1_seungin_date"'>AND left(replace(q.Ejj1_seungin_date,'-',''),8) BETWEEN #{strFromDate6} AND #{strToDate6}</when>
+				<when test='_DateType == "Expo_ok_date"'>AND left(q.OkDt,8) BETWEEN #{strFromDate6} AND #{strToDate6}</when>
+			  </choose>
+			</if>
+	    </where>
+		group by q.Ejj1_singo_no, q.Expo_ok_date, q.Expo_iv_no, q.Ejj1_jung_sayu1, q.Ejj1_seungin_date,
+		q.OkGbn, q.BfDesc, q.AfDesc, q.ErrScoreLast, q.Ejj1_gwichek_sayu_cd, q.Ejj1_segwan, q.LanNo,
+		q.hangmokCode, q.Ejj1_jung_sayu_cd, q.Ejj1_gwichek_sayu, q.Ejj_SeDmdngNm, q.JungCd, q.Ejj1_gwichek_sayu_desc, q.ExBuyerSangho, q.RecvOkDt,	q.OkDt
+		order by q.Ejj1_seungin_date desc, q.Ejj1_singo_no, q.LanNo, q.hangmokCode
+	</select>
+	
+	<select id="selectExJungList_back_back" resultType="map">
+		/* 에드워드 수출정정리스트 */
+		select * from (
+			select
+				d.SingoNo as 'Ejj1_singo_no',
+				rms.dbo.fn_NEW_DATE_VIEW('D1',d.OkDt) as 'Expo_ok_date',
+				d.IvNo as 'Expo_iv_no',
+				d.JungSayu as 'Ejj1_jung_sayu1',
+				rms.dbo.fn_NEW_DATE_VIEW('D1',d.RecvOkDt) as 'Ejj1_seungin_date',
+				case when d.OkGbn is not null then d.OkGbn else '' end as 'OkGbn',
+				d.BfDesc,
+				d.AfDesc,
+				case when d.ErrScoreLast is not null then d.ErrScoreLast else '0' end as 'ErrScoreLast',
+				d.ReasonCd as 'Ejj1_gwichek_sayu_cd',
+				(select CusHnm from CPS.[dbo].[CDAB100M] where CusCd = d.Segwan) as 'Ejj1_segwan',
+				d.LanNo,
+				(select CdPrtNm from CPS.dbo.CDAA100D where Mcd = 'EXP_DCLR_ITEM_CD' and useYn = 'Y' and Cd = d.hangmokCode) as 'hangmokCode',
+				(select CdPrtNm from CPS.dbo.CDAA100D where Mcd = 'EXP_DCLR_MDFY_RCD' and useYn = 'Y' and Cd = d.JungCd) as 'Ejj1_jung_sayu_cd',
+				d.ReasonSayu as 'Ejj1_gwichek_sayu',
+				d.DamDang as 'Ejj_SeDmdngNm'
+				from CPS_SR.[dbo].[GOVCBR5FR] d
+				<where>
+				    and d.DealSaupHead='3128112960'
+					and d.imexGbn='EX'
+					<if test='expoSingoNo != null and expoSingoNo != ""'>AND d.SingoNo LIKE '%' + #{expoSingoNo} + '%'</if>
+					<if test='expoIvNo != null and expoIvNo != ""'>AND d.IvNo LIKE '%' + #{expoIvNo} + '%'</if>
+					<if test='_DateType != "ALL" and _DateType != null and (strFromDate6 != null and strFromDate6 != "") and (strToDate6 != null and strToDate6 != "")'>
+					  <choose>
+						<when test='_DateType == "Ejj1_seungin_date"'>AND left(d.RecvOkDt,8) BETWEEN #{strFromDate6} AND #{strToDate6}</when>
+						<when test='_DateType == "Expo_ok_date"'>AND left(d.OkDt,8) BETWEEN #{strFromDate6} AND #{strToDate6}</when>
+					  </choose>
+					</if>
+			    </where>
+			union all
+			select
+				z.Ejj1_singo_no,
+				rms.dbo.fn_NEW_DATE_VIEW('D1',z.Expo_ok_date) as 'Expo_ok_date',
+				z.Expo_iv_no,
+				z.Ejj1_jung_sayu1,
+				rms.dbo.fn_NEW_DATE_VIEW('D1',z.Ejj1_seungin_date) as 'Ejj1_seungin_date',
+				case when d.OkGbn is not null then d.OkGbn else '' end as 'OkGbn',
+				replace(z.Ejj2_bf1,',','') as 'BfDesc',
+				replace(z.Ejj2_af1,',','') as 'AfDesc',
+				case when d.ErrScoreLast is not null then d.ErrScoreLast else '0' end as 'ErrScoreLast',
+				z.Ejj1_gwichek_sayu_cd,
+				z.Ejj1_segwan,
+				z.Ejj2_lan as 'LanNo',
+				z.Ejj2_hangmok_cd as 'hangmokCode',
+				z.Ejj1_jung_sayu_cd,
+				z.Ejj1_gwichek_sayu,
+				z.Ejj_SeDmdngNm
+				from
+				(select
+				y.Ejj1_singo_no,
+				y.Expo_ok_date,
+				y.Expo_iv_no,
+				y.Ejj1_jung_sayu1,
+				y.Ejj1_seungin_date,
+				y.Ejj1_gwichek_sayu_cd,
+				c.Exj2Bf1 as 'Ejj2_bf1',
+				c.Exj2af01 as 'Ejj2_af1',
+				c.ExjSingoNoLan as 'Ejj2_lan',
+				(select CdPrtNm from CPS.dbo.CDAA100D where Mcd = 'EXP_DCLR_ITEM_CD' and useYn = 'Y' and Cd = c.HangmokCd) as 'Ejj2_hangmok_cd',
+				y.Ejj1_segwan,
+				y.Ejj1_jung_sayu_cd,
+				y.Ejj1_gwichek_sayu,
+				y.Ejj_SeDmdngNm
+				from
+				(select
+		        a.ExaeMngNo,
+				a.ExSingoNo as 'Ejj1_singo_no',
+				b.ExOkDtm as 'Expo_ok_date',
+				b.ExIvNo1 as 'Expo_iv_no',
+				a.ExjAmdSayu1 as 'Ejj1_jung_sayu1',
+				a.RecvOkDate as 'Ejj1_seungin_date',
+				a.ExjAmdResonCd as 'Ejj1_gwichek_sayu_cd',
+				(select CusHnm from CPS.[dbo].[CDAB100M] where CusCd = a.ExjSegwan) as 'Ejj1_segwan',
+				(select CdPrtNm from CPS.dbo.CDAA100D where Mcd = 'EXP_DCLR_MDFY_RCD' and useYn = 'Y' and Cd = a.ExjAmdSayuCd) as 'Ejj1_jung_sayu_cd',
+				(select CdHtxt from CPS.dbo.CDAA100D where Mcd='EXP_IMPT_RCD' and Cd = a.ExjAmdResonCd) as 'Ejj1_gwichek_sayu',
+				a.RecvCusNm as 'Ejj_SeDmdngNm'
+				from CPS.dbo.EXAE100 a, CPS.dbo.EXAC100 b
+				where a.ExjWhaJuSaup='3128112960'
+				  and a.ExSingoNo = b.ExSingoNo
+				  and a.UseYn='Y'
+				  and b.UseYn='Y' ) y left outer join CPS.dbo.EXAE110 c
+				  on y.ExaeMngNo = c.ExaeMngNo ) z left outer Join CPS_SR.[dbo].[GOVCBR5FR] d
+				on z.Ejj1_singo_no = d.SingoNo
+				and z.Ejj2_lan = d.LanNo
+				and z.Ejj2_hangmok_cd = d.hangmokCode
+				and left(z.Ejj1_seungin_date,8) = left(d.SinchungDtm,8)
+				<where>
+				<if test='expoSingoNo != null and expoSingoNo != ""'>AND z.Ejj1_singo_no LIKE '%' + #{expoSingoNo} + '%'</if>
+				<if test='expoIvNo != null and expoIvNo != ""'>AND z.Expo_iv_no LIKE '%' + #{expoIvNo} + '%'</if>
+				<if test='_DateType != "ALL" and _DateType != null and (strFromDate6 != null and strFromDate6 != "") and (strToDate6 != null and strToDate6 != "")'>
+			      <choose>
+			        <when test='_DateType == "Ejj1_seungin_date"'>AND left(z.Ejj1_seungin_date,8) BETWEEN #{strFromDate6} AND #{strToDate6}</when>
+			        <when test='_DateType == "Expo_ok_date"'>AND left(z.Expo_ok_date,8) BETWEEN #{strFromDate6} AND #{strToDate6}</when>
+			      </choose>
+			    </if>
+			    </where>
+		) q
+		where q.OkGbn !=''
+		group by q.Ejj1_singo_no, q.Expo_ok_date, q.Expo_iv_no, q.Ejj1_jung_sayu1, q.Ejj1_seungin_date,
+		q.OkGbn, q.BfDesc, q.AfDesc, q.ErrScoreLast, q.Ejj1_gwichek_sayu_cd, q.Ejj1_segwan, q.LanNo,
+		q.hangmokCode, q.Ejj1_jung_sayu_cd, q.Ejj1_gwichek_sayu, q.Ejj_SeDmdngNm
+		order by q.Ejj1_seungin_date desc, q.Ejj1_singo_no, q.LanNo, q.hangmokCode
+	</select>
+
+    <select id="selectExJungList_back" resultType="map">
+		/* 에드워드 수출정정리스트 백업 */
+		select * from
+		(select
+		a.Ejj1_singo_no,
+		rms.dbo.fn_NEW_DATE_VIEW('D1',b.Expo_ok_date) as 'Expo_ok_date',
+		b.Expo_iv_no,
+		a.Ejj1_jung_sayu1,
+		rms.dbo.fn_NEW_DATE_VIEW('D1',a.Ejj1_seungin_date) as 'Ejj1_seungin_date',
+		case when d.OkGbn is not null then d.OkGbn else '' end as 'OkGbn',
+		d.BfDesc,
+		d.AfDesc,
+		case when d.ErrScoreLast is not null then d.ErrScoreLast else '0' end as 'ErrScoreLast',
+		a.Ejj1_gwichek_sayu_cd,
+		(select CD_DESC from soo_MST.dbo.TBR_SYS_CODE where MCD='SEGWAN' and CD = a.Ejj1_segwan) as 'Ejj1_segwan',
+		d.LanNo,
+		(select CdPrtNm from CPS.dbo.CDAA100D where Mcd = 'EXP_DCLR_ITEM_CD' and useYn = 'Y' and Cd = d.hangmokCode) as 'hangmokCode',
+		(select CdPrtNm from CPS.dbo.CDAA100D where Mcd = 'EXP_DCLR_MDFY_RCD' and useYn = 'Y' and Cd = a.Ejj1_jung_sayu_cd) as 'Ejj1_jung_sayu_cd',
+		(select CD_DESC from soo_MST.dbo.TBR_SYS_CODE where MCD='EXP_IMPT_RCD' and CD = a.Ejj1_gwichek_sayu_cd) as 'Ejj1_gwichek_sayu',
+		a.Ejj_SeDmdngNm
+		from ncustoms_ca.kcba.ejung1 a, ncustoms_ca.kcba.expo1 b, [122.99.247.5].[seinAnalysis].[dbo].[TBR_GOVCBR5FR] d
+		<where>
+		    a.Ejj1_suchul_sangho='에드워드코리아(주)'
+		    and a.Ejj1_singo_no = b.Expo_singo_no
+		    and a.Ejj1_singo_no = d.SingoNo
+			and left(a.Ejj1_seungin_date,8) = left(d.SinchungDtm,8)
+		<if test='expoSingoNo != null and expoSingoNo != ""'>AND a.Ejj1_singo_no LIKE '%' + #{expoSingoNo} + '%'</if>
+		<if test='expoIvNo != null and expoIvNo != ""'>AND b.Expo_iv_no LIKE '%' + #{expoIvNo} + '%'</if>
+		<if test='_DateType != "ALL" and _DateType != null and (strFromDate6 != null and strFromDate6 != "") and (strToDate6 != null and strToDate6 != "")'>
+	      <choose>
+	        <when test='_DateType == "Ejj1_seungin_date"'>AND left(a.Ejj1_seungin_date,8) BETWEEN #{strFromDate6} AND #{strToDate6}</when>
+	        <when test='_DateType == "Expo_ok_date"'>AND left(b.Expo_ok_date,8) BETWEEN #{strFromDate6} AND #{strToDate6}</when>
+	      </choose>
+	    </if>
+	    </where>
+		union all
+		select
+		z.Ejj1_singo_no,
+		rms.dbo.fn_NEW_DATE_VIEW('D1',z.Expo_ok_date) as 'Expo_ok_date',
+		z.Expo_iv_no,
+		z.Ejj1_jung_sayu1,
+		rms.dbo.fn_NEW_DATE_VIEW('D1',z.Ejj1_seungin_date) as 'Ejj1_seungin_date',
+		case when d.OkGbn is not null then d.OkGbn else '' end as 'OkGbn',
+		z.Ejj2_bf1 as 'BfDesc',
+		z.Ejj2_af1 as 'AfDesc',
+		case when d.ErrScoreLast is not null then d.ErrScoreLast else '0' end as 'ErrScoreLast',
+		z.Ejj1_gwichek_sayu_cd,
+		z.Ejj1_segwan,
+		z.Ejj2_lan as 'LanNo',
+		z.Ejj2_hangmok_cd as 'hangmokCode',
+		z.Ejj1_jung_sayu_cd,
+		z.Ejj1_gwichek_sayu,
+		z.Ejj_SeDmdngNm
+		from
+		(select
+		y.Ejj1_singo_no,
+		y.Expo_ok_date,
+		y.Expo_iv_no,
+		y.Ejj1_jung_sayu1,
+		y.Ejj1_seungin_date,
+		y.Ejj1_gwichek_sayu_cd,
+		c.Ejj2_bf1,
+		c.Ejj2_af1,
+		c.Ejj2_lan,
+		(select CdPrtNm from CPS.dbo.CDAA100D where Mcd = 'EXP_DCLR_ITEM_CD' and useYn = 'Y' and Cd = c.Ejj2_hangmok_cd) as 'Ejj2_hangmok_cd',
+		y.Ejj1_segwan,
+		y.Ejj1_jung_sayu_cd,
+		y.Ejj1_gwichek_sayu,
+		y.Ejj_SeDmdngNm
+		from
+		(select
+        a.Ejj1_key,
+		a.Ejj1_singo_no,
+		b.Expo_ok_date,
+		b.Expo_iv_no,
+		a.Ejj1_jung_sayu1,
+		a.Ejj1_seungin_date,
+		a.Ejj1_gwichek_sayu_cd,
+		(select CD_DESC from soo_MST.dbo.TBR_SYS_CODE where MCD='SEGWAN' and CD = a.Ejj1_segwan) as 'Ejj1_segwan',
+		(select CdPrtNm from CPS.dbo.CDAA100D where Mcd = 'EXP_DCLR_MDFY_RCD' and useYn = 'Y' and Cd = a.Ejj1_jung_sayu_cd) as 'Ejj1_jung_sayu_cd',
+		(select CD_DESC from soo_MST.dbo.TBR_SYS_CODE where MCD='EXP_IMPT_RCD' and CD = a.Ejj1_gwichek_sayu_cd) as 'Ejj1_gwichek_sayu',
+		a.Ejj_SeDmdngNm
+		from ncustoms_ca.kcba.ejung1 a, ncustoms_ca.kcba.expo1 b
+		where a.Ejj1_suchul_sangho='에드워드코리아(주)'
+		  and a.Ejj1_singo_no = b.Expo_singo_no) y left outer join ncustoms_ca.kcba.ejung2 c
+		  on y.Ejj1_key = c.Ejj2_key ) z left outer Join [122.99.247.5].[seinAnalysis].[dbo].[TBR_GOVCBR5FR] d
+		on z.Ejj1_singo_no = d.SingoNo
+		and z.Ejj2_lan = d.LanNo
+		and z.Ejj2_hangmok_cd = d.hangmokCode
+		and left(z.Ejj1_seungin_date,8) = left(d.SinchungDtm,8)
+		<where>
+		<if test='expoSingoNo != null and expoSingoNo != ""'>AND z.Ejj1_singo_no LIKE '%' + #{expoSingoNo} + '%'</if>
+		<if test='expoIvNo != null and expoIvNo != ""'>AND z.Expo_iv_no LIKE '%' + #{expoIvNo} + '%'</if>
+		<if test='_DateType != "ALL" and _DateType != null and (strFromDate6 != null and strFromDate6 != "") and (strToDate6 != null and strToDate6 != "")'>
+	      <choose>
+	        <when test='_DateType == "Ejj1_seungin_date"'>AND left(z.Ejj1_seungin_date,8) BETWEEN #{strFromDate6} AND #{strToDate6}</when>
+	        <when test='_DateType == "Expo_ok_date"'>AND left(z.Expo_ok_date,8) BETWEEN #{strFromDate6} AND #{strToDate6}</when>
+	      </choose>
+	    </if>
+	    </where> ) q
+		group by q.Ejj1_singo_no, q.Expo_ok_date, q.Expo_iv_no, q.Ejj1_jung_sayu1, q.Ejj1_seungin_date,
+		q.OkGbn, q.BfDesc, q.AfDesc, q.ErrScoreLast, q.Ejj1_gwichek_sayu_cd, q.Ejj1_segwan, q.LanNo,
+		q.hangmokCode, q.Ejj1_jung_sayu_cd, q.Ejj1_gwichek_sayu, q.Ejj_SeDmdngNm
+		order by q.Ejj1_seungin_date desc, q.Ejj1_singo_no, q.LanNo, q.hangmokCode
+	</select>
+
+	<select id="selectExJungDetailList" resultType="map">
+		/* 에드워드 수출정정 상세리스트 */
+		select
+		c.Ejj1_singo_no,
+		c.Ejj2_lan,
+		rms.dbo.fn_NEW_DATE_VIEW('D1',c.Ejj1_seungin_date) as 'SinchungDtm',
+		case when d.OkGbn is not null then d.OkGbn else '' end as 'OkGbn',
+		c.Ejj2_hangmok_cd,
+		c.Ejj2_hangmok,
+		c.Ejj2_bf1,
+		c.Ejj2_af1,
+		case when d.ErrScoreLast is not null then d.ErrScoreLast else '0' end as 'ErrScoreLast',
+		c.Ejj1_jung_sayu_cd,
+		(select CD_DESC from soo_MST.dbo.TBR_SYS_CODE where MCD='EXP_IMPT_RCD' and CD = c.Ejj1_gwichek_sayu_cd) as 'Ejj1_gwichek_sayu_cd',
+		c.Ejj_SeDmdngNm
+		from
+		(select
+		a.Ejj1_singo_no,
+		b.Ejj2_lan,
+		a.Ejj1_seungin_date,
+		b.Ejj2_hangmok_cd,
+		b.Ejj2_hangmok,
+		b.Ejj2_bf1,
+		b.Ejj2_af1,
+		a.Ejj1_jung_sayu_cd,
+		a.Ejj1_gwichek_sayu_cd,
+		a.Ejj_SeDmdngNm
+		from ncustoms_ca.kcba.ejung1 a, ncustoms_ca.kcba.ejung2 b
+		where a.Ejj1_suchul_sangho='에드워드코리아(주)'
+			and a.Ejj1_key = b.Ejj2_key ) c left outer Join [122.99.247.5].[seinAnalysis].[dbo].[TBR_GOVCBR5FR] d
+		on c.Ejj1_singo_no = d.SingoNo
+			and c.Ejj2_lan = d.LanNo
+			and c.Ejj2_hangmok_cd = d.hangmokCode
+		    where c.Ejj1_singo_no LIKE '%' + #{Exjung_singo_no} + '%'
+		order by c.Ejj2_lan, c.Ejj2_hangmok_cd
+	</select>
+
+	<select id="selectExFtaList" resultType="map">
+		/* 에드워드 FTA사후관리 수출 상세리스트 */
+		SELECT
+		a.DECL_CMPL_DT,
+		a.EXPT_DECL_NO AS 'expt_noti_no',
+		a.Expo_gurae_gbn,
+		a.INV_NO1,
+		a.EXPO_BLNO,
+		a.EXPO_HBLNO,
+		a.Expo_Leave_Day,
+		b.Orig,
+		b.CO_NO,
+		b.CO_NO_DT,
+		a.ShippingMode,
+		a.NameOfShipto,
+		b.APLY_PACT,
+		case when b.APLY_PACT='FUS' then 'KR-US' when b.APLY_PACT='FEU' then 'KR-EU' when b.APLY_PACT='FCN' then 'KR-CN' else '비협정' end as 'EX_FTA_CD',
+		rms.dbo.fn_NEW_DATE_VIEW('D1',a.DECL_CMPL_DT) as 'DECL_CMPL_DT1',
+		rms.dbo.fn_NEW_DATE_VIEW('D1',a.Expo_Leave_Day) as 'Expo_Leave_Day1',
+		rms.dbo.fn_NEW_DATE_VIEW('D1',b.CO_NO_DT) as 'CO_NO_DT1'
+		FROM  rms.dbo.ED_EXPT_ORDR a,rms.dbo.ED_EXPT_DECL_LAN b
+		<where>
+		    and a.EXPT_ORDR_MNG_NO = b.EXPT_ORDR_MNG_NO
+			AND a.GRP_COMP_CD = '3128112960'
+			and a.EXPT_DECL_NO !=''
+			and b.APLY_PACT != ''
+		<if test='NameOfShipto != null and NameOfShipto != ""'>AND a.NameOfShipto LIKE '%' + #{NameOfShipto} + '%'</if>
+		<if test='ShippingMode != null and ShippingMode != ""'>AND a.ShippingMode = #{ShippingMode}</if>
+		<if test='APLY_PACT != null and APLY_PACT != ""'>AND b.APLY_PACT = #{APLY_PACT}</if>
+		<if test='_DateType != "ALL" and _DateType != null and (strFromDate7 != null and strFromDate7 != "") and (strToDate7 != null and strToDate7 != "")'>
+	      <choose>
+	        <when test='_DateType == "Impo_ok_date_Day"'>AND a.DECL_CMPL_DT BETWEEN #{strFromDate7} AND #{strToDate7}</when>
+	      </choose>
+	    </if>
+	    <if test='CO_NO != "" and CO_NO != null'>
+	      <choose>
+	        <when test='CO_NO == "N"'>AND b.CO_NO = ''</when>
+	        <when test='CO_NO == "Y"'>AND b.CO_NO != ''</when>
+	      </choose>
+	    </if>
+	    <if test='taxNum != null and taxNum != ""'>AND a.GRP_COMP_CD = #{taxNum}</if>
+	    </where>
+		order by a.DECL_CMPL_DT
+	</select>
+</mapper>

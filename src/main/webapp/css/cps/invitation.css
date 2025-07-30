@@ -1,0 +1,166 @@
+@charset "utf-8";
+
+/* reset */
+body, div, ul, li, ol, dl, dd, dt, h1, h2, h3, h4, h5, h6, p, form, fieldset, legend, select, input,iframe{margin:0; padding:0;}
+h1, h2, h3, h4, h5, h6 {font-size:12px; font-weight:normal;}
+body, input, textarea, select, button,iframe{font-family: "Noto Sans KR", sans-serif;}
+a {text-decoration:none; color:#4f4f4f; font-family: "Noto Sans KR";}
+a:link{font-size:12px; color:#4f4f4f; text-decoration:none;}
+a:hover{font-size:12px; color:#4f4f4f; text-decoration:none;}
+a:visited{font-size:12px; color:#4f4f4f;  text-decoration:none;}
+li, ul, ol {list-style:none;}
+img {border:0;}
+
+body {
+  height:100%;
+  overflow-x: hidden;
+}
+
+html { height: 100%; }
+
+header {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: url('../../images/cps/seintnl.JPG') no-repeat center center scroll;
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    background-size: cover;
+    -o-background-size: cover;
+}
+
+@media (min-width: 1200px){
+  	#main{
+    	width : 1200px;
+    	text-align:center;
+    	display: table-cell;
+	    vertical-align: middle;
+ 	}
+
+ 	#mainimg{
+    	width : 900px;
+    	text-align:center;
+ 	}
+
+ 	#maintop{
+    	height:800px;
+ 	}
+
+ 	#invitation{
+    	font-size:40px
+ 	}
+
+ 	#place{
+    	font-size:25px
+ 	}
+
+ 	#ment{
+    	font-size:30px
+ 	}
+
+ 	#day{
+    	font-size:25px
+ 	}
+
+ 	#placeDate{
+    	font-size:20px
+ 	}
+
+ 	#contents{
+    	width:100%;
+    	height:100%;
+    	background:#fbf9ea;
+    	text-align:left;
+    	padding-left:300px;
+    	padding-right:300px;
+ 	}
+
+ 	#date{
+    	width:100%;
+    	height:100%;
+    	background:#fff;
+ 	}
+
+ 	#loc{
+    	width:100%;
+    	height:100%;
+    	background:#fbf9ea;
+ 	}
+
+ 	#ceo{
+    	padding-left:160px;
+ 	}
+
+ 	#ceo1{
+    	padding-left:220px;
+ 	}
+}
+
+@media (max-width: 1200px){
+  	#main{
+    	width : 100%;
+    	text-align:center;
+ 	}
+
+ 	#maintop{
+    	height:500px;
+ 	}
+
+ 	#mainimg{
+    	width : 100%;
+    	text-align:center;
+ 	}
+
+ 	#invitation{
+    	font-size:30px
+ 	}
+
+ 	#place{
+    	font-size:20px
+ 	}
+
+ 	#ment{
+    	font-size:22px
+ 	}
+
+ 	#day{
+    	font-size:18px
+ 	}
+
+ 	#placeDate{
+    	font-size:13px;
+ 	}
+
+ 	#contents{
+    	width:100%;
+    	height:100%;
+    	background:#fbf9ea;
+    	text-align:left;
+    	padding-left:20px;
+    	padding-right:20px;
+ 	}
+
+ 	#date{
+    	width:100%;
+    	height:100%;
+    	background:#fff;
+    	padding-left:20px;
+    	padding-right:20px;
+ 	}
+
+ 	#loc{
+    	width:100%;
+    	height:100%;
+    	background:#fbf9ea;
+    	padding-left:20px;
+    	padding-right:20px;
+ 	}
+
+ 	#ceo{
+    	padding-left:50px;
+ 	}
+
+ 	#ceo1{
+    	padding-left:20px;
+ 	}
+}
