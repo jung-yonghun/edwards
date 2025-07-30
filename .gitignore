@@ -1,7 +1,7 @@
-edwards/target/
+target/
 
-edwards/*.project
+*.project
 
-edwards/*.classpath
+*.classpath
 
-edwards/.settings/
+.settings/
