@@ -35,7 +35,7 @@
 			</div>
 		  </div>		  
 		  <div style="width:100%;text-align:center;margin-top:10px">
-        	<font size="1" color="#ffffff">COPYRIGHT(c) 2019 CustomsPass.com ALL RIGHTS RESERVED</font>
+        	<font size="1" color="#ffffff">COPYRIGHT(c) 2019 CustomsPass.com ALL RIGHTS RESERVED</font>        	
       	  </div>
 		</div>
 	  </div>
