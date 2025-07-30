@@ -32,7 +32,6 @@ import com.edwards.commons.CmmnUtils;
 import com.edwards.domains.CDAF100DVO;
 import com.edwards.domains.CpsEdmsAttachFileVO;
 import com.edwards.domains.CpsSaveCustomerVO;
-import com.edwards.domains.DeliveryCarryingInVO;
 import com.edwards.domains.ItemAttachFileVO;
 import com.edwards.domains.ItemHsMasterVO;
 import com.edwards.domains.LogFileVO;
@@ -1349,52 +1348,6 @@ public class ItemController extends CmmnController {
 
 
 
-
-
-//  @RequestMapping(value = "/testItemMasterList", method = RequestMethod.GET)
-//  public ResponseEntity<?> testItemMasterList(HttpServletRequest request, @RequestParam Map args) {
-//	if (CmmnUtil.isNull(getUserInfo(request, CmmnConstants.SESSION_ID)))
-//	  return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-//
-//	// 테스트용
-////	args.put("itemKey", 304467);
-//	if (!args.containsKey("mcountNo"))
-//	  args.put("mcountNo", "PJ1507");
-//
-//	try {
-//	  args.put("_userId", getUserInfo(request, CmmnConstants.SESSION_USERID));
-//	  args.put("_Auth", getUserAuth(String.valueOf(getUserInfo(request, CmmnConstants.SESSION_GRADE))));
-//	  PageRequest pageRequest = new PageRequest(Integer.parseInt(String.valueOf(args.getOrDefault("page", 0))), Integer.parseInt(String.valueOf(args.getOrDefault("size", 500))));
-//	  List<SooMst_ItemMasterVO> list = itemService.getItemMasterList2(args);
-//	  List<?> result = list.stream()
-//			  .map(vo -> modelMapper.map(vo, ItemMasterDTO.searchResponse.class))
-//			  .skip(pageRequest.getPageNumber() * pageRequest.getPageSize())
-//			  .limit(pageRequest.getPageSize())
-//			  .collect(Collectors.toList());
-//
-//	  List<ItemAttachFileVO> fileVOList = null;
-//	  if (args.containsKey("mcountNo")) {
-//		args.put("itemMcountNo", args.get("mcountNo"));
-//		fileVOList = itemFileService.getItemFileList(args);
-//	  }
-//
-//	  Map returnMap = new HashMap();
-//	  returnMap.put("list1", new PageImpl<>(result, pageRequest, list.size()));
-//	  returnMap.put("list2", fileVOList);
-//	  return new ResponseEntity<>(returnMap, HttpStatus.OK);
-//	} catch (Exception e) {
-//	  getCommonErrorLogger(e, args);
-//	  return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-//	}
-//  }
-
-  /**
-   * Gets item master list.
-   *
-   * @param request the request
-   * @param args    the args
-   * @return the item master list
-   */
   @RequestMapping(value = "/getItemMasterList")
   public ResponseEntity<?> getItemMasterList(HttpServletRequest request, @RequestBody Map args) {
 	if (CmmnUtils.isNull(CmmnUtils.getUserInfo(request, CmmnConstants.SESSION_ID)))
@@ -1939,106 +1892,6 @@ public class ItemController extends CmmnController {
 		}
 	}
 
-  @RequestMapping(value = "/downloadImpZeiss")
-	public void downloadImpZeiss(HttpServletRequest request, @RequestParam String _DateType, @RequestParam String strFromDate,
-			@RequestParam String strToDate, @RequestParam String _Undecided, @RequestParam String _TodayData,
-			@RequestParam String _Document, @RequestParam String _Test,	@RequestParam String impoNapseSangho,
-			@RequestParam String impoBlNo, @RequestParam String impoSingoNo,	@RequestParam String Imlan_gije,
-			@RequestParam String impoGonggubSangho, @RequestParam String impoSegwan,	@RequestParam String impoForwarder,
-			@RequestParam String impumJajaeCode, @RequestParam String impumGukyk,	@RequestParam String impumSungbun,
-			@RequestParam String taxNum, HttpServletResponse response) throws UnsupportedEncodingException{
-		if(CmmnUtils.isNull(getUserInfo(request, CmmnConstants.SESSION_ID)))
-			return;
-
-		ZeissImpExcel excelResultHandler = null;
-
-		try {
-			String currentDatetime 	= CmmnUtils.getFormatedDate("yyyyMMddHHmmss");
-			excelResultHandler = new ZeissImpExcel(response);
-
-			Map map = new HashMap();
-			map.put("_DateType", _DateType);
-			map.put("strFromDate", strFromDate);
-			map.put("strToDate", strToDate);
-			map.put("_Undecided", _Undecided);
-			map.put("_TodayData", _TodayData);
-			map.put("_Document", _Document);
-			map.put("_Test", _Test);
-			map.put("impoNapseSangho", impoNapseSangho);
-			map.put("impoBlNo", impoBlNo);
-			map.put("impoSingoNo", impoSingoNo);
-			map.put("Imlan_gije", Imlan_gije);
-			map.put("impoGonggubSangho", impoGonggubSangho);
-			map.put("impoSegwan", impoSegwan);
-			map.put("impoForwarder", impoForwarder);
-			map.put("impumJajaeCode", impumJajaeCode);
-			map.put("impumGukyk", impumGukyk);
-			map.put("impumSungbun", impumSungbun);
-
-			if(taxNum.equals("1058677021")){
-				sessionTempItemDao.zeissImport("com.edwards.biz.customsManagement.ImpoCustomsMapper.selectZeissImportStatusList2Excel", map, excelResultHandler);
-			}else if(taxNum.equals("2038151510")){
-				sessionTempItemDao.zeissImport("com.edwards.biz.customsManagement.ImpoCustomsMapper.selectZeissImportStatusList1Excel", map, excelResultHandler);
-			}else{
-				sessionTempItemDao.zeissImport("com.edwards.biz.customsManagement.ImpoCustomsMapper.selectZeissImportStatusListExcel", map, excelResultHandler);
-			}
-		}catch(Exception ex){
-			throw new RuntimeException(ex);
-		}finally{
-			if(excelResultHandler != null){
-				try{ excelResultHandler.close();}catch(Exception ex){}
-			}
-		}
-	}
-
-    @RequestMapping(value = "/downloadSebItem")
-	public void downloadSebItem(HttpServletRequest request, @RequestParam String Status, @RequestParam String strFromDate,
-			@RequestParam String strToDate, @RequestParam String CommercialCode, @RequestParam String FamilyLevel1,
-			@RequestParam String FamilyLevel2, @RequestParam String Mmodel_code,	@RequestParam String OverseaCustomer,
-			@RequestParam String DescriptionKr, @RequestParam String DescriptionEn, @RequestParam String HsCode,
-			@RequestParam String Manufacturer, @RequestParam String Fta, HttpServletResponse response) throws UnsupportedEncodingException{
-		if(CmmnUtils.isNull(getUserInfo(request, CmmnConstants.SESSION_ID)))
-			return;
-
-		SebItemExcel excelResultHandler = null;
-
-		try {
-			String currentDatetime 	= CmmnUtils.getFormatedDate("yyyyMMddHHmmss");
-			String mmodelCodeArray[] = Mmodel_code.split(",");
-
-			excelResultHandler = new SebItemExcel(response);
-
-			Map map = new HashMap();
-			map.put("Status", Status);
-			map.put("strFromDate", strFromDate);
-			map.put("strToDate", strToDate);
-			map.put("CommercialCode", CommercialCode);
-			map.put("FamilyLevel1", FamilyLevel1);
-			map.put("FamilyLevel2", FamilyLevel2);
-			if (!Mmodel_code.equals("") && mmodelCodeArray.length > 1) {
-				ArrayList<String> mmodelCodeArrayList = new ArrayList(Arrays.asList(mmodelCodeArray));
-				String mmodelCodeList = CmmnUtils.convertArrayToStringIn(mmodelCodeArrayList);
-				map.put("mmodelCodeList", mmodelCodeList);
-				map.put("Mmodel_code", "");
-			}else{
-				map.put("Mmodel_code", Mmodel_code);
-			}
-			map.put("OverseaCustomer", OverseaCustomer);
-			map.put("DescriptionKr", DescriptionKr);
-			map.put("DescriptionEn", DescriptionEn);
-			map.put("HsCode", HsCode);
-			map.put("Manufacturer", Manufacturer);
-			map.put("Fta", Fta);
-
-			sessionTempItemDao.sebItemExcel("com.edwards.biz.itemMng.ItemMapper.selectItemSebList", map, excelResultHandler);
-		}catch(Exception ex){
-			throw new RuntimeException(ex);
-		}finally{
-			if(excelResultHandler != null){
-				try{ excelResultHandler.close();}catch(Exception ex){}
-			}
-		}
-	}
 
     @RequestMapping(value = "/insertCUAA130")
     public ResponseEntity<?> insertCUAA130(HttpServletRequest request, @RequestBody Map args) throws Exception{
@@ -2066,77 +1919,6 @@ public class ItemController extends CmmnController {
 	  		return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
 	  	}
     }
-
-    @RequestMapping(value = "/excelImportSebItemList")
-	public ResponseEntity<?> excelImportSebItemList(HttpServletRequest request, @RequestBody Map args){
-	    if(CmmnUtils.isNull(CmmnUtils.getUserInfo(request, CmmnConstants.SESSION_ID)))
-			return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-
-		try{
-			List returnList = new ArrayList();
-		    long returnVal = 0L;
-		    List<Map> itemMasterList = (List<Map>) args.get("itemMasterList");
-		    String inputStatus 		= args.containsKey("inputStatus") ? String.valueOf(args.get("inputStatus")) : "";
-		    String currentDatetime 	= CmmnUtils.getFormatedDate("yyyyMMddHHmmss");
-		    String cmmf = "";
-
-		    for (Map map : itemMasterList){
-		    	if (map.containsKey("CMMFCode") && !CmmnUtils.isNull(map.get("CMMFCode"))) {
-		    		//엑셀입력되는 Status
-			  		String Status = inputStatus;
-			  		if(!Status.equals("1") && !Status.equals("4")){  // 엑셀업로드시 Status 1,4 항목은 제외
-				        Map mcountNoMap = new HashMap();
-				        mcountNoMap.put("CMMFCode", map.get("CMMFCode")); // equal자재코드_비교용
-				        // 기존에 입력된 CMMF(자재관리번호:mcountNo)인지?
-				        map.put("_userId", String.valueOf(getUserInfo(request, CmmnConstants.SESSION_ID)));
-			        	map.put("_userNm", String.valueOf(CmmnUtils.getUserInfo(request, CmmnConstants.SESSION_USERNAME)));
-			        	map.put("_currentDatetime", currentDatetime);
-				        List<Map> reqMaster  = itemService.selectCUAA130(mcountNoMap);
-				        List<Map> reqMaster1 = itemService.selectItemSebList(mcountNoMap);
-				  		if (reqMaster1.size() > 0) {
-					        if (reqMaster.size() > 0) {
-					        	String PrvStatus = String.valueOf(reqMaster.get(0).get("Status"));
-					        	if((Integer.parseInt(PrvStatus) > Integer.parseInt(Status)) && (Integer.parseInt(PrvStatus) < 5)){
-					        		map.put("Status", PrvStatus);
-						  		}else if(Integer.parseInt(PrvStatus) > 4){
-					        		map.put("Status", PrvStatus);
-						  		}else{
-						  			map.put("Status", Status);
-						  		}
-					        	map.put("CUAA130Key", reqMaster.get(0).get("CUAA130Key"));
-					        	returnVal = itemService.updateCUAA130(map);
-					        }else{
-					        	String PrvStatus1 = String.valueOf(reqMaster1.get(0).get("StatusNow"));
-					        	if(PrvStatus1.equals("4")){
-					        		map.put("Status", "4");
-						  		}else if (map.containsKey("Manufacturer") && !CmmnUtils.isNull(map.get("Manufacturer"))) {
-					        		map.put("Status", "3");
-						  		}else if (map.containsKey("DescriptionEn") && !CmmnUtils.isNull(map.get("DescriptionEn"))) {
-					        		map.put("Status", "2");
-						  		}else{
-					        		map.put("Status", Status);
-						  		}
-					        	map.put("McountNo", reqMaster1.get(0).get("Mcount_no"));
-					        	returnVal = itemService.insertCUAA130(map);
-					        }
-
-					        if (returnVal > 0) {
-	//				        	returnList.add("");
-					        }
-				  		}else{
-				  			// 신규자재리스트 팝업창 띄우기
-							cmmf += map.get("CMMFCode")+" ";
-				  			returnList.add(cmmf);
-				  		}
-			  		}
-		    	}
-		    }
-
-			return new ResponseEntity<>(returnList, HttpStatus.OK);
-		}catch(Exception e){
-			return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-		}
-	}
 
     @RequestMapping(value = "/selectCUAA130")
     public ResponseEntity<?> selectCUAA130(HttpServletRequest request, @RequestBody Map args){

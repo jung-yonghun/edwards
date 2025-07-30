@@ -96,10 +96,6 @@ $(document).ready(function(){
 	    	if ($("#userTaxNo").val() == "3128112960" || $("#userTaxNo").val() == "1078163829" || $("#userTaxNo").val() == "2118671545" || $("#userTaxNo").val() == "1298123036"){ //에드워드코리아 또는 코스트코코리아, 펜디
 	    		$('#btn1').css("display", "none");
 	    	}
-	    	if ($("#userTaxNo").val() == "2208146671"){ //그룹세브코리아면
-				$('#btn1').css("display", "none");
-				$('#btn3').css("display", "none");
-			}
 	    	$("#audi1").css("display", "none");
 	    	$("#audi2").css("display", "none");
 	    	$("#audi3").css("display", "none");

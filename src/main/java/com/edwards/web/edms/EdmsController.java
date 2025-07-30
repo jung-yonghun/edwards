@@ -2,7 +2,6 @@ package com.edwards.web.edms;
 
 import com.edwards.biz.customsManagement.FtpClient;
 import com.edwards.biz.edmsManagement.CpsEdmsFileDTO;
-import com.edwards.biz.edmsManagement.CpsZeissFileDownDao;
 import com.edwards.biz.edmsManagement.EdmsFileDTO;
 import com.edwards.biz.edmsManagement.EdmsManagementService;
 import com.edwards.biz.edmsManagement.EdmsMasterDao;
@@ -10,7 +9,6 @@ import com.edwards.biz.edmsManagement.FtpLogDao;
 import com.edwards.biz.edmsManagement.LogFileDao;
 import com.edwards.commons.*;
 import com.edwards.domains.CpsEdmsAttachFileVO;
-import com.edwards.domains.CpsZeissFileDownVO;
 import com.edwards.domains.EdmsAttachFileVO;
 import com.edwards.domains.EdmsMasterVO;
 import com.edwards.domains.FtpLogVO;
@@ -65,8 +63,6 @@ public class EdmsController extends CmmnController {
 	@Autowired
 	private EdmsMasterDao edmsMasterDao;
 	@Autowired
-	private CpsZeissFileDownDao cpsZeissFileDownDao;
-	@Autowired
 	private ModelMapper modelMapper;
 	@Autowired
 	private MessageSource messageSource;
@@ -85,11 +81,6 @@ public class EdmsController extends CmmnController {
 	 */
 	@Value("${com.sein.taxnum}")
 	public String seinCompanyTaxNum;
-	/**
-	 * The Geows tax num.
-	 */
-	@Value("${asml.main.taxNum}")
-	public String asmlTaxNum;
 
 	@RequestMapping(value = "/selectEdmsFileListNew")
 	public ResponseEntity<?> selectEdmsFileListNew(HttpServletRequest request, @RequestBody Map args){
@@ -761,169 +752,6 @@ public class EdmsController extends CmmnController {
 		}
 	}
 
-	@RequestMapping(value = "/archivingZeissFiles")
-	public ResponseEntity<?> archivingZeissFiles(HttpServletRequest request, @RequestBody Map args) throws Exception {
-		if (CmmnUtils.isNull(CmmnUtils.getUserInfo(request, CmmnConstants.SESSION_ID)))
-			return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-		String downloadFileName = null;
-		String userId = String.valueOf(getUserInfo(request, CmmnConstants.SESSION_USERID));
-
-		try {
-			downloadFileName = String.valueOf(args.get("ZeissFileName"));
-
-
-			List<CpsZeissFileDownVO> voList = new ArrayList<>();
-			List<Map<String, Object>> jsonList = CmmnUtils.convertMapSourceToList(args, "batchZeissFileList");
-			for(int i = 0, n = jsonList.size(); i < n; i++){
-				String edmsFileKey = String.valueOf(jsonList.get(i).get("edmsFileKey"));
-				String edmsSingoNum = String.valueOf(jsonList.get(i).get("edmsSingoNum"));
-
-				Map map = new HashMap();
-				map.put("edmsFileKey", edmsFileKey);
-				map.put("edmsSingoNum", edmsSingoNum);
-				voList.addAll(edmsManagementService.selectZeissFileList(map));
-			}
-
-			List<File> filelist 		= new ArrayList();
-			List<String> fileExtList 	= new ArrayList<>();
-			CmmnFileCompressUtils cmmnFileCompressUtil = new CmmnFileCompressUtils();
-			String tempKey = "";
-
-			for(int i=0;i<voList.size();i++){
-				System.out.println("##########"+voList.get(i).getEdmsSaveFileName());
-				if(tempKey.equals("")){
-					filelist.add(new File(voList.get(i).getEdmsFilePath() + voList.get(i).getEdmsSaveFileName()));
-					fileExtList.add(voList.get(i).getEdmsFileExt());
-				}else if(tempKey.equals(voList.get(i).getEdmsInvNo().toString())){
-					filelist.add(new File(voList.get(i).getEdmsFilePath() + voList.get(i).getEdmsSaveFileName()));
-					fileExtList.add(voList.get(i).getEdmsFileExt());
-				}else{
-					CpsZeissFileDownVO newcpsedmsfileVO = cpsZeissFileDownDao.findTop1ByEdmsInvNo(tempKey);
-					String fileName = newcpsedmsfileVO.getEdmsInvNo() +".zip";
-
-					File zippedFile = new File(edmsFileUploadPath + "\\zeissDownload\\", fileName);
-					cmmnFileCompressUtil.isZip(filelist, fileExtList, new FileOutputStream(zippedFile));
-					filelist = new ArrayList();
-					fileExtList = new ArrayList<>();
-					filelist.add(new File(voList.get(i).getEdmsFilePath() + voList.get(i).getEdmsSaveFileName()));
-					fileExtList.add(voList.get(i).getEdmsFileExt());
-				}
-
-				tempKey = voList.get(i).getEdmsInvNo().toString();
-
-				if(i == voList.size()-1){
-					String fileName = voList.get(i).getEdmsInvNo().toString() +".zip";
-					File zippedFile = new File(edmsFileUploadPath + "\\zeissDownload\\", fileName);
-					cmmnFileCompressUtil.isZip(filelist, fileExtList, new FileOutputStream(zippedFile));
-				}
-			}
-
-			cmmnFileCompressUtil.zip(new File(edmsFileUploadPath + "\\zeissDownload\\"));
-			System.out.println("@@@@@@@@@@"+downloadFileName);
-			return new ResponseEntity<>(downloadFileName, HttpStatus.OK);
-		}catch(Exception e){
-			e.printStackTrace();
-			return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-		}
-	}
-
-	@RequestMapping(value = "/archivingZeissFilesPo")
-	public ResponseEntity<?> archivingZeissFilesPo(HttpServletRequest request, @RequestBody Map args) throws Exception {
-		if (CmmnUtils.isNull(CmmnUtils.getUserInfo(request, CmmnConstants.SESSION_ID)))
-			return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-		String downloadFileName = null;
-		String userId = String.valueOf(getUserInfo(request, CmmnConstants.SESSION_USERID));
-
-		try {
-			downloadFileName = String.valueOf(args.get("ZeissFileName"));
-
-
-			List<CpsZeissFileDownVO> voList = new ArrayList<>();
-			List<Map<String, Object>> jsonList = CmmnUtils.convertMapSourceToList(args, "batchZeissFileList");
-			for(int i = 0, n = jsonList.size(); i < n; i++){
-				String edmsFileKey = String.valueOf(jsonList.get(i).get("edmsFileKey"));
-				String edmsSingoNum = String.valueOf(jsonList.get(i).get("edmsSingoNum"));
-
-				Map map = new HashMap();
-				map.put("edmsFileKey", edmsFileKey);
-				map.put("edmsSingoNum", edmsSingoNum);
-				voList.addAll(edmsManagementService.selectZeissFileList(map));
-			}
-
-			List<File> filelist 		= new ArrayList();
-			List<String> fileExtList 	= new ArrayList<>();
-			CmmnFileCompressUtils cmmnFileCompressUtil = new CmmnFileCompressUtils();
-			String tempKey = "";
-
-			for(int i=0;i<voList.size();i++){
-				System.out.println("##########"+voList.get(i).getEdmsSaveFileName());
-				if(tempKey.equals("")){
-					filelist.add(new File(voList.get(i).getEdmsFilePath() + voList.get(i).getEdmsSaveFileName()));
-					fileExtList.add(voList.get(i).getEdmsFileExt());
-				}else if(tempKey.equals(voList.get(i).getEdmsPoNo().toString())){
-					filelist.add(new File(voList.get(i).getEdmsFilePath() + voList.get(i).getEdmsSaveFileName()));
-					fileExtList.add(voList.get(i).getEdmsFileExt());
-				}else{
-					CpsZeissFileDownVO newcpsedmsfileVO = cpsZeissFileDownDao.findTop1ByEdmsPoNo(tempKey);
-					String fileName = newcpsedmsfileVO.getEdmsPoNo() +".zip";
-
-					File zippedFile = new File(edmsFileUploadPath + "\\zeissDownload\\", fileName);
-					cmmnFileCompressUtil.isZip(filelist, fileExtList, new FileOutputStream(zippedFile));
-					filelist = new ArrayList();
-					fileExtList = new ArrayList<>();
-					filelist.add(new File(voList.get(i).getEdmsFilePath() + voList.get(i).getEdmsSaveFileName()));
-					fileExtList.add(voList.get(i).getEdmsFileExt());
-				}
-
-				tempKey = voList.get(i).getEdmsPoNo().toString();
-
-				if(i == voList.size()-1){
-					String fileName = voList.get(i).getEdmsPoNo().toString() +".zip";
-					File zippedFile = new File(edmsFileUploadPath + "\\zeissDownload\\", fileName);
-					cmmnFileCompressUtil.isZip(filelist, fileExtList, new FileOutputStream(zippedFile));
-				}
-			}
-
-			cmmnFileCompressUtil.zip(new File(edmsFileUploadPath + "\\zeissDownload\\"));
-			System.out.println("@@@@@@@@@@"+downloadFileName);
-			return new ResponseEntity<>(downloadFileName, HttpStatus.OK);
-		}catch(Exception e){
-			e.printStackTrace();
-			return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-		}
-	}
-
-	@RequestMapping(value = "/batchDownloadZeissFiles", method = RequestMethod.GET)
-	public void batchDownloadZeissFiles(HttpServletRequest request, @RequestParam(value = "fileName") String compressFileName, HttpServletResponse response) {
-		String userId = String.valueOf(getUserInfo(request, CmmnConstants.SESSION_ID));
-		if(CmmnUtils.isNull(userId) || CmmnUtils.isNull(compressFileName))
-			return;
-		if(!new File(edmsFileUploadPath + compressFileName).exists()){
-			return;
-		}
-
-		String downloadFileName = CmmnFileUtils.convertEncodeFileName(compressFileName);
-
-		try{
-			File fileToDownload = new File(edmsFileUploadPath + downloadFileName);
-			InputStream inputStream = new FileInputStream(fileToDownload);
-			response.setContentType("application/force-download");
-			response.setHeader("Content-Disposition", "attachment; filename=\"" + downloadFileName + "\";");
-			IOUtils.copy(inputStream, response.getOutputStream());
-			response.flushBuffer();
-			inputStream.close();
-		}catch (Exception e){
-			e.printStackTrace();
-		}finally{
-			File selectedDir= new File(edmsFileUploadPath + "\\zeissDownload\\");
-	        File[] innerFiles= selectedDir.listFiles();
-	        for(int i=0; i<innerFiles.length; i++){
-	            innerFiles[i].delete();
-	        }
-	        if (new File(edmsFileUploadPath + compressFileName).exists()) CmmnFileUtils.deletePath(edmsFileUploadPath, downloadFileName);
-		}
-	}
-
 
 
 
@@ -1067,53 +895,6 @@ public class EdmsController extends CmmnController {
 	}
   }
 
-  /**
-   * Gets edms master with not classification file list.(edms 마스터X미구분파일 조회)
-   *
-   * @param request the request
-   * @param args    the args
-   * @return the edms master with not classification file list
-   */
-  @RequestMapping(value = "/getEdmsMasterWithNotClassificationFileList")
-  public ResponseEntity<?> getEdmsMasterWithNotClassificationFileList(HttpServletRequest request, @RequestBody Map args) {
-	if (CmmnUtils.isNull(getUserInfo(request, CmmnConstants.SESSION_ID)))
-	  return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-
-	try {
-	  checkPagingParamsForMapper(args);
-	  args.put("asmlTaxNum", asmlTaxNum);
-	  PageRequest pageRequest = new PageRequest(Integer.parseInt(String.valueOf(args.getOrDefault("page", CmmnConstants.PAGE_NUMBER_INIT))), Integer.parseInt(String.valueOf(args.getOrDefault("size", CmmnConstants.PAGE_SIZE))));
-	  List<Map> list = edmsManagementService.getEdmsMasterWithNotClassificationFileList(args);
-	  List<?> result = list.stream().skip(pageRequest.getPageNumber() * pageRequest.getPageSize()).limit(pageRequest.getPageSize()).collect(Collectors.toList());
-	  return new ResponseEntity<>(new PageImpl<>(result, pageRequest, list.size()), HttpStatus.OK);
-	} catch (Exception e) {
-	  return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-	}
-  }
-
-  /**
-   * Gets edms master status group count list.(edms 마스터 상태 그룹별 조회)
-   *
-   * @param request the request
-   * @param args    the args
-   * @return the edms master status group count list
-   */
-  @RequestMapping(value = "/getEdmsMasterStatusGroupCountList")
-  public ResponseEntity<?> getEdmsMasterStatusGroupCountList(HttpServletRequest request, @RequestBody Map args) {
-	if (CmmnUtils.isNull(getUserInfo(request, CmmnConstants.SESSION_ID)))
-	  return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-
-	try {
-	  checkPagingParamsForMapper(args);
-	  args.put("asmlTaxNum", asmlTaxNum);
-	  PageRequest pageRequest = new PageRequest(Integer.parseInt(String.valueOf(args.getOrDefault("page", CmmnConstants.PAGE_NUMBER_INIT))), Integer.parseInt(String.valueOf(args.getOrDefault("size", CmmnConstants.PAGE_SIZE))));
-	  List<Map> list = edmsManagementService.getEdmsMasterStatusGroupCountList(args);
-	  List<?> result = list.stream().skip(pageRequest.getPageNumber() * pageRequest.getPageSize()).limit(pageRequest.getPageSize()).collect(Collectors.toList());
-	  return new ResponseEntity<>(new PageImpl<>(result, pageRequest, list.size()), HttpStatus.OK);
-	} catch (Exception e) {
-	  return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-	}
-  }
 
   /**
    * Gets edms file info list.(edms 파일 조회)
@@ -1231,30 +1012,6 @@ public class EdmsController extends CmmnController {
 	  List<EdmsAttachFileVO> voList = CmmnUtils.convertMapListToBean(mapList, EdmsAttachFileVO.class);
 	  List<EdmsAttachFileVO> returnVoList = edmsManagementService.saveEdmsFileList(voList, request);
 	  return new ResponseEntity<>(returnVoList, HttpStatus.OK);
-	} catch (Exception e) {
-	  return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-	}
-  }
-
-  /**
-   * Gets expo invoice list.(edms 수출 INV 조회. ncustoms.Expo1 기준)
-   *
-   * @param request the request
-   * @param args    the args
-   * @return the expo invoice list
-   */
-  @RequestMapping(value = "/getExpoInvoiceList")
-  public ResponseEntity<?> getExpoInvoiceList(HttpServletRequest request, @RequestBody Map args) {
-	if (CmmnUtils.isNull(getUserInfo(request, CmmnConstants.SESSION_ID)))
-	  return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-
-	try {
-	  checkPagingParamsForMapper(args);
-	  args.put("asmlTaxNum", asmlTaxNum);
-	  PageRequest pageRequest = new PageRequest(Integer.parseInt(String.valueOf(args.getOrDefault("page", CmmnConstants.PAGE_NUMBER_INIT))), Integer.parseInt(String.valueOf(args.getOrDefault("size", CmmnConstants.PAGE_SIZE))));
-	  List<Map> list = edmsManagementService.getExpoInvoiceList(args);
-	  List<?> result = list.stream().skip(pageRequest.getPageNumber() * pageRequest.getPageSize()).limit(pageRequest.getPageSize()).collect(Collectors.toList());
-	  return new ResponseEntity<>(new PageImpl<>(result, pageRequest, list.size()), HttpStatus.OK);
 	} catch (Exception e) {
 	  return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
 	}
@@ -1796,55 +1553,6 @@ public class EdmsController extends CmmnController {
 //	return returnVO;
 //  }
 
-
-
-  /**
-   * Gets customs clearance by unregistered edms master list.
-   *
-   * @param request the request
-   * @param args    the args
-   * @return the customs clearance by unregistered edms master list
-   */
-  @RequestMapping(value = "/getCustomsClearanceByUnregisteredEdmsMasterList")
-  public ResponseEntity<?> getCustomsClearanceByUnregisteredEdmsMasterList(HttpServletRequest request, @RequestBody Map args) {
-	if (CmmnUtils.isNull(getUserInfo(request, CmmnConstants.SESSION_ID)))
-	  return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-
-	try {
-	  checkPagingParamsForMapper(args);
-	  args.put("asmlTaxNum", asmlTaxNum);
-	  PageRequest pageRequest = new PageRequest(Integer.parseInt(String.valueOf(args.getOrDefault("page", CmmnConstants.PAGE_NUMBER_INIT))), Integer.parseInt(String.valueOf(args.getOrDefault("size", CmmnConstants.PAGE_SIZE))));
-	  List<Map> list = edmsManagementService.getCustomsClearanceByUnregisteredEdmsMasterList(args);
-	  List<?> result = list.stream().skip(pageRequest.getPageNumber() * pageRequest.getPageSize()).limit(pageRequest.getPageSize()).collect(Collectors.toList());
-	  return new ResponseEntity<>(new PageImpl<>(result, pageRequest, list.size()), HttpStatus.OK);
-	} catch (Exception e) {
-	  return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-	}
-  }
-
-  /**
-   * Gets edms division copy target list.
-   *
-   * @param request the request
-   * @param args    the args
-   * @return the edms division copy target list
-   */
-  @RequestMapping(value = "/getEdmsDivisionCopyTargetList")
-  public ResponseEntity<?> getEdmsDivisionCopyTargetList(HttpServletRequest request, @RequestBody Map args) {
-	if (CmmnUtils.isNull(getUserInfo(request, CmmnConstants.SESSION_ID)))
-	  return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-
-	try {
-	  checkPagingParamsForMapper(args);
-	  args.put("asmlTaxNum", asmlTaxNum);
-	  PageRequest pageRequest = new PageRequest(Integer.parseInt(String.valueOf(args.getOrDefault("page", CmmnConstants.PAGE_NUMBER_INIT))), Integer.parseInt(String.valueOf(args.getOrDefault("size", CmmnConstants.PAGE_SIZE))));
-	  List<Map> list = edmsManagementService.getEdmsDivisionCopyTargetList(args);
-	  List<?> result = list.stream().skip(pageRequest.getPageNumber() * pageRequest.getPageSize()).limit(pageRequest.getPageSize()).collect(Collectors.toList());
-	  return new ResponseEntity<>(new PageImpl<>(result, pageRequest, list.size()), HttpStatus.OK);
-	} catch (Exception e) {
-	  return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-	}
-  }
 
   /**
    * Save edms division copy list response entity.

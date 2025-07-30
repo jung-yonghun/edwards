@@ -8,9 +8,5 @@ public interface UserInfoMapper {
 
 	List<Map> findUserInfoList(Map args);
 
-	long updateCpsUserMenu(Map args);
-
-	List<Map> findMsgUserInfoList(Map args);
-
-	List<Map> selectZeissUser(Map args);
+	long updateCpsUserMenu(Map args);;
 }

@@ -21,12 +21,4 @@ public class SessionTempItemDao{
 	public void importManage1(String sqlId, @SuppressWarnings("rawtypes") Map param, ManageExcel1 excelResultHandler) throws IOException{
 		sqlSessionTemplate.select(sqlId, param, excelResultHandler);
 	}
-
-	public void zeissImport(String sqlId, @SuppressWarnings("rawtypes") Map param, ZeissImpExcel excelResultHandler) throws IOException{
-		sqlSessionTemplate.select(sqlId, param, excelResultHandler);
-	}
-
-	public void sebItemExcel(String sqlId, @SuppressWarnings("rawtypes") Map param, SebItemExcel excelResultHandler) throws IOException{
-		sqlSessionTemplate.select(sqlId, param, excelResultHandler);
-	}
 }

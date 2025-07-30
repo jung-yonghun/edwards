@@ -5,7 +5,6 @@ import com.edwards.commons.CmmnConstants;
 import com.edwards.commons.CmmnSpecs;
 import com.edwards.commons.CmmnUtils;
 import com.edwards.domains.CpsSaveCustomerVO;
-import com.edwards.domains.DeliveryCarryingInVO;
 import com.edwards.domains.ItemHsMasterVO;
 import com.edwards.domains.ResultEtlImportUnitPriceVO;
 import com.edwards.domains.SooMst_ItemMasterVO;

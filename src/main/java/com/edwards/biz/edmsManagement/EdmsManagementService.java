@@ -3,12 +3,10 @@ package com.edwards.biz.edmsManagement;
 import com.edwards.biz.customsManagement.ImpoCustomsMapper;
 import com.edwards.biz.edmsManagement.CpsEdmsFileDTO;
 import com.edwards.biz.edmsManagement.CpsEdmsFileDao;
-import com.edwards.biz.edmsManagement.CpsZeissFileDownDao;
 import com.edwards.commons.CmmnConstants;
 import com.edwards.commons.CmmnSpecs;
 import com.edwards.commons.CmmnUtils;
 import com.edwards.domains.CpsEdmsAttachFileVO;
-import com.edwards.domains.CpsZeissFileDownVO;
 import com.edwards.domains.EdmsAttachFileVO;
 import com.edwards.domains.EdmsMasterVO;
 
@@ -44,8 +42,6 @@ public class EdmsManagementService {
 	private EdmsMasterDao edmsMasterDao;
 	@Autowired
 	private EdmsFileDao edmsFileDao;
-	@Autowired
-	private CpsZeissFileDownDao cpsZeissFileDownDao;
 	@Autowired
 	private CpsEdmsFileDao cpsEdmsFileDao;
 
@@ -142,21 +138,6 @@ public class EdmsManagementService {
 
 	public List<Map> selectEdmsFileCountList(Map args) throws Exception{
 		return sqlSession.getMapper(EdmsManagementMapper.class).selectEdmsFileCountList(CmmnUtils.replaceMapSc(args));
-	}
-
-	public List<CpsZeissFileDownVO> selectZeissFileList(Map args) throws Exception {
-		String edmsFileKey = args.containsKey("edmsFileKey") ? String.valueOf(args.get("edmsFileKey")) : null;
-		String edmsSingoNum = args.containsKey("edmsSingoNum") ? String.valueOf(args.get("edmsSingoNum")) : null;
-		String useYn = "Y";
-System.out.println("##########"+edmsFileKey);
-System.out.println("##########"+edmsSingoNum);
-		//검색조건(필수:useYn)
-		Specifications spec = Specifications.where(CmmnSpecs.afterLikeStringSpec(useYn, "useYn"));
-		//검색조건
-		if (!CmmnUtils.isNull(edmsFileKey)) spec = spec.and(CmmnSpecs.eqStringSpec(edmsFileKey, "edmsFileKey"));
-		if (!CmmnUtils.isNull(edmsSingoNum)) spec = spec.and(CmmnSpecs.eqStringSpec(edmsSingoNum, "edmsSingoNum"));
-
-		return cpsZeissFileDownDao.findAll(spec);
 	}
 
 

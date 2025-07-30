@@ -75,8 +75,6 @@ public class SignupController {
 	public String loginEngCheckPagePath;
 	@Value("${changeEngPw.path}")
 	public String changeEngPwPath;
-	@Value("${asml.main.taxNum}")
-	public String asmlTaxNum;
 
 	@RequestMapping(value = "/loginAction")
 	public ModelAndView loginAction(HttpServletRequest request, HttpServletResponse response, @RequestParam Map args, ModelMap model) throws Exception{
@@ -694,81 +692,6 @@ public class SignupController {
 			return new ResponseEntity<>(userInfoVOResult, HttpStatus.CREATED);
 		}catch(Exception e){
 			return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-		}
-	}
-
-	@RequestMapping(value = "/hrloginAction")
-	public ModelAndView hrloginAction(HttpServletRequest request, HttpServletResponse response, @RequestParam Map args, ModelMap model) throws Exception{
-		ModelAndView mv 		= new ModelAndView();
-		HttpSession session 	= request.getSession(true);
-		String userId 			= String.valueOf(args.get("userId"));
-		String currentDate 		= CmmnUtils.getFormatedDate("yyyyMMdd");
-		String currentDatetime 	= CmmnUtils.getFormatedDate("yyyyMMddHHmmss");
-		args.put("yyyymmdd",currentDate);
-
-		String ip = request.getHeader("X-Forwarded-For");
-		if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-		     ip = request.getHeader("Proxy-Client-IP");
-		}
-		if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-		     ip = request.getHeader("WL-Proxy-Client-IP");
-		}
-		if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-		     ip = request.getHeader("HTTP_CLIENT_IP");
-		}
-		if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-		     ip = request.getHeader("HTTP_X_FORWARDED_FOR");
-		}
-		if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-		     ip = request.getHeader("X-Real-IP");
-		}
-		if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-		     ip = request.getHeader("X-RealIP");
-		}
-		if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
-		     ip = request.getRemoteAddr();
-		}
-
-		args.put("ip",ip);
-
-		List<Map> list = userManagementService.getMsgUserList(args);
-
-		if(list.size() < 1){
-			// 접속실패로그
-			CpsLogAccessVO logAccessVO = new CpsLogAccessVO();
-			logAccessVO.setUserEmail(userId);
-			logAccessVO.setAction("로그인실패");
-			logAccessVO.setSessionId("seinhr");
-			logAccessVO.setAddUserEmail(userId);
-			logAccessVO.setAddUserName(userId);
-			logAccessVO.setAddDtm(currentDatetime);
-			logAccessDao.save(logAccessVO);
-
-			mv.setViewName("redirect:./seinhr/loginCheck.cps");
-			mv.addObject("resultMsg", "메신저를 켜세요.");
-			return mv;
-		}else{
-			System.out.println("############"+ip);
-			session.setAttribute(CmmnConstants.SESSION_ID, list.get(0).get("user_id"));
-			session.setAttribute(CmmnConstants.SESSION_USERID, list.get(0).get("logon_cd"));
-			session.setAttribute(CmmnConstants.SESSION_USERNAME, list.get(0).get("user_nm_kr"));
-
-			int interval = 3600;
-			session.setMaxInactiveInterval(interval);
-
-			// 접속성공로그
-			CpsLogAccessVO logAccessVO = new CpsLogAccessVO();
-			logAccessVO.setUserEmail((String) list.get(0).get("logon_cd"));
-			logAccessVO.setAction("로그인성공");
-			logAccessVO.setSessionId(ip);
-			logAccessVO.setAddUserEmail((String) list.get(0).get("logon_cd"));
-			logAccessVO.setAddUserName((String) list.get(0).get("user_nm_kr"));
-			logAccessVO.setAddDtm(currentDatetime);
-			logAccessDao.save(logAccessVO);
-
-			mv.setViewName("redirect:./seinhr/main.cps");
-
-			return mv;
 		}
 	}
 }

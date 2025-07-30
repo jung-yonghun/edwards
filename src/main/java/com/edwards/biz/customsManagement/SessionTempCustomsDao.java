@@ -13,16 +13,4 @@ public class SessionTempCustomsDao{
 	@Autowired
 	@Qualifier("SqlSessionTemplate")
 	private SqlSessionTemplate sqlSessionTemplate;
-
-	public void burberry(String sqlId, @SuppressWarnings("rawtypes") Map param, BurberryExcel excelResultHandler) throws IOException{
-		sqlSessionTemplate.select(sqlId, param, excelResultHandler);
-	}
-
-	public void porscheTax(String sqlId, @SuppressWarnings("rawtypes") Map param, PorscheTaxExcel excelResultHandler) throws IOException{
-		sqlSessionTemplate.select(sqlId, param, excelResultHandler);
-	}
-	
-	public void porscheItem(String sqlId, @SuppressWarnings("rawtypes") Map param, PorscheItemExcel excelResultHandler) throws IOException{
-		sqlSessionTemplate.select(sqlId, param, excelResultHandler);
-	}
 }

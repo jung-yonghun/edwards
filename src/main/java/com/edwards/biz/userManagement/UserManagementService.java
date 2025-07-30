@@ -160,14 +160,6 @@ public class UserManagementService{
 	    return args;
 	}
 
-	public List<Map> getMsgUserList(Map args) throws Exception {
-		return sqlSession.getMapper(UserInfoMapper.class).findMsgUserInfoList(CmmnUtils.replaceMapSc(args));
-	}
-
-	public List<Map> selectZeissUser(Map args) throws Exception {
-		return sqlSession.getMapper(UserInfoMapper.class).selectZeissUser(CmmnUtils.replaceMapSc(args));
-	}
-
 
 
 
@@ -188,19 +180,6 @@ public class UserManagementService{
 	Specifications spec = Specifications.where(CmmnSpecs.afterLikeStringSpec(useYn, "useYn"));
 	if (!CmmnUtils.isNull(userKey)) spec = spec.and(CmmnSpecs.eqNumberSpec(userKey, "userKey"));
 	if (!CmmnUtils.isNull(userId)) spec = spec.and(CmmnSpecs.eqStringSpec(userId, "userId"));
-
-//	if (!CmmnUtils.isNull((argChosung))) {
-//	  List<CmsMasterVO> chosungList = cmsContentsDao.findChosungWithContentNameOrContentsGenreOrcontentsMain(CmmnUtils.convertChosung(argChosung));
-//	  if (chosungList.size() > 0) {
-//		List<BigInteger> result = chosungList.stream()
-//				.map(i -> i.getContentsKey())
-//				.collect(Collectors.toList());
-//		spec = spec.and(CmmnSpecs.inKeyListSpec(result, "contentsKey"));
-//	  }
-//	}
-//	if (!CmmnUtils.isNull(contentsName)) spec = spec.and(CmmnSpecs.afterLikeStringSpec(contentsName, "contentsName"));
-//	if (!CmmnUtils.isNull(liveContentsYn)) spec = spec.and(CmmnSpecs.afterLikeStringSpec(liveContentsYn, "liveContentsYn"));
-//	if (!CmmnUtils.isNull(contentsConfYn)) spec = spec.and(CmmnSpecs.afterLikeStringSpec(contentsConfYn, "contentsConfYn"));
 
 	return spec;
   }
@@ -229,30 +208,5 @@ public class UserManagementService{
 	List<CpsUserInfoVO> returnVO = userInfoDao.save(voList);
 
 	return returnVO;
-  }
-
-
-  private boolean sendEmailUserPassword(CpsUserInfoVO result, StringBuffer newPassword) {
-	HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
-	Map map = new HashMap();
-	boolean mailSendCheck = false;
-	List<Object> mailAddr = new ArrayList<Object>(), mailList = new ArrayList<Object>();
-
-	mailAddr.add(result.getUserEmail());
-	for (int i = 0; i < mailAddr.size(); i++) {
-	  if (EmailValidator.getInstance().isValid(String.valueOf(mailAddr.get(i)))) {
-		mailList.add(String.valueOf(mailAddr.get(i)));
-	  }
-	}
-
-	if (mailList.size() > 0) {
-	  map.put("toAddr", mailList);
-	  map.put("subject", "[GEOWS] 신규 비밀번호 안내 입니다.");
-	  map.put("contents", "<html><b><u>신규비밀번호</u></b> : " + newPassword + "</html>");
-	  map.put("contentType", true);
-
-	  mailSendCheck = cmmnMailService.sendMail(request, map);
-	}
-	return mailSendCheck;
   }
 }
