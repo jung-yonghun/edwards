@@ -15,6 +15,8 @@ import com.edwards.domains.FtpLogVO;
 import com.edwards.domains.LogFileVO;
 
 import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.commons.net.ftp.FTPClient;
+import org.apache.commons.net.ftp.FTPReply;
 import org.apache.tomcat.util.http.fileupload.IOUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -209,6 +211,8 @@ public class EdmsController extends CmmnController {
 						mpf.transferTo(new File("C:\\hspass\\"+saveFileName));
 			            File file1 = new File("C:\\hspass\\"+saveFileName);
 						FtpClient ftp_ivr2 = new FtpClient("122.99.247.9", "seinftp", "seindoc!!", "");
+						//############# NEWNAS #######################
+						//FtpClient ftp_ivr2 = new FtpClient("122.99.247.9", "EdmsMng9", "Seinadmin9", "/Web/seincustoms/edms_file");
 						boolean result2 = ftp_ivr2.upload(file1, "/Web/seincustoms/edms_file/"+yyyymmdd+"/"+saveFileName);
 						
 //						mpf.transferTo(new File(uploadPath + saveFileName));
@@ -428,6 +432,47 @@ public class EdmsController extends CmmnController {
 			e.printStackTrace();
 		}
 	}
+	
+	//############# NEWNAS #######################
+//	@RequestMapping(value = "/downloadEdmsFile", method = {RequestMethod.GET})
+//	public void downloadEdmsFile(HttpServletRequest request, @RequestParam(value = "SDAAKey") BigDecimal SDAAKey,
+//								   HttpServletResponse response) throws UnsupportedEncodingException{
+//		if(CmmnUtils.isNull(getUserInfo(request, CmmnConstants.SESSION_ID)))
+//			return;
+//
+//		String downloadFileName, reqFilePath = null, reqFileName = null, remoteFile = null;
+//		HttpURLConnection httpCon = null;
+//
+//		try{
+//			List<CpsEdmsAttachFileVO> voList;
+//			Map args = new HashMap();
+//			args.put("SDAAKey", SDAAKey);
+//			voList = edmsManagementService.selectEdmsFileList(args);
+//			if (CmmnUtils.isNull(voList) || voList.size() > 1) throw new Exception("edms파일정보확인");
+//
+//			CpsEdmsAttachFileVO returnVO = voList.get(0);
+//			downloadFileName = CmmnFileUtils.convertEncodeFileName(returnVO.getEdmsOrgFileNm());
+//
+//			reqFilePath = returnVO.getEdmsFilePath();
+//			reqFileName = returnVO.getEdmsSaveFileNm();
+//			
+//			remoteFile  = reqFilePath.substring(14).replaceAll("\\\\", "/")+reqFileName;
+//			System.out.println("################"+remoteFile);
+//
+//			FTPClient ftpClient = new FTPClient();
+//			ftpClient.connect("122.99.247.9", 21);
+//			ftpClient.login("EdmsMng9", "Seinadmin9");
+//			ftpClient.enterLocalPassiveMode();
+//			response.setContentType("application/force-download");
+//			response.setHeader("Content-Disposition", "attachment; filename=\"" + downloadFileName + "\";");
+//			ftpClient.retrieveFile(remoteFile, response.getOutputStream());
+//			response.flushBuffer();
+//			ftpClient.logout();
+//			ftpClient.disconnect();
+//		}catch(Exception e){
+//			e.printStackTrace();
+//		}
+//	}
 
 	@RequestMapping(value = "/downloadEdmsFileCount", method = {RequestMethod.GET})
 	public void downloadEdmsFileCount(HttpServletRequest request, @RequestParam(value = "SDAAKey") BigDecimal SDAAKey,

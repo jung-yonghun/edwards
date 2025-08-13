@@ -39,6 +39,8 @@ import com.edwards.domains.UserMenuAuthVO;
 import com.jayway.jsonpath.JsonPath;
 
 import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.commons.net.ftp.FTPClient;
+import org.apache.commons.net.ftp.FTPReply;
 import org.apache.tomcat.util.http.fileupload.IOUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -250,6 +252,41 @@ public class SystemController extends CmmnController{
 			e.printStackTrace();
 		}
 	}
+	
+	//############# NEWNAS #######################
+//	@RequestMapping(value = "/downloadENAC100", method = {RequestMethod.GET})
+//	public void downloadENAC100(HttpServletRequest request, @RequestParam(value = "ENACKey") BigDecimal ENACKey,
+//								   HttpServletResponse response) throws UnsupportedEncodingException{
+//
+//		String downloadFileName, reqFilePath = null, reqFileName = null, remoteFile = null;
+//		File fileToDownload = null;
+//		HttpURLConnection httpCon = null;
+//
+//		try{
+//			ENAC100VO isENAC100VO = eNAC100Dao.findOne(ENACKey);
+//			reqFilePath = isENAC100VO.getFilePath();
+//			reqFileName = CmmnFileUtils.convertEncodeFileName(isENAC100VO.getSaveFileNm()).replaceAll(" ", "%20");
+//
+//			downloadFileName = isENAC100VO.getOriginFileNm();
+//			downloadFileName = CmmnFileUtils.convertEncodeFileName(downloadFileName);
+//			
+//			remoteFile  = reqFilePath.substring(14).replaceAll("\\\\", "/")+reqFileName;
+//			System.out.println("################"+remoteFile);
+//
+//			FTPClient ftpClient = new FTPClient();
+//			ftpClient.connect("122.99.247.9", 21);
+//			ftpClient.login("EdmsMng9", "Seinadmin9");
+//			ftpClient.enterLocalPassiveMode();
+//			response.setContentType("application/force-download");
+//			response.setHeader("Content-Disposition", "attachment; filename=\"" + downloadFileName + "\";");
+//			ftpClient.retrieveFile(remoteFile, response.getOutputStream());
+//			response.flushBuffer();
+//			ftpClient.logout();
+//			ftpClient.disconnect();
+//		}catch(Exception e){
+//			e.printStackTrace();
+//		}
+//	}
 
 	@RequestMapping(value = "/selectSaveCustomerList")
 	public ResponseEntity<?> selectSaveCustomerList(HttpServletRequest request, @RequestBody Map args){

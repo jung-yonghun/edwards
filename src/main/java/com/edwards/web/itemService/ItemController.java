@@ -4,6 +4,8 @@ import static com.edwards.commons.CmmnUtils.getUserInfo;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.commons.net.ftp.FTPClient;
+import org.apache.commons.net.ftp.FTPReply;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -180,6 +182,8 @@ public class ItemController extends CmmnController {
 						mpf.transferTo(new File("C:\\hspass\\"+saveFileName));
 			            File file1 = new File("C:\\hspass\\"+saveFileName);
 						FtpClient ftp_ivr2 = new FtpClient("122.99.247.9", "seinftp", "seindoc!!", "");
+						//############# NEWNAS #######################
+						//FtpClient ftp_ivr2 = new FtpClient("122.99.247.9", "EdmsMng9", "Seinadmin9", "/Web/seincustoms/item_file");
 						boolean result2 = ftp_ivr2.upload(file1, "/Web/seincustoms/item_file/"+yyyymmdd+"/"+saveFileName);
 						
 //						mpf.transferTo(new File(uploadPath + saveFileName));
@@ -308,6 +312,42 @@ public class ItemController extends CmmnController {
 			e.printStackTrace();
 		}
 	}
+	
+	//############# NEWNAS #######################
+//	@RequestMapping(value = "/downloadItemFile", method = {RequestMethod.GET})
+//	public void downloadItemFile(HttpServletRequest request,
+//								   @RequestParam(value = "itemFileKey") BigDecimal itemFileKey,
+//								   HttpServletResponse response) throws UnsupportedEncodingException{
+//		if(CmmnUtils.isNull(CmmnUtils.getUserInfo(request, CmmnConstants.SESSION_ID)))
+//			return;
+//
+//		String downloadFileName, reqFilePath = null, reqFileName = null, remoteFile = null;
+//		HttpURLConnection httpCon = null;
+//
+//		try{
+//			ItemAttachFileVO returnVO = itemFileService.selectItemFileInfo(itemFileKey);
+//			downloadFileName = CmmnFileUtils.convertEncodeFileName(returnVO.getItemOrgFileName());
+//
+//			reqFilePath = returnVO.getItemFilePath();
+//			reqFileName = returnVO.getItemSaveFileName();
+//			
+//			remoteFile  = reqFilePath.substring(14).replaceAll("\\\\", "/")+reqFileName;
+//			System.out.println("################"+remoteFile);
+//
+//			FTPClient ftpClient = new FTPClient();
+//			ftpClient.connect("122.99.247.9", 21);
+//			ftpClient.login("EdmsMng9", "Seinadmin9");
+//			ftpClient.enterLocalPassiveMode();
+//			response.setContentType("application/force-download");
+//			response.setHeader("Content-Disposition", "attachment; filename=\"" + downloadFileName + "\";");
+//			ftpClient.retrieveFile(remoteFile, response.getOutputStream());
+//			response.flushBuffer();
+//			ftpClient.logout();
+//			ftpClient.disconnect();
+//		}catch(Exception e){
+//			e.printStackTrace();
+//		}
+//	}
 
     @RequestMapping(value = "/deleteItemFile", method = {RequestMethod.POST})
 	public ResponseEntity<?> deleteItemFile(HttpServletRequest request, @RequestBody Map args) throws Exception{
