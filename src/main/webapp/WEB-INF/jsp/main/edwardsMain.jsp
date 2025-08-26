@@ -5,7 +5,7 @@
 	<jsp:include page="/WEB-INF/jsp/include/head_titleIndex.jsp"></jsp:include>
 	<jsp:include page="/WEB-INF/jsp/include/head_titleCss.jsp"></jsp:include>
 	<jsp:include page="/WEB-INF/jsp/include/head_titleJs.jsp"></jsp:include>
-	<script type="text/javascript" src="<c:url value='/js/cps/main/edwardsMain.js?250214'/>"></script>
+	<script type="text/javascript" src="<c:url value='/js/cps/main/edwardsMain.js?250826'/>"></script>
   </head>
   <body>
     <div id="seach_pop_bg"></div>
@@ -202,7 +202,7 @@
 							  <td class="taC" style="background:#fff;"><a href="mailto:ek@esein.co.kr">ek@esein.co.kr</a></td>
 						  	</tr>
 							<tr>
-							  <td class="taC" style="background:#fff;">전선옥 대리</td>
+							  <td class="taC" style="background:#fff;">전선옥 과장</td>
 							  <td class="taC" style="background:#fff;">070-4353-0677</td>
 							  <td class="taC" style="background:#fff;"><a href="mailto:ek@esein.co.kr">ek@esein.co.kr</a></td>
 						  	</tr>
